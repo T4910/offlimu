@@ -1,0 +1,24 @@
+{
+  "version": 3,
+  "skills": {
+    "flutter-expert": {
+      "source": "xfstudio/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/xfstudio/skills.git",
+      "skillPath": "flutter-expert/SKILL.md",
+      "skillFolderHash": "6a0c3cd23c7b848e7e4d791aad1478d3917cd991",
+      "installedAt": "2026-04-13T14:35:15.288Z",
+      "updatedAt": "2026-04-13T14:35:15.288Z"
+    },
+    "flutter-design-system": {
+      "source": "hoangnguyen0403/agent-skills-standard",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/hoangnguyen0403/agent-skills-standard.git",
+      "skillPath": "skills/flutter/flutter-design-system/SKILL.md",
+      "skillFolderHash": "b06b2b25d9740f049a5aed9e12c55fe174718bd8",
+      "installedAt": "2026-04-13T15:09:02.132Z",
+      "updatedAt": "2026-04-13T15:09:02.132Z"
+    }
+  },
+  "dismissed": {}
+}
