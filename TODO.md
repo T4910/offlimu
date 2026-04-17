@@ -385,7 +385,7 @@ This is the single source of truth for what remains before OffLiMU is considered
 
 ### 19.2 Build outputs
 - [x] [DEMO] Create reproducible Android and Windows build commands.
-- [ ] [DEMO] Prepare release artifacts and version tags.
+- [x] [DEMO] Prepare release artifacts and version tags.
 
 ---
 
