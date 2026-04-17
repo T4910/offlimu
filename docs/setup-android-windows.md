@@ -69,4 +69,5 @@
 - For Android device demos, keep both devices on the same hotspot or LAN and expect battery optimizations to affect discovery reliability on some devices.
 - iOS and macOS now include the local-network privacy declaration and Bonjour service entry for `_offlimu._tcp`.
 - macOS builds require CocoaPods to be installed locally before `flutter build macos` or `flutter run -d macos` will work with plugins.
+- Linux builds need the native `libsecret` development package installed so `flutter_secure_storage_linux` can link successfully. On Debian/Ubuntu that is typically `sudo apt-get install libsecret-1-dev`.
 - On Windows, allow the first Defender Firewall prompt for the app so local TCP discovery and transport can bind and connect normally.
