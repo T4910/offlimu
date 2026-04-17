@@ -229,14 +229,14 @@ This is the single source of truth for what remains before OffLiMU is considered
 ## 10) Crypto and Node Identity
 
 ### 10.1 Identity
-- [ ] [MVP] Generate persistent node keypair on first launch.
-- [ ] [MVP] Securely store private key.
-- [ ] [MVP] Expose public identity for peer trust/debug screens.
+- [x] [MVP] Generate persistent node keypair on first launch.
+- [x] [MVP] Securely store private key.
+- [x] [MVP] Expose public identity for peer trust/debug screens.
 
 ### 10.2 Bundle integrity
-- [ ] [MVP] Sign outbound bundles (Ed25519).
-- [ ] [MVP] Verify inbound bundle signatures.
-- [ ] [MVP] Reject/flag invalid signatures.
+- [x] [MVP] Sign outbound bundles (Ed25519).
+- [x] [MVP] Verify inbound bundle signatures.
+- [x] [MVP] Reject/flag invalid signatures.
 
 ### 10.3 Security hardening
 - [x] [HARDEN] Add anti-replay strategy.

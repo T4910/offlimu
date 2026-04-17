@@ -62,3 +62,11 @@
      --dart-define=OFFLIMU_TCP_PORT=47822 \
      --dart-define=OFFLIMU_DISCOVERY_PORT=46691
    ```
+
+## Platform Notes
+
+- Android now ships the required LAN discovery and background-work permissions in the app manifest: `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_WIFI_MULTICAST_STATE`, `WAKE_LOCK`, and `RECEIVE_BOOT_COMPLETED`.
+- For Android device demos, keep both devices on the same hotspot or LAN and expect battery optimizations to affect discovery reliability on some devices.
+- iOS and macOS now include the local-network privacy declaration and Bonjour service entry for `_offlimu._tcp`.
+- macOS builds require CocoaPods to be installed locally before `flutter build macos` or `flutter run -d macos` will work with plugins.
+- On Windows, allow the first Defender Firewall prompt for the app so local TCP discovery and transport can bind and connect normally.
