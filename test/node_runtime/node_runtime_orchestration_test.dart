@@ -166,6 +166,91 @@ void main() {
     await runtime.stop();
     await runtime.dispose();
   });
+
+  test(
+    'runtime signs outbound ACK bundles before saving and sending',
+    () async {
+      final now = DateTime.now();
+      final inboundBundle = Bundle(
+        bundleId: 'chat-ack-1',
+        type: Bundle.typeChatMessage,
+        sourceNodeId: 'node-b',
+        destinationNodeId: 'node-a',
+        payload: 'hello',
+        createdAt: now,
+        ttlSeconds: 3600,
+        signature: 'signature-1',
+        sourcePublicKey: 'public-key-1',
+      );
+
+      final fakeDiscovery = _FakeDiscoveryAdapter();
+      final fakeTransport = _FakeTransportAdapter();
+      final fakeBundles = _FakeBundleRepository();
+      final fakeSignatureService = _FakeBundleSignatureService(
+        signResultBuilder: (Bundle bundle, String nodeId) {
+          return bundle.copyWith(
+            sourcePublicKey: 'public-key-$nodeId',
+            signature: 'signed-${bundle.bundleId}',
+          );
+        },
+      );
+      final runtime = NodeRuntime(
+        localNodeId: 'node-a',
+        discovery: fakeDiscovery,
+        transport: fakeTransport,
+        bundles: fakeBundles,
+        peers: _FakePeerRepository(),
+        contentStore: _FakeContentStore(),
+        bundleSignatureService: fakeSignatureService,
+      );
+
+      final startFuture = runtime.start();
+      await Future<void>.delayed(Duration.zero);
+      fakeTransport.releaseStart();
+      await startFuture;
+
+      fakeDiscovery.emit(
+        DiscoveredPeer(
+          nodeId: 'node-b',
+          host: '192.168.1.20',
+          port: 4040,
+          lastSeen: now,
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      fakeTransport.emitIncoming(inboundBundle);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(fakeSignatureService.signCalls, hasLength(1));
+      expect(fakeSignatureService.signCalls.single.bundle.type, Bundle.typeAck);
+      expect(fakeSignatureService.signCalls.single.nodeId, 'node-a');
+      expect(fakeBundles.savedBundles, hasLength(2));
+      expect(
+        fakeBundles.savedBundles.where((bundle) => bundle.type == Bundle.typeAck),
+        hasLength(1),
+      );
+      final Bundle savedAck = fakeBundles.savedBundles
+          .lastWhere((bundle) => bundle.type == Bundle.typeAck);
+      expect(savedAck.signature, isNotNull);
+      expect(savedAck.sourcePublicKey, isNotNull);
+      expect(savedAck.ackForBundleId, 'chat-ack-1');
+      expect(fakeTransport.sentBundles, hasLength(1));
+      expect(fakeTransport.sentBundles.single.bundle.type, Bundle.typeAck);
+      expect(fakeTransport.sentBundles.single.bundle.signature, isNotNull);
+      expect(
+        fakeTransport.sentBundles.single.bundle.sourcePublicKey,
+        isNotNull,
+      );
+      expect(
+        fakeTransport.sentBundles.single.bundle.ackForBundleId,
+        'chat-ack-1',
+      );
+
+      await runtime.stop();
+      await runtime.dispose();
+    },
+  );
 }
 
 class _FakeDiscoveryAdapter implements DiscoveryAdapter {
@@ -175,6 +260,10 @@ class _FakeDiscoveryAdapter implements DiscoveryAdapter {
 
   @override
   Stream<DiscoveredPeer> discover() => _controller.stream;
+
+  void emit(DiscoveredPeer peer) {
+    _controller.add(peer);
+  }
 
   @override
   Future<void> start() async {
@@ -192,6 +281,7 @@ class _FakeTransportAdapter implements TransportAdapter {
   final StreamController<Bundle> _controller =
       StreamController<Bundle>.broadcast();
   final List<String> events = <String>[];
+  final List<_SentBundleRecord> sentBundles = <_SentBundleRecord>[];
   final Completer<void> allowStart = Completer<void>();
 
   bool _startReleased = false;
@@ -213,7 +303,9 @@ class _FakeTransportAdapter implements TransportAdapter {
   Future<void> sendBundle({
     required String peerNodeId,
     required Bundle bundle,
-  }) async {}
+  }) async {
+    sentBundles.add(_SentBundleRecord(peerNodeId: peerNodeId, bundle: bundle));
+  }
 
   @override
   Future<void> start() async {
@@ -334,15 +426,35 @@ class _FakeBundleRepository implements BundleRepository {
 }
 
 class _FakeBundleSignatureService implements BundleSignatureService {
-  _FakeBundleSignatureService({this.verifyResult = true});
+  _FakeBundleSignatureService({
+    this.verifyResult = true,
+    this.signResultBuilder,
+  });
 
   final bool verifyResult;
+  final Bundle Function(Bundle bundle, String nodeId)? signResultBuilder;
+  final List<_SignCall> signCalls = <_SignCall>[];
 
   @override
   Future<Bundle> sign({required Bundle bundle, required String nodeId}) async {
-    return bundle;
+    signCalls.add(_SignCall(bundle: bundle, nodeId: nodeId));
+    return signResultBuilder?.call(bundle, nodeId) ?? bundle;
   }
 
   @override
   Future<bool> verify(Bundle bundle) async => verifyResult;
+}
+
+class _SignCall {
+  const _SignCall({required this.bundle, required this.nodeId});
+
+  final Bundle bundle;
+  final String nodeId;
+}
+
+class _SentBundleRecord {
+  const _SentBundleRecord({required this.peerNodeId, required this.bundle});
+
+  final String peerNodeId;
+  final Bundle bundle;
 }

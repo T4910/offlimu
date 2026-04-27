@@ -951,16 +951,24 @@ class NodeRuntime {
       ttlSeconds: 300,
     );
 
-    await _bundles.save(ack);
+    final Bundle signedAck = await _bundleSignatureService.sign(
+      bundle: ack,
+      nodeId: _localNodeId,
+    );
+
+    await _bundles.save(signedAck);
     final targetPeer = _peers[inbound.sourceNodeId];
     if (targetPeer == null) {
       return;
     }
 
     try {
-      await _transport.sendBundle(peerNodeId: targetPeer.nodeId, bundle: ack);
+      await _transport.sendBundle(
+        peerNodeId: targetPeer.nodeId,
+        bundle: signedAck,
+      );
       _recordPeerSendSuccess(targetPeer.nodeId);
-      await _bundles.markAcknowledged(ack.bundleId);
+      await _bundles.markAcknowledged(signedAck.bundleId);
     } catch (_) {
       _recordPeerSendFailure(targetPeer.nodeId);
       // Keep ACK pending for retry in periodic flush.
