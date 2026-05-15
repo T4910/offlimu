@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:offlimu/infrastructure/identity/flutter_secure_storage_node_identity_vault.dart';
 import 'package:offlimu/infrastructure/identity/secure_node_identity_store.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('loadOrCreate persists and reuses the same key seed', () async {
@@ -45,6 +47,25 @@ void main() {
     expect(rotated.publicKeyBase64, isNot(first.publicKeyBase64));
     expect(rotated.publicKeyFingerprint, isNot(first.publicKeyFingerprint));
     expect(vault.seed, isNotNull);
+  });
+
+  test('macOS vault uses shared preferences storage', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final previousPlatformOverride = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    addTearDown(() {
+      debugDefaultTargetPlatformOverride = previousPlatformOverride;
+    });
+
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final prefs = await SharedPreferences.getInstance();
+    final vault = FlutterSecureStorageNodeIdentityVault(
+      sharedPreferences: prefs,
+    );
+
+    await vault.writeSeed('seed-value');
+
+    expect(await vault.readSeed(), 'seed-value');
   });
 }
 

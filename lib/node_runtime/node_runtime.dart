@@ -79,6 +79,7 @@ class NodeRuntime {
 
   StreamSubscription<dynamic>? _discoverySubscription;
   StreamSubscription<dynamic>? _incomingBundleSubscription;
+  StreamSubscription<List<PeerContact>>? _peerRepositorySubscription;
   Timer? _forwardTimer;
   Timer? _livenessTimer;
   Future<void> _orchestrationTail = Future<void>.value();
@@ -177,6 +178,10 @@ class NodeRuntime {
       unawaited(_handleIncomingBundle(bundle));
     });
 
+    _peerRepositorySubscription = _peerRepository.watchPeers().listen(
+      _syncPeersFromRepository,
+    );
+
     _forwardTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       unawaited(_flushPendingOutboundBundlesLocked());
     });
@@ -207,6 +212,9 @@ class NodeRuntime {
 
     await _incomingBundleSubscription?.cancel();
     _incomingBundleSubscription = null;
+
+    await _peerRepositorySubscription?.cancel();
+    _peerRepositorySubscription = null;
 
     await _discoverySubscription?.cancel();
     _discoverySubscription = null;
@@ -470,6 +478,47 @@ class NodeRuntime {
     );
   }
 
+  void _syncPeersFromRepository(List<PeerContact> peers) {
+    final now = DateTime.now();
+    var changed = false;
+
+    for (final peer in peers) {
+      if (peer.nodeId == _localNodeId) {
+        continue;
+      }
+
+      final persistedPeer = DiscoveredPeer(
+        nodeId: peer.nodeId,
+        host: peer.host,
+        port: peer.port,
+        lastSeen: peer.lastSeen,
+      );
+      final existing = _peers[peer.nodeId];
+      if (existing != null &&
+          existing.host == persistedPeer.host &&
+          existing.port == persistedPeer.port &&
+          !existing.lastSeen.isBefore(persistedPeer.lastSeen)) {
+        continue;
+      }
+
+      _peers[peer.nodeId] = persistedPeer;
+      _peerSeenAt[peer.nodeId] = persistedPeer.lastSeen;
+      _peerLivenessFailures[peer.nodeId] = 0;
+      _peerRoutingStats.putIfAbsent(peer.nodeId, _PeerRoutingStats.new);
+      _transport.registerPeer(persistedPeer);
+      _peerLastUpsertAt[peer.nodeId] = now;
+      changed = true;
+    }
+
+    if (changed) {
+      _peerCount = _peers.length;
+      _peerCountController.add(_peerCount);
+      _setHealth(
+        _peerCount > 0 ? RuntimeHealth.connected : RuntimeHealth.discovering,
+      );
+    }
+  }
+
   void _removePeer(String nodeId) {
     final removed = _peers.remove(nodeId);
     if (removed == null) {
@@ -496,6 +545,9 @@ class NodeRuntime {
     if (destinationId != null) {
       final directPeer = _peers[destinationId];
       if (directPeer != null) {
+        if (directPeer.nodeId == _localNodeId) {
+          return null;
+        }
         return directPeer;
       }
       final relayPeers = _rankPeersForBundle(
@@ -534,6 +586,7 @@ class NodeRuntime {
     return peers
         .where(
           (peer) =>
+              peer.nodeId != _localNodeId &&
               peer.nodeId != sourceNodeId &&
               (destinationNodeId == null || peer.nodeId != destinationNodeId),
         )

@@ -73,7 +73,6 @@ class Bundle {
     'createdAtMs': createdAt.millisecondsSinceEpoch,
     'expiresAtMs': expiresAtOverride?.millisecondsSinceEpoch,
     'ttlSeconds': ttlSeconds,
-    'hopCount': hopCount,
   });
 
   bool get isBroadcast =>

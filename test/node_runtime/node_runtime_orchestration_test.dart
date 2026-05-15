@@ -185,6 +185,16 @@ void main() {
 
       final fakeDiscovery = _FakeDiscoveryAdapter();
       final fakeTransport = _FakeTransportAdapter();
+      final fakePeerRepository = _FakePeerRepository(
+        initialPeers: <PeerContact>[
+          PeerContact(
+            nodeId: 'node-b',
+            host: '192.168.1.20',
+            port: 4040,
+            lastSeen: now,
+          ),
+        ],
+      );
       final fakeBundles = _FakeBundleRepository();
       final fakeSignatureService = _FakeBundleSignatureService(
         signResultBuilder: (Bundle bundle, String nodeId) {
@@ -199,7 +209,7 @@ void main() {
         discovery: fakeDiscovery,
         transport: fakeTransport,
         bundles: fakeBundles,
-        peers: _FakePeerRepository(),
+        peers: fakePeerRepository,
         contentStore: _FakeContentStore(),
         bundleSignatureService: fakeSignatureService,
       );
@@ -208,16 +218,6 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       fakeTransport.releaseStart();
       await startFuture;
-
-      fakeDiscovery.emit(
-        DiscoveredPeer(
-          nodeId: 'node-b',
-          host: '192.168.1.20',
-          port: 4040,
-          lastSeen: now,
-        ),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 10));
 
       fakeTransport.emitIncoming(inboundBundle);
       await Future<void>.delayed(const Duration(milliseconds: 10));
@@ -251,6 +251,71 @@ void main() {
       await runtime.dispose();
     },
   );
+
+  test('runtime ignores self-discovered peers when relaying bundles', () async {
+    final now = DateTime.now();
+    final inboundBundle = Bundle(
+      bundleId: 'relay-self-1',
+      type: Bundle.typeChatMessage,
+      sourceNodeId: 'node-a',
+      destinationNodeId: 'node-b',
+      payload: 'relay me',
+      createdAt: now,
+      ttlSeconds: 3600,
+      signature: 'signature-1',
+      sourcePublicKey: 'public-key-1',
+    );
+
+    final fakeDiscovery = _FakeDiscoveryAdapter();
+    final fakeTransport = _FakeTransportAdapter();
+    final fakeBundles = _FakeBundleRepository();
+    final runtime = NodeRuntime(
+      localNodeId: 'node-c',
+      discovery: fakeDiscovery,
+      transport: fakeTransport,
+      bundles: fakeBundles,
+      peers: _FakePeerRepository(
+        initialPeers: <PeerContact>[
+          PeerContact(
+            nodeId: 'node-d',
+            host: '192.168.1.21',
+            port: 5050,
+            lastSeen: now,
+          ),
+        ],
+      ),
+      contentStore: _FakeContentStore(),
+      bundleSignatureService: _FakeBundleSignatureService(),
+    );
+
+    final startFuture = runtime.start();
+    await Future<void>.delayed(Duration.zero);
+    fakeTransport.releaseStart();
+    await startFuture;
+
+    fakeDiscovery.emit(
+      DiscoveredPeer(
+        nodeId: 'node-c',
+        host: '192.168.1.22',
+        port: 6060,
+        lastSeen: now,
+      ),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    fakeTransport.emitIncoming(inboundBundle);
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(fakeTransport.sentBundles, hasLength(1));
+    expect(fakeTransport.sentBundles.single.peerNodeId, 'node-d');
+    expect(
+      fakeBundles.savedBundles.any((bundle) => bundle.bundleId == 'relay-self-1'),
+      isTrue,
+    );
+
+    await runtime.stop();
+    await runtime.dispose();
+  });
 }
 
 class _FakeDiscoveryAdapter implements DiscoveryAdapter {
@@ -344,12 +409,17 @@ class _FakeContentStore implements ContentStore {
 }
 
 class _FakePeerRepository implements PeerRepository {
+  _FakePeerRepository({List<PeerContact>? initialPeers})
+    : initialPeers = initialPeers ?? const <PeerContact>[];
+
+  final List<PeerContact> initialPeers;
+
   @override
   Future<void> upsertPeer(PeerContact peer) async {}
 
   @override
   Stream<List<PeerContact>> watchPeers() {
-    return const Stream<List<PeerContact>>.empty();
+    return Stream<List<PeerContact>>.value(initialPeers);
   }
 }
 
