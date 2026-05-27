@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 abstract interface class NodeIdentityVault {
   Future<String?> readSeed();
   Future<void> writeSeed(String value);
+  Future<String?> readNodeId();
+  Future<void> writeNodeId(String value);
 }
 
 class FlutterSecureStorageNodeIdentityVault implements NodeIdentityVault {
@@ -14,6 +16,7 @@ class FlutterSecureStorageNodeIdentityVault implements NodeIdentityVault {
   }) : _storage = storage ?? const FlutterSecureStorage(),
        _sharedPreferences = sharedPreferences;
 
+    static const String _nodeIdKey = 'offlimu.node.identity.id';
   static const String _seedKey = 'offlimu.node.identity.seed';
 
   final FlutterSecureStorage _storage;
@@ -41,6 +44,25 @@ class FlutterSecureStorageNodeIdentityVault implements NodeIdentityVault {
     await _storage.write(key: _seedKey, value: value);
   }
 
+  @override
+  Future<String?> readNodeId() async {
+    if (_usesSharedPreferencesOnly) {
+      return _readNodeIdFromSharedPreferences();
+    }
+
+    return _storage.read(key: _nodeIdKey);
+  }
+
+  @override
+  Future<void> writeNodeId(String value) async {
+    if (_usesSharedPreferencesOnly) {
+      await _writeNodeIdToSharedPreferences(value);
+      return;
+    }
+
+    await _storage.write(key: _nodeIdKey, value: value);
+  }
+
   Future<String?> _readFromSharedPreferences() async {
     final prefs = await _getSharedPreferences();
     return prefs.getString(_seedKey);
@@ -49,6 +71,16 @@ class FlutterSecureStorageNodeIdentityVault implements NodeIdentityVault {
   Future<void> _writeToSharedPreferences(String value) async {
     final prefs = await _getSharedPreferences();
     await prefs.setString(_seedKey, value);
+  }
+
+  Future<String?> _readNodeIdFromSharedPreferences() async {
+    final prefs = await _getSharedPreferences();
+    return prefs.getString(_nodeIdKey);
+  }
+
+  Future<void> _writeNodeIdToSharedPreferences(String value) async {
+    final prefs = await _getSharedPreferences();
+    await prefs.setString(_nodeIdKey, value);
   }
 
   Future<SharedPreferences> _getSharedPreferences() async {

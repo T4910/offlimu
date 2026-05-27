@@ -12,38 +12,29 @@ void main() {
     final vault = _InMemoryNodeIdentityVault();
     final store = SecureNodeIdentityStore(vault: vault, random: Random(42));
 
-    final first = await store.loadOrCreate(
-      nodeId: 'node-a',
-      displayName: 'OffLiMU Node',
-    );
-    final second = await store.loadOrCreate(
-      nodeId: 'node-a',
-      displayName: 'OffLiMU Node',
-    );
+    final first = await store.loadOrCreate(displayName: 'OffLiMU Node');
+    final second = await store.loadOrCreate(displayName: 'OffLiMU Node');
 
-    expect(first.nodeId, 'node-a');
+    expect(first.nodeId, startsWith('node-'));
     expect(first.displayName, 'OffLiMU Node');
     expect(first.publicKeyBase64, isNotEmpty);
     expect(first.publicKeyFingerprint, isNotEmpty);
     expect(second.publicKeyBase64, first.publicKeyBase64);
     expect(second.publicKeyFingerprint, first.publicKeyFingerprint);
+    expect(second.nodeId, first.nodeId);
+    expect(vault.nodeId, first.nodeId);
     expect(vault.seed, isNotNull);
     expect(base64Decode(vault.seed!).length, 32);
   });
 
-  test('rotate generates a new public identity', () async {
+  test('rotate keeps the same node id but generates a new public identity', () async {
     final vault = _InMemoryNodeIdentityVault();
     final store = SecureNodeIdentityStore(vault: vault, random: Random(42));
 
-    final first = await store.loadOrCreate(
-      nodeId: 'node-a',
-      displayName: 'OffLiMU Node',
-    );
-    final rotated = await store.rotate(
-      nodeId: 'node-a',
-      displayName: 'OffLiMU Node',
-    );
+    final first = await store.loadOrCreate(displayName: 'OffLiMU Node');
+    final rotated = await store.rotate(displayName: 'OffLiMU Node');
 
+    expect(rotated.nodeId, first.nodeId);
     expect(rotated.publicKeyBase64, isNot(first.publicKeyBase64));
     expect(rotated.publicKeyFingerprint, isNot(first.publicKeyFingerprint));
     expect(vault.seed, isNotNull);
@@ -70,6 +61,7 @@ void main() {
 }
 
 class _InMemoryNodeIdentityVault implements NodeIdentityVault {
+  String? nodeId;
   String? seed;
 
   @override
@@ -78,5 +70,13 @@ class _InMemoryNodeIdentityVault implements NodeIdentityVault {
   @override
   Future<void> writeSeed(String value) async {
     seed = value;
+  }
+
+  @override
+  Future<String?> readNodeId() async => nodeId;
+
+  @override
+  Future<void> writeNodeId(String value) async {
+    nodeId = value;
   }
 }

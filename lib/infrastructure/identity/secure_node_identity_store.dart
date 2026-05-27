@@ -23,17 +23,17 @@ class SecureNodeIdentityStore implements NodeIdentityStore {
 
   @override
   Future<NodePublicIdentity> loadOrCreate({
-    required String nodeId,
     required String displayName,
   }) async {
+    final nodeId = await _loadOrCreateNodeId();
     return _loadIdentity(nodeId: nodeId, displayName: displayName);
   }
 
   @override
   Future<NodePublicIdentity> rotate({
-    required String nodeId,
     required String displayName,
   }) async {
+    final nodeId = await _loadOrCreateNodeId();
     final seed = _generateSeed();
     await _vault.writeSeed(base64Encode(seed));
     return _loadIdentity(nodeId: nodeId, displayName: displayName, seed: seed);
@@ -73,6 +73,24 @@ class SecureNodeIdentityStore implements NodeIdentityStore {
     await _vault.writeSeed(base64Encode(seed));
     return seed;
   }
+
+  Future<String> _loadOrCreateNodeId() async {
+    final existing = await _vault.readNodeId();
+    if (existing != null && existing.isNotEmpty) {
+      return existing;
+    }
+
+    final nodeId = _generateNodeId();
+    await _vault.writeNodeId(nodeId);
+    return nodeId;
+  }
+
+  String _generateNodeId() {
+    final bytes = List<int>.generate(16, (_) => _random.nextInt(256));
+    return 'node-${bytes.map(_toHexByte).join()}';
+  }
+
+  String _toHexByte(int value) => value.toRadixString(16).padLeft(2, '0');
 
   List<int> _generateSeed() {
     return List<int>.generate(32, (_) => _random.nextInt(256));

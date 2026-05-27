@@ -57,7 +57,6 @@ class SettingsPage extends ConsumerWidget {
                         OutlinedButton(
                           onPressed: () async {
                             await nodeIdentityStore.rotate(
-                              nodeId: identity.nodeId,
                               displayName: identity.displayName,
                             );
                             ref.invalidate(nodePublicIdentityProvider);

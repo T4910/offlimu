@@ -105,7 +105,6 @@ void main() {
     );
 
     final identity = await identityStore.loadOrCreate(
-      nodeId: 'node-a',
       displayName: 'OffLiMU Node',
     );
     final legacyPayload = jsonEncode(<String, Object?>{
@@ -136,6 +135,7 @@ void main() {
 }
 
 class _InMemoryNodeIdentityVault implements NodeIdentityVault {
+  String? nodeId;
   String? seed;
 
   @override
@@ -144,5 +144,13 @@ class _InMemoryNodeIdentityVault implements NodeIdentityVault {
   @override
   Future<void> writeSeed(String value) async {
     seed = value;
+  }
+
+  @override
+  Future<String?> readNodeId() async => nodeId;
+
+  @override
+  Future<void> writeNodeId(String value) async {
+    nodeId = value;
   }
 }

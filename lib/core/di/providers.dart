@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offlimu/core/config/app_config.dart';
 import 'package:offlimu/core/debug/runtime_log_store.dart';
+import 'package:offlimu/core/identity/local_node_identity_bootstrap.dart';
 import 'package:offlimu/domain/entities/ack_event.dart';
 import 'package:offlimu/domain/entities/bundle.dart';
 import 'package:offlimu/domain/entities/chat_message.dart';
@@ -62,6 +63,7 @@ import 'package:offlimu/node_runtime/queue_pruning.dart';
 import 'package:offlimu/node_runtime/sync_engine.dart';
 
 final AppConfig _appConfig = AppConfig.fromEnvironment();
+const String _localNodeDisplayName = 'OffLiMU Node';
 const String _scheduledSyncTaskId = 'scheduled_sync';
 const String _scheduledCleanupTaskId = 'scheduled_cleanup';
 const String _scheduledRetryTaskId = 'scheduled_retry';
@@ -70,8 +72,10 @@ const Duration _scheduledCleanupFrequency = Duration(minutes: 30);
 const Duration _scheduledRetryFrequency = Duration(minutes: 1);
 
 final Provider<NodeIdentity> localNodeIdentityProvider = Provider<NodeIdentity>(
-  (ref) =>
-      NodeIdentity(nodeId: _appConfig.localNodeId, displayName: 'OffLiMU Node'),
+  (ref) => resolveLocalNodeIdentity(
+    fallbackNodeId: _appConfig.localNodeId,
+    displayName: _localNodeDisplayName,
+  ),
 );
 
 final Provider<AppConfig> appConfigProvider = Provider<AppConfig>(
@@ -112,10 +116,7 @@ final FutureProvider<NodePublicIdentity> nodePublicIdentityProvider =
     FutureProvider<NodePublicIdentity>((ref) {
       final identity = ref.watch(localNodeIdentityProvider);
       final store = ref.watch(nodeIdentityStoreProvider);
-      return store.loadOrCreate(
-        nodeId: identity.nodeId,
-        displayName: identity.displayName,
-      );
+      return store.loadOrCreate(displayName: identity.displayName);
     });
 
 final Provider<void> nodeIdentityBootstrapProvider = Provider<void>((ref) {
@@ -136,7 +137,7 @@ final Provider<BundleRepository> bundleRepositoryProvider =
     Provider<BundleRepository>(
       (ref) => DriftBundleRepository(
         ref.watch(appDatabaseProvider),
-        localNodeId: _appConfig.localNodeId,
+        localNodeId: ref.watch(localNodeIdentityProvider).nodeId,
       ),
     );
 
@@ -307,13 +308,13 @@ final StreamProvider<int> pendingBundleCountProvider = StreamProvider<int>(
 final Provider<DiscoveryAdapter> discoveryAdapterProvider =
     Provider<DiscoveryAdapter>((ref) {
       final fallback = LanBroadcastDiscoveryAdapter(
-        localNodeId: _appConfig.localNodeId,
+        localNodeId: ref.watch(localNodeIdentityProvider).nodeId,
         transportPort: _appConfig.transportPort,
         discoveryPort: _appConfig.discoveryPort,
       );
 
       return NsdDiscoveryAdapter(
-        localNodeId: _appConfig.localNodeId,
+        localNodeId: ref.watch(localNodeIdentityProvider).nodeId,
         transportPort: _appConfig.transportPort,
         fallback: fallback,
       );
@@ -348,7 +349,7 @@ final Provider<AppErrorLogStore> appErrorLogStoreProvider =
 
 final Provider<SyncEngine> syncEngineProvider = Provider<SyncEngine>(
   (ref) => SyncEngine(
-    localNodeId: _appConfig.localNodeId,
+    localNodeId: ref.watch(localNodeIdentityProvider).nodeId,
     bundles: ref.watch(bundleRepositoryProvider),
     syncApi: ref.watch(syncApiProvider),
     syncJobs: ref.watch(syncJobRepositoryProvider),
@@ -440,7 +441,7 @@ final Provider<GatewaySyncCoordinator> gatewaySyncCoordinatorProvider =
 
 final Provider<NodeRuntime> nodeRuntimeProvider = Provider<NodeRuntime>((ref) {
   final NodeRuntime runtime = NodeRuntime(
-    localNodeId: _appConfig.localNodeId,
+    localNodeId: ref.watch(localNodeIdentityProvider).nodeId,
     discovery: ref.watch(discoveryAdapterProvider),
     transport: ref.watch(transportAdapterProvider),
     bundles: ref.watch(bundleRepositoryProvider),
