@@ -9,7 +9,8 @@ import 'package:offlimu/core/di/providers.dart';
 import 'package:offlimu/core/error/app_error_log_store.dart';
 import 'package:offlimu/domain/entities/ack_event.dart';
 import 'package:offlimu/domain/entities/bundle.dart';
-import 'package:offlimu/domain/entities/chat_message.dart';
+import 'package:offlimu/domain/entities/chat_message.dart'
+  show ChatMessage, MessageDeliveryStatus;
 import 'package:offlimu/domain/entities/content_metadata_record.dart';
 import 'package:offlimu/domain/entities/peer_contact.dart';
 import 'package:offlimu/domain/entities/sync_job_history_entry.dart';
@@ -942,7 +943,13 @@ class _SectionCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (trailing != null) trailing!,
+                if (trailing != null)
+                  Flexible(
+                    child: Align(
+                      alignment: Alignment.topRight,
+                      child: trailing!,
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 12),

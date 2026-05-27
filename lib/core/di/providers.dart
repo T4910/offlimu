@@ -51,6 +51,7 @@ import 'package:offlimu/infrastructure/scheduler/workmanager_background_schedule
 import 'package:offlimu/infrastructure/settings/database_maintenance_store.dart';
 import 'package:offlimu/infrastructure/settings/gateway_sync_preference_store.dart';
 import 'package:offlimu/infrastructure/sync/dio_sync_api.dart';
+import 'package:offlimu/infrastructure/transport/http_transport_adapter.dart';
 import 'package:offlimu/infrastructure/transport/tcp_socket_transport_adapter.dart';
 import 'package:offlimu/core/error/app_error_boundary.dart';
 import 'package:offlimu/core/error/app_error_log_store.dart';
@@ -320,7 +321,16 @@ final Provider<DiscoveryAdapter> discoveryAdapterProvider =
 
 final Provider<TransportAdapter> transportAdapterProvider =
     Provider<TransportAdapter>(
-      (ref) => TcpSocketTransportAdapter(listenPort: _appConfig.transportPort),
+      (ref) {
+        switch (_appConfig.transportMode) {
+          case TransportMode.http:
+            return HttpTransportAdapter(listenPort: _appConfig.transportPort);
+          case TransportMode.tcp:
+            return TcpSocketTransportAdapter(
+              listenPort: _appConfig.transportPort,
+            );
+        }
+      },
     );
 
 final Provider<SyncApi> syncApiProvider = Provider<SyncApi>(

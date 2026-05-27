@@ -1,41 +1,42 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:offlimu/domain/entities/bundle.dart';
 import 'package:offlimu/domain/services/discovery_adapter.dart';
 import 'package:offlimu/domain/services/transport_adapter.dart';
 
-class TcpSocketTransportAdapter implements TransportAdapter {
-  TcpSocketTransportAdapter({
+class HttpTransportAdapter implements TransportAdapter {
+  HttpTransportAdapter({
     required int listenPort,
     int sendMaxAttempts = 3,
     Duration connectTimeout = const Duration(seconds: 2),
+    Duration requestTimeout = const Duration(seconds: 3),
     Duration backoffBaseDelay = const Duration(milliseconds: 250),
     Duration maxBackoffDelay = const Duration(seconds: 2),
   }) : _listenPort = listenPort,
        _sendMaxAttempts = sendMaxAttempts,
        _connectTimeout = connectTimeout,
+       _requestTimeout = requestTimeout,
        _backoffBaseDelay = backoffBaseDelay,
        _maxBackoffDelay = maxBackoffDelay;
 
   final int _listenPort;
   final int _sendMaxAttempts;
   final Duration _connectTimeout;
+  final Duration _requestTimeout;
   final Duration _backoffBaseDelay;
   final Duration _maxBackoffDelay;
 
   final StreamController<Bundle> _incomingController =
       StreamController<Bundle>.broadcast();
   final Map<String, DiscoveredPeer> _peersByNodeId = <String, DiscoveredPeer>{};
-  static const int _maxFrameLengthBytes = 8 * 1024 * 1024;
 
-  ServerSocket? _serverSocket;
-  StreamSubscription<Socket>? _acceptSubscription;
-  final List<StreamSubscription<List<int>>> _clientSubscriptions =
-      <StreamSubscription<List<int>>>[];
+  HttpServer? _server;
   bool _started = false;
+  HttpClient? _client;
+
+  int get boundPort => _server?.port ?? _listenPort;
 
   @override
   Stream<Bundle> incomingBundles() => _incomingController.stream;
@@ -52,18 +53,16 @@ class TcpSocketTransportAdapter implements TransportAdapter {
       return false;
     }
 
-    Socket? socket;
+    final client = _client ??= HttpClient()..connectionTimeout = _connectTimeout;
     try {
-      socket = await Socket.connect(
-        peer.host,
-        peer.port,
-        timeout: _connectTimeout,
-      );
-      return true;
+      final request = await client
+          .getUrl(Uri(scheme: 'http', host: peer.host, port: peer.port, path: '/v1/health'))
+          .timeout(_connectTimeout);
+      final response = await request.close().timeout(_requestTimeout);
+      await response.drain<void>().timeout(_requestTimeout);
+      return response.statusCode >= 200 && response.statusCode < 300;
     } catch (_) {
       return false;
-    } finally {
-      await socket?.close();
     }
   }
 
@@ -74,30 +73,24 @@ class TcpSocketTransportAdapter implements TransportAdapter {
     }
     _started = true;
 
-    final ServerSocket server = await ServerSocket.bind(
+    _client ??= HttpClient()..connectionTimeout = _connectTimeout;
+
+    final server = await HttpServer.bind(
       InternetAddress.anyIPv4,
       _listenPort,
     );
-    _serverSocket = server;
-    _acceptSubscription = server.listen(_handleIncomingSocket);
+    _server = server;
+    unawaited(server.forEach(_handleRequest));
   }
 
   @override
   Future<void> stop() async {
     _started = false;
-
-    for (final sub in _clientSubscriptions) {
-      await sub.cancel();
-    }
-    _clientSubscriptions.clear();
-
-    await _acceptSubscription?.cancel();
-    _acceptSubscription = null;
-
-    await _serverSocket?.close();
-    _serverSocket = null;
-
+    await _server?.close(force: true);
+    _server = null;
     _peersByNodeId.clear();
+    _client?.close(force: true);
+    _client = null;
   }
 
   @override
@@ -110,50 +103,40 @@ class TcpSocketTransportAdapter implements TransportAdapter {
       throw StateError('Unknown peer: $peerNodeId');
     }
 
-    final Map<String, Object?> payload = <String, Object?>{
-      'bundleId': bundle.bundleId,
-      'type': bundle.type,
-      'sourceNodeId': bundle.sourceNodeId,
-      'sourcePublicKey': bundle.sourcePublicKey,
-      'destinationNodeId': bundle.destinationNodeId,
-      'destinationScope': bundle.destinationScope.name,
-      'priority': bundle.priority.name,
-      'ackForBundleId': bundle.ackForBundleId,
-      'payload': bundle.payload,
-      'payloadRef': bundle.payloadReference,
-      'signature': bundle.signature,
-      'appId': bundle.appId,
-      'createdAtMs': bundle.createdAt.millisecondsSinceEpoch,
-      'expiresAtMs': bundle.expiresAtOverride?.millisecondsSinceEpoch,
-      'ttlSeconds': bundle.ttlSeconds,
-      'hopCount': bundle.hopCount,
-    };
-    final List<int> encodedBytes = utf8.encode(jsonEncode(payload));
-    final ByteData header = ByteData(4)
-      ..setUint32(0, encodedBytes.length, Endian.big);
+    final Map<String, Object?> payload = _toWirePayload(bundle);
+    final client = _client ??= HttpClient()..connectionTimeout = _connectTimeout;
 
     Object? lastError;
     final int maxAttempts = _sendMaxAttempts <= 0 ? 1 : _sendMaxAttempts;
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-      Socket? socket;
       try {
-        socket = await Socket.connect(
-          peer.host,
-          peer.port,
-          timeout: _connectTimeout,
+        final request = await client
+            .postUrl(
+              Uri(
+                scheme: 'http',
+                host: peer.host,
+                port: peer.port,
+                path: '/v1/bundles',
+              ),
+            )
+            .timeout(_connectTimeout);
+        request.headers.contentType = ContentType.json;
+        request.add(utf8.encode(jsonEncode(payload)));
+        final response = await request.close().timeout(_requestTimeout);
+        await response.drain<void>().timeout(_requestTimeout);
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return;
+        }
+        throw HttpException(
+          'HTTP ${response.statusCode} from ${peer.host}:${peer.port}',
+          uri: request.uri,
         );
-        socket.add(header.buffer.asUint8List());
-        socket.add(encodedBytes);
-        await socket.flush();
-        return;
       } catch (error) {
         lastError = error;
         if (attempt >= maxAttempts) {
           rethrow;
         }
         await Future<void>.delayed(_retryDelay(attempt));
-      } finally {
-        await socket?.close();
       }
     }
 
@@ -173,29 +156,66 @@ class TcpSocketTransportAdapter implements TransportAdapter {
     return Duration(milliseconds: effectiveMs);
   }
 
-  void _handleIncomingSocket(Socket socket) {
-    final _LengthPrefixedFrameParser parser = _LengthPrefixedFrameParser(
-      maxFrameLengthBytes: _maxFrameLengthBytes,
-    );
-
-    final StreamSubscription<List<int>> sub = socket.listen(
-      (chunk) {
-        try {
-          for (final String frame in parser.addChunk(chunk)) {
-            final Bundle? bundle = _decodeBundle(frame);
-            if (bundle != null) {
-              _incomingController.add(bundle);
-            }
+  Future<void> _handleRequest(HttpRequest request) async {
+    try {
+      switch ((request.method.toUpperCase(), request.uri.path)) {
+        case ('GET', '/v1/health'):
+          await _writeJsonResponse(request.response, <String, Object?>{
+            'ok': true,
+          });
+          break;
+        case ('POST', '/v1/bundles'):
+          final String body = await utf8.decoder.bind(request).join();
+          final Bundle? bundle = _decodeBundle(body);
+          if (bundle == null) {
+            request.response.statusCode = HttpStatus.badRequest;
+            await request.response.close();
+            return;
           }
-        } catch (_) {
-          socket.destroy();
-        }
-      },
-      onDone: () => socket.destroy(),
-      onError: (error, stackTrace) => socket.destroy(),
-      cancelOnError: true,
-    );
-    _clientSubscriptions.add(sub);
+          _incomingController.add(bundle);
+          request.response.statusCode = HttpStatus.accepted;
+          await request.response.close();
+          break;
+        default:
+          request.response.statusCode = HttpStatus.notFound;
+          await request.response.close();
+      }
+    } catch (_) {
+      request.response.statusCode = HttpStatus.internalServerError;
+      try {
+        await request.response.close();
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _writeJsonResponse(
+    HttpResponse response,
+    Map<String, Object?> body,
+  ) async {
+    response.headers.contentType = ContentType.json;
+    response.write(jsonEncode(body));
+    await response.close();
+  }
+
+  Map<String, Object?> _toWirePayload(Bundle bundle) {
+    return <String, Object?>{
+      'bundleId': bundle.bundleId,
+      'type': bundle.type,
+      'sourceNodeId': bundle.sourceNodeId,
+      'sourcePublicKey': bundle.sourcePublicKey,
+      'destinationNodeId': bundle.destinationNodeId,
+      'destinationScope': bundle.destinationScope.name,
+      'priority': bundle.priority.name,
+      'ackForBundleId': bundle.ackForBundleId,
+      'payload': bundle.payload,
+      'payloadRef': bundle.payloadReference,
+      'signature': bundle.signature,
+      'appId': bundle.appId,
+      'createdAtMs': bundle.createdAt.millisecondsSinceEpoch,
+      'expiresAtMs': bundle.expiresAtOverride?.millisecondsSinceEpoch,
+      'ttlSeconds': bundle.ttlSeconds,
+      'hopCount': bundle.hopCount,
+    };
   }
 
   Bundle? _decodeBundle(String line) {
@@ -253,44 +273,5 @@ class TcpSocketTransportAdapter implements TransportAdapter {
     } catch (_) {
       return null;
     }
-  }
-}
-
-class _LengthPrefixedFrameParser {
-  _LengthPrefixedFrameParser({required this.maxFrameLengthBytes});
-
-  final int maxFrameLengthBytes;
-  final List<int> _buffer = <int>[];
-
-  List<String> addChunk(List<int> chunk) {
-    _buffer.addAll(chunk);
-    final List<String> frames = <String>[];
-
-    while (true) {
-      if (_buffer.length < 4) {
-        break;
-      }
-
-      final int frameLength =
-          (_buffer[0] << 24) |
-          (_buffer[1] << 16) |
-          (_buffer[2] << 8) |
-          _buffer[3];
-
-      if (frameLength <= 0 || frameLength > maxFrameLengthBytes) {
-        throw const FormatException('Invalid frame length');
-      }
-
-      final int totalFrameBytes = 4 + frameLength;
-      if (_buffer.length < totalFrameBytes) {
-        break;
-      }
-
-      final List<int> payloadBytes = _buffer.sublist(4, totalFrameBytes);
-      frames.add(utf8.decode(payloadBytes));
-      _buffer.removeRange(0, totalFrameBytes);
-    }
-
-    return frames;
   }
 }

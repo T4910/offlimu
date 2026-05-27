@@ -1,3 +1,15 @@
+enum TransportMode {
+  tcp,
+  http;
+
+  static TransportMode fromWire(String value) {
+    return switch (value.toLowerCase()) {
+      'tcp' => TransportMode.tcp,
+      _ => TransportMode.http,
+    };
+  }
+}
+
 enum OfflimuEnvironment {
   dev,
   demo,
@@ -16,6 +28,7 @@ class AppConfig {
   const AppConfig({
     required this.environment,
     required this.localNodeId,
+    required this.transportMode,
     required this.transportPort,
     required this.discoveryPort,
     required this.syncMockMode,
@@ -37,6 +50,9 @@ class AppConfig {
       localNodeId: const String.fromEnvironment(
         'OFFLIMU_NODE_ID',
         defaultValue: 'node-local-001',
+      ),
+      transportMode: TransportMode.fromWire(
+        const String.fromEnvironment('OFFLIMU_TRANSPORT_MODE', defaultValue: 'http'),
       ),
       transportPort: const int.fromEnvironment(
         'OFFLIMU_TCP_PORT',
@@ -87,6 +103,7 @@ class AppConfig {
 
   final OfflimuEnvironment environment;
   final String localNodeId;
+  final TransportMode transportMode;
   final int transportPort;
   final int discoveryPort;
   final bool syncMockMode;
