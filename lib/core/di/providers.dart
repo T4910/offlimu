@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offlimu/core/config/app_config.dart';
+import 'package:offlimu/core/debug/runtime_log_store.dart';
 import 'package:offlimu/domain/entities/ack_event.dart';
 import 'package:offlimu/domain/entities/bundle.dart';
 import 'package:offlimu/domain/entities/chat_message.dart';
@@ -43,6 +44,7 @@ import 'package:offlimu/infrastructure/device/plugin_device_conditions_service.d
 import 'package:offlimu/infrastructure/discovery/lan_broadcast_discovery_adapter.dart';
 import 'package:offlimu/infrastructure/discovery/nsd_discovery_adapter.dart';
 import 'package:offlimu/infrastructure/identity/secure_node_identity_store.dart';
+import 'package:offlimu/infrastructure/logging/recording_logger.dart';
 import 'package:offlimu/infrastructure/logging/structured_logger.dart';
 import 'package:offlimu/infrastructure/scheduler/in_app_background_scheduler.dart';
 import 'package:offlimu/infrastructure/scheduler/workmanager_background_scheduler.dart';
@@ -75,8 +77,19 @@ final Provider<AppConfig> appConfigProvider = Provider<AppConfig>(
   (ref) => _appConfig,
 );
 
+final Provider<RuntimeLogStore> runtimeLogStoreProvider = Provider<RuntimeLogStore>(
+  (ref) {
+    final store = RuntimeLogStore();
+    ref.onDispose(store.dispose);
+    return store;
+  },
+);
+
 final Provider<LoggerService> loggerServiceProvider = Provider<LoggerService>(
-  (ref) => const StructuredLogger(),
+  (ref) => RecordingLogger(
+    store: ref.watch(runtimeLogStoreProvider),
+    delegate: const StructuredLogger(),
+  ),
 );
 
 final Provider<CryptoService> cryptoServiceProvider = Provider<CryptoService>(

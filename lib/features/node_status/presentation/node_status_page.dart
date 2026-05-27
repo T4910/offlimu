@@ -468,6 +468,11 @@ class _NodeStatusPageState extends ConsumerState<NodeStatusPage> {
                           onPressed: () => context.push('/settings'),
                           child: const Text('Open Settings'),
                         ),
+                        const SizedBox(width: 8),
+                        OutlinedButton(
+                          onPressed: () => context.push('/debug'),
+                          child: const Text('Open Debugger'),
+                        ),
                       ],
                     ),
                   ],

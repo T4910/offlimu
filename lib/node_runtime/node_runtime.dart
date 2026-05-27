@@ -126,6 +126,13 @@ class NodeRuntime {
     return _enqueueOrchestration(_flushPendingOutboundBundlesLocked);
   }
 
+  Future<void> refreshPeersNow() {
+    return _enqueueOrchestration(() async {
+      final peers = await _peerRepository.watchPeers().first;
+      _syncPeersFromRepository(peers);
+    });
+  }
+
   Future<void> _enqueueOrchestration(Future<void> Function() action) {
     final Completer<void> completer = Completer<void>();
     _orchestrationTail = _orchestrationTail

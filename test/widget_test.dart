@@ -4,12 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offlimu/app/app.dart';
 
 void main() {
-  testWidgets('App shell renders node status screen', (
+  testWidgets('App shell renders debug console', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const ProviderScope(child: OfflimuApp()));
     await tester.pump();
 
-    expect(find.text('OffLiMU Node Status'), findsOneWidget);
+    expect(find.text('OffLiMU Debug Console'), findsOneWidget);
   });
 }

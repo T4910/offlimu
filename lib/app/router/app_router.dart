@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:offlimu/features/bundle_queue/presentation/bundle_queue_page.dart';
+import 'package:offlimu/features/debug/presentation/debug_page.dart';
 import 'package:offlimu/features/chat/presentation/chat_page.dart';
 import 'package:offlimu/features/chat/presentation/conversation_page.dart';
 import 'package:offlimu/features/files/presentation/files_page.dart';
@@ -10,6 +11,7 @@ import 'package:offlimu/features/sync/presentation/sync_page.dart';
 final GoRouter appRouter = GoRouter(
   routes: <RouteBase>[
     GoRoute(path: '/', builder: (context, state) => const NodeStatusPage()),
+    GoRoute(path: '/debug', builder: (context, state) => const DebugPage()),
     GoRoute(
       path: '/status',
       builder: (context, state) => const NodeStatusPage(),
