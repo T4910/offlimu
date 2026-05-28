@@ -9,7 +9,7 @@ import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 void main() {
   group('AppDatabase migrations', () {
-    test('migrates v9 schema to v11 and preserves rows', () async {
+    test('migrates v9 schema to v12 and preserves rows', () async {
       final tempDir = await Directory.systemTemp.createTemp('offlimu-db-');
       final dbFile = File(p.join(tempDir.path, 'offlimu.sqlite'));
 
@@ -173,15 +173,15 @@ WHERE bundle_id = ?
     });
 
     test(
-      'fresh v11 schema includes DTN metadata and content metadata table',
-      () async {
+    'fresh v12 schema includes DTN metadata and content metadata table',
+    () async {
         final db = AppDatabase.forTesting(NativeDatabase.memory());
         addTearDown(db.close);
 
         final version = await db
             .customSelect('PRAGMA user_version')
             .getSingle();
-        expect(version.data['user_version'], 11);
+        expect(version.data['user_version'], 12);
 
         final columnRows = await db
             .customSelect('PRAGMA table_info(bundle_records)')
@@ -193,6 +193,7 @@ WHERE bundle_id = ?
         expect(
           columns,
           containsAll(<String>{
+            'source_public_key',
             'destination_scope',
             'priority',
             'payload_ref',
