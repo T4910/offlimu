@@ -976,7 +976,7 @@ class NodeRuntime {
 
   bool _isReadyForRetry(Bundle bundle, DateTime now) {
     if (bundle.failedAttempts == 0) {
-      return true;
+      return bundle.sentAt == null;
     }
     final DateTime lastAttemptAt = bundle.sentAt ?? bundle.createdAt;
     final Duration delay = _retryDelay(bundle.failedAttempts);

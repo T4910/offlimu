@@ -60,5 +60,29 @@ void main() {
       expect(updated, isNotNull);
       expect(updated!.acknowledged, isTrue);
     });
+
+    test('save and load preserve source public key', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+
+      final repository = DriftBundleRepository(db, localNodeId: 'node-a');
+      final bundle = Bundle(
+        bundleId: 'msg-3',
+        type: Bundle.typeChatMessage,
+        sourceNodeId: 'node-a',
+        sourcePublicKey: 'public-key-123',
+        destinationNodeId: 'node-b',
+        payload: 'hello',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(1000),
+        ttlSeconds: 3600,
+      );
+
+      await repository.save(bundle);
+
+      final loaded = await repository.getById('msg-3');
+      expect(loaded, isNotNull);
+      expect(loaded!.sourcePublicKey, 'public-key-123');
+      expect(loaded.signature, isNull);
+    });
   });
 }

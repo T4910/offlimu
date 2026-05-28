@@ -11,6 +11,7 @@ class BundleRecords extends Table {
   TextColumn get bundleId => text()();
   TextColumn get type => text()();
   TextColumn get sourceNodeId => text()();
+  TextColumn get sourcePublicKey => text().nullable()();
   TextColumn get destinationNodeId => text().nullable()();
   TextColumn get destinationScope =>
       text().withDefault(const Constant('direct'))();
@@ -115,7 +116,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -164,6 +165,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 11) {
         await m.createTable(contentMetadata);
+      }
+      if (from < 12) {
+        await m.addColumn(bundleRecords, bundleRecords.sourcePublicKey);
       }
     },
   );

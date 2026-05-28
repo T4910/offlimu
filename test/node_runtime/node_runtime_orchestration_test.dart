@@ -316,6 +316,60 @@ void main() {
     await runtime.stop();
     await runtime.dispose();
   });
+
+  test('runtime does not resend successfully sent outbound bundles immediately', () async {
+    final now = DateTime.now();
+    final outboundBundle = Bundle(
+      bundleId: 'outbound-1',
+      type: Bundle.typeChatMessage,
+      sourceNodeId: 'node-a',
+      sourcePublicKey: 'public-key-a',
+      destinationNodeId: 'node-b',
+      payload: 'hello world',
+      createdAt: now,
+      ttlSeconds: 3600,
+    );
+
+    final fakeDiscovery = _FakeDiscoveryAdapter();
+    final fakeTransport = _FakeTransportAdapter();
+    final fakeBundles = _FakeBundleRepository(
+      pendingBundles: <Bundle>[outboundBundle],
+    );
+    final runtime = NodeRuntime(
+      localNodeId: 'node-a',
+      discovery: fakeDiscovery,
+      transport: fakeTransport,
+      bundles: fakeBundles,
+      peers: _FakePeerRepository(
+        initialPeers: <PeerContact>[
+          PeerContact(
+            nodeId: 'node-b',
+            host: '192.168.1.20',
+            port: 4040,
+            lastSeen: now,
+          ),
+        ],
+      ),
+      contentStore: _FakeContentStore(),
+      bundleSignatureService: _FakeBundleSignatureService(),
+    );
+
+    final startFuture = runtime.start();
+    await Future<void>.delayed(Duration.zero);
+    fakeTransport.releaseStart();
+    await startFuture;
+
+    await runtime.flushPendingNow();
+    await runtime.flushPendingNow();
+
+    expect(fakeTransport.sentBundles, hasLength(1));
+    expect(fakeTransport.sentBundles.single.bundle.bundleId, 'outbound-1');
+    expect(fakeBundles.getSavedBundle('outbound-1')?.sentAt, isNotNull);
+    expect(fakeBundles.getSavedBundle('outbound-1')?.failedAttempts, 0);
+
+    await runtime.stop();
+    await runtime.dispose();
+  });
 }
 
 class _FakeDiscoveryAdapter implements DiscoveryAdapter {
@@ -424,8 +478,12 @@ class _FakePeerRepository implements PeerRepository {
 }
 
 class _FakeBundleRepository implements BundleRepository {
-  _FakeBundleRepository({Map<String, Bundle>? existingBundlesById})
-    : existingBundlesById = existingBundlesById ?? <String, Bundle>{};
+  _FakeBundleRepository({
+    Map<String, Bundle>? existingBundlesById,
+    List<Bundle>? pendingBundles,
+  })
+    : existingBundlesById = existingBundlesById ?? <String, Bundle>{},
+      pendingBundles = pendingBundles ?? <Bundle>[];
 
   @override
   Future<void> saveContentMetadata(ContentMetadataRecord metadata) async {}
@@ -442,7 +500,20 @@ class _FakeBundleRepository implements BundleRepository {
   }
 
   @override
-  Future<void> markSent(String bundleId) async {}
+  Future<void> markSent(String bundleId) async {
+    final existing = existingBundlesById[bundleId];
+    if (existing == null) {
+      return;
+    }
+
+    final updated = existing.copyWith(
+      sentAt: DateTime.now(),
+      failedAttempts: 0,
+      lastError: null,
+    );
+    existingBundlesById[bundleId] = updated;
+    _replacePendingBundle(updated);
+  }
 
   @override
   Future<void> markSendFailed(
@@ -457,7 +528,11 @@ class _FakeBundleRepository implements BundleRepository {
   Future<bool> recordAckReceipt(Bundle ackBundle) async => false;
 
   @override
-  Future<List<Bundle>> getPendingBundles() async => const <Bundle>[];
+  Future<List<Bundle>> getPendingBundles() async {
+    return pendingBundles
+        .where((bundle) => !bundle.acknowledged)
+        .toList(growable: false);
+  }
 
   @override
   Stream<List<Bundle>> watchPendingBundles() {
@@ -477,11 +552,13 @@ class _FakeBundleRepository implements BundleRepository {
   final List<String> rejectedBundles = <String>[];
   final List<Bundle> savedBundles = <Bundle>[];
   final Map<String, Bundle> existingBundlesById;
+  final List<Bundle> pendingBundles;
 
   @override
   Future<void> save(Bundle bundle) async {
     savedBundles.add(bundle);
     existingBundlesById[bundle.bundleId] = bundle;
+    _replacePendingBundle(bundle);
   }
 
   @override
@@ -492,6 +569,20 @@ class _FakeBundleRepository implements BundleRepository {
   @override
   Future<Bundle?> getById(String bundleId) async {
     return existingBundlesById[bundleId];
+  }
+
+  Bundle? getSavedBundle(String bundleId) => existingBundlesById[bundleId];
+
+  void _replacePendingBundle(Bundle bundle) {
+    final index = pendingBundles.indexWhere(
+      (candidate) => candidate.bundleId == bundle.bundleId,
+    );
+    if (index == -1) {
+      pendingBundles.add(bundle);
+      return;
+    }
+
+    pendingBundles[index] = bundle;
   }
 }
 

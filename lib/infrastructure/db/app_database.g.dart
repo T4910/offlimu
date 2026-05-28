@@ -40,6 +40,17 @@ class $BundleRecordsTable extends BundleRecords
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _sourcePublicKeyMeta = const VerificationMeta(
+    'sourcePublicKey',
+  );
+  @override
+  late final GeneratedColumn<String> sourcePublicKey = GeneratedColumn<String>(
+    'source_public_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _destinationNodeIdMeta = const VerificationMeta(
     'destinationNodeId',
   );
@@ -229,6 +240,7 @@ class $BundleRecordsTable extends BundleRecords
     bundleId,
     type,
     sourceNodeId,
+    sourcePublicKey,
     destinationNodeId,
     destinationScope,
     priority,
@@ -284,6 +296,15 @@ class $BundleRecordsTable extends BundleRecords
       );
     } else if (isInserting) {
       context.missing(_sourceNodeIdMeta);
+    }
+    if (data.containsKey('source_public_key')) {
+      context.handle(
+        _sourcePublicKeyMeta,
+        sourcePublicKey.isAcceptableOrUnknown(
+          data['source_public_key']!,
+          _sourcePublicKeyMeta,
+        ),
+      );
     }
     if (data.containsKey('destination_node_id')) {
       context.handle(
@@ -427,6 +448,10 @@ class $BundleRecordsTable extends BundleRecords
         DriftSqlType.string,
         data['${effectivePrefix}source_node_id'],
       )!,
+      sourcePublicKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_public_key'],
+      ),
       destinationNodeId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}destination_node_id'],
@@ -504,6 +529,7 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
   final String bundleId;
   final String type;
   final String sourceNodeId;
+  final String? sourcePublicKey;
   final String? destinationNodeId;
   final String destinationScope;
   final String priority;
@@ -524,6 +550,7 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
     required this.bundleId,
     required this.type,
     required this.sourceNodeId,
+    this.sourcePublicKey,
     this.destinationNodeId,
     required this.destinationScope,
     required this.priority,
@@ -547,6 +574,9 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
     map['bundle_id'] = Variable<String>(bundleId);
     map['type'] = Variable<String>(type);
     map['source_node_id'] = Variable<String>(sourceNodeId);
+    if (!nullToAbsent || sourcePublicKey != null) {
+      map['source_public_key'] = Variable<String>(sourcePublicKey);
+    }
     if (!nullToAbsent || destinationNodeId != null) {
       map['destination_node_id'] = Variable<String>(destinationNodeId);
     }
@@ -587,6 +617,9 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
       bundleId: Value(bundleId),
       type: Value(type),
       sourceNodeId: Value(sourceNodeId),
+        sourcePublicKey: sourcePublicKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourcePublicKey),
       destinationNodeId: destinationNodeId == null && nullToAbsent
           ? const Value.absent()
           : Value(destinationNodeId),
@@ -631,6 +664,7 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
       bundleId: serializer.fromJson<String>(json['bundleId']),
       type: serializer.fromJson<String>(json['type']),
       sourceNodeId: serializer.fromJson<String>(json['sourceNodeId']),
+      sourcePublicKey: serializer.fromJson<String?>(json['sourcePublicKey']),
       destinationNodeId: serializer.fromJson<String?>(
         json['destinationNodeId'],
       ),
@@ -658,6 +692,7 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
       'bundleId': serializer.toJson<String>(bundleId),
       'type': serializer.toJson<String>(type),
       'sourceNodeId': serializer.toJson<String>(sourceNodeId),
+      'sourcePublicKey': serializer.toJson<String?>(sourcePublicKey),
       'destinationNodeId': serializer.toJson<String?>(destinationNodeId),
       'destinationScope': serializer.toJson<String>(destinationScope),
       'priority': serializer.toJson<String>(priority),
@@ -681,6 +716,7 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
     String? bundleId,
     String? type,
     String? sourceNodeId,
+    Value<String?> sourcePublicKey = const Value.absent(),
     Value<String?> destinationNodeId = const Value.absent(),
     String? destinationScope,
     String? priority,
@@ -701,6 +737,9 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
     bundleId: bundleId ?? this.bundleId,
     type: type ?? this.type,
     sourceNodeId: sourceNodeId ?? this.sourceNodeId,
+    sourcePublicKey: sourcePublicKey.present
+      ? sourcePublicKey.value
+      : this.sourcePublicKey,
     destinationNodeId: destinationNodeId.present
         ? destinationNodeId.value
         : this.destinationNodeId,
@@ -729,6 +768,9 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
       sourceNodeId: data.sourceNodeId.present
           ? data.sourceNodeId.value
           : this.sourceNodeId,
+        sourcePublicKey: data.sourcePublicKey.present
+          ? data.sourcePublicKey.value
+          : this.sourcePublicKey,
       destinationNodeId: data.destinationNodeId.present
           ? data.destinationNodeId.value
           : this.destinationNodeId,
@@ -772,6 +814,7 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
           ..write('bundleId: $bundleId, ')
           ..write('type: $type, ')
           ..write('sourceNodeId: $sourceNodeId, ')
+          ..write('sourcePublicKey: $sourcePublicKey, ')
           ..write('destinationNodeId: $destinationNodeId, ')
           ..write('destinationScope: $destinationScope, ')
           ..write('priority: $priority, ')
@@ -797,6 +840,7 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
     bundleId,
     type,
     sourceNodeId,
+    sourcePublicKey,
     destinationNodeId,
     destinationScope,
     priority,
@@ -821,6 +865,7 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
           other.bundleId == this.bundleId &&
           other.type == this.type &&
           other.sourceNodeId == this.sourceNodeId &&
+          other.sourcePublicKey == this.sourcePublicKey &&
           other.destinationNodeId == this.destinationNodeId &&
           other.destinationScope == this.destinationScope &&
           other.priority == this.priority &&
@@ -843,6 +888,7 @@ class BundleRecordsCompanion extends UpdateCompanion<BundleRecord> {
   final Value<String> bundleId;
   final Value<String> type;
   final Value<String> sourceNodeId;
+  final Value<String?> sourcePublicKey;
   final Value<String?> destinationNodeId;
   final Value<String> destinationScope;
   final Value<String> priority;
@@ -864,6 +910,7 @@ class BundleRecordsCompanion extends UpdateCompanion<BundleRecord> {
     this.bundleId = const Value.absent(),
     this.type = const Value.absent(),
     this.sourceNodeId = const Value.absent(),
+    this.sourcePublicKey = const Value.absent(),
     this.destinationNodeId = const Value.absent(),
     this.destinationScope = const Value.absent(),
     this.priority = const Value.absent(),
@@ -886,6 +933,7 @@ class BundleRecordsCompanion extends UpdateCompanion<BundleRecord> {
     required String bundleId,
     required String type,
     required String sourceNodeId,
+    this.sourcePublicKey = const Value.absent(),
     this.destinationNodeId = const Value.absent(),
     this.destinationScope = const Value.absent(),
     this.priority = const Value.absent(),
@@ -912,6 +960,7 @@ class BundleRecordsCompanion extends UpdateCompanion<BundleRecord> {
     Expression<String>? bundleId,
     Expression<String>? type,
     Expression<String>? sourceNodeId,
+    Expression<String>? sourcePublicKey,
     Expression<String>? destinationNodeId,
     Expression<String>? destinationScope,
     Expression<String>? priority,
@@ -934,6 +983,7 @@ class BundleRecordsCompanion extends UpdateCompanion<BundleRecord> {
       if (bundleId != null) 'bundle_id': bundleId,
       if (type != null) 'type': type,
       if (sourceNodeId != null) 'source_node_id': sourceNodeId,
+      if (sourcePublicKey != null) 'source_public_key': sourcePublicKey,
       if (destinationNodeId != null) 'destination_node_id': destinationNodeId,
       if (destinationScope != null) 'destination_scope': destinationScope,
       if (priority != null) 'priority': priority,
@@ -958,6 +1008,7 @@ class BundleRecordsCompanion extends UpdateCompanion<BundleRecord> {
     Value<String>? bundleId,
     Value<String>? type,
     Value<String>? sourceNodeId,
+    Value<String?>? sourcePublicKey,
     Value<String?>? destinationNodeId,
     Value<String>? destinationScope,
     Value<String>? priority,
@@ -980,6 +1031,7 @@ class BundleRecordsCompanion extends UpdateCompanion<BundleRecord> {
       bundleId: bundleId ?? this.bundleId,
       type: type ?? this.type,
       sourceNodeId: sourceNodeId ?? this.sourceNodeId,
+      sourcePublicKey: sourcePublicKey ?? this.sourcePublicKey,
       destinationNodeId: destinationNodeId ?? this.destinationNodeId,
       destinationScope: destinationScope ?? this.destinationScope,
       priority: priority ?? this.priority,
@@ -1011,6 +1063,9 @@ class BundleRecordsCompanion extends UpdateCompanion<BundleRecord> {
     }
     if (sourceNodeId.present) {
       map['source_node_id'] = Variable<String>(sourceNodeId.value);
+    }
+    if (sourcePublicKey.present) {
+      map['source_public_key'] = Variable<String>(sourcePublicKey.value);
     }
     if (destinationNodeId.present) {
       map['destination_node_id'] = Variable<String>(destinationNodeId.value);
