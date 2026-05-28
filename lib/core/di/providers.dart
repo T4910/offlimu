@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offlimu/core/config/app_config.dart';
 import 'package:offlimu/core/debug/runtime_log_store.dart';
 import 'package:offlimu/core/identity/local_node_identity_bootstrap.dart';
+import 'package:offlimu/core/maintenance/app_data_reset_service.dart';
 import 'package:offlimu/domain/entities/ack_event.dart';
 import 'package:offlimu/domain/entities/bundle.dart';
 import 'package:offlimu/domain/entities/chat_message.dart';
@@ -385,6 +386,21 @@ final Provider<GatewaySyncPreferenceStore> gatewaySyncPreferenceStoreProvider =
 final Provider<DatabaseMaintenanceStore> databaseMaintenanceStoreProvider =
     Provider<DatabaseMaintenanceStore>((ref) {
       return const DatabaseMaintenanceStore();
+    });
+
+final Provider<AppDataResetService> appDataResetServiceProvider =
+    Provider<AppDataResetService>((ref) {
+      return AppDataResetService(
+        runtime: ref.watch(nodeRuntimeProvider),
+        database: ref.watch(appDatabaseProvider),
+        contentStore: ref.watch(contentStoreProvider),
+        runtimeLogStore: ref.watch(runtimeLogStoreProvider),
+        errorLogStore: ref.watch(appErrorLogStoreProvider),
+        gatewaySyncPreferenceStore: ref.watch(
+          gatewaySyncPreferenceStoreProvider,
+        ),
+        databaseMaintenanceStore: ref.watch(databaseMaintenanceStoreProvider),
+      );
     });
 
 final Provider<void> gatewaySyncPreferenceBootstrapProvider = Provider<void>((

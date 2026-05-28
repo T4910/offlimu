@@ -38,6 +38,7 @@ class _NodeStatusPageState extends ConsumerState<NodeStatusPage> {
     final gatewayEnabled = ref.watch(gatewayEnabledProvider);
     final gatewaySyncStatus = ref.watch(gatewaySyncStatusProvider);
     final errorLogStore = ref.watch(appErrorLogStoreProvider);
+    final nodeRuntime = ref.read(nodeRuntimeProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('OffLiMU Node Status')),
@@ -101,6 +102,84 @@ class _NodeStatusPageState extends ConsumerState<NodeStatusPage> {
                           value: runtime.telemetry.stalePeerRemovals.toString(),
                         ),
                       ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          'Active Peers',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          tooltip: 'Refresh active peers',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () async {
+                            try {
+                              await nodeRuntime.refreshPeersNow();
+                            } catch (error) {
+                              if (!context.mounted) {
+                                return;
+                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Refresh failed: $error'),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.refresh),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    peerContactsAsync.when(
+                      loading: () => const Text('Loading active peers...'),
+                      error: (error, stackTrace) =>
+                          Text('Active peers error: $error'),
+                      data: (List<PeerContact> peers) {
+                        final activePeers = peers
+                            .where(
+                              (peer) =>
+                                  DateTime.now()
+                                          .difference(peer.lastSeen)
+                                          .inSeconds <=
+                                      60,
+                            )
+                            .toList(growable: false)
+                          ..sort((a, b) => b.lastSeen.compareTo(a.lastSeen));
+                        if (activePeers.isEmpty) {
+                          return const Text('No active peers recently seen.');
+                        }
+
+                        return Column(
+                          children: activePeers
+                              .take(5)
+                              .map<Widget>(
+                                (PeerContact peer) => ListTile(
+                                  dense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(peer.nodeId),
+                                  subtitle: Text(
+                                    '${peer.host}:${peer.port} • '
+                                    'lastSeen ${peer.lastSeen.toIso8601String()} • '
+                                    'seen ${peer.seenCount}x',
+                                  ),
+                                ),
+                              )
+                              .toList(growable: false),
+                        );
+                      },
                     ),
                   ],
                 ),

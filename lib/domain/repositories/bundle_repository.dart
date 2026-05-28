@@ -10,12 +10,14 @@ abstract interface class BundleRepository {
   Stream<List<ContentMetadataRecord>> watchRecentContentMetadata({
     int limit = 50,
   });
+  Future<List<Bundle>> getAllBundles();
   Future<void> markSent(String bundleId);
   Future<void> markSendFailed(String bundleId, {required String errorMessage});
   Future<void> markRejected(String bundleId, {required String reason});
   Future<void> markAcknowledged(String bundleId);
   Future<bool> recordAckReceipt(Bundle ackBundle);
   Future<List<Bundle>> getPendingBundles();
+  Stream<List<Bundle>> watchAllBundles();
   Stream<List<Bundle>> watchPendingBundles();
   Stream<List<Bundle>> watchBundlesByType(String type);
   Stream<List<AckAuditEvent>> watchRecentAckEvents({int limit = 20});

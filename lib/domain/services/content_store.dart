@@ -24,4 +24,6 @@ abstract interface class ContentStore {
   Future<String?> put({required String contentHash, required Uint8List bytes});
 
   Future<Uint8List?> read({required String contentHash});
+
+  Future<void> clear();
 }

@@ -273,10 +273,13 @@ class NodeRuntime {
       final now = DateTime.now();
       final List<DiscoveredPeer> peers = _peers.values.toList(growable: false);
       final pending = await _bundles.getPendingBundles();
-      final outbound = pending
-          .where((bundle) => bundle.sourceNodeId == _localNodeId)
-          .toList(growable: false);
 
+
+      final outbound = pending;
+          // .where((bundle) => bundle.sourceNodeId == _localNodeId)
+          // .toList(growable: false);
+
+      print(outbound);
       if (outbound.isEmpty) {
         return;
       }

@@ -27,6 +27,15 @@ class GatewaySyncPreferenceStore {
     }
   }
 
+  Future<void> clear() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(gatewaySyncEnabledPreferenceKey);
+    } on MissingPluginException {
+      // Preference persistence can be unavailable in some test/runtime contexts.
+    }
+  }
+
   Future<bool> readEnabledOrDefault({bool defaultValue = true}) async {
     final value = await readEnabled();
     return value ?? defaultValue;

@@ -43,6 +43,14 @@ class LocalFileContentStore implements ContentStore {
     return file.readAsBytes();
   }
 
+  @override
+  Future<void> clear() async {
+    final Directory root = await _resolveRootDirectory();
+    if (await root.exists()) {
+      await root.delete(recursive: true);
+    }
+  }
+
   Future<File> _resolveFile(String contentHash) async {
     final Directory docs = await getApplicationDocumentsDirectory();
     final String safeHash = _toSafeHash(contentHash);

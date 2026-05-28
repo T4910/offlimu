@@ -185,6 +185,18 @@ class AppDatabase extends _$AppDatabase {
   Future<void> runVacuum() async {
     await customStatement('VACUUM;');
   }
+
+  Future<void> clearAllUserData() async {
+    await transaction(() async {
+      await delete(messageProjections).go();
+      await delete(ackEvents).go();
+      await delete(bundleRecords).go();
+      await delete(peerContacts).go();
+      await delete(syncJobs).go();
+      await delete(contentMetadata).go();
+      await customStatement('DELETE FROM sqlite_sequence;');
+    });
+  }
 }
 
 LazyDatabase _openConnection() {

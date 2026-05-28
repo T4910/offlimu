@@ -30,4 +30,13 @@ class DatabaseMaintenanceStore {
       // Persistence may be unavailable in some test/runtime contexts.
     }
   }
+
+  Future<void> clear() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(databaseLastVacuumAtMsPreferenceKey);
+    } on MissingPluginException {
+      // Persistence may be unavailable in some test/runtime contexts.
+    }
+  }
 }

@@ -87,6 +87,12 @@ class DriftBundleRepository implements BundleRepository {
   }
 
   @override
+  Future<List<Bundle>> getAllBundles() async {
+    final List<BundleRecord> rows = await _allBundlesQuery().get();
+    return rows.map(_toEntity).toList(growable: false);
+  }
+
+  @override
   Stream<List<ContentMetadataRecord>> watchRecentContentMetadata({
     int limit = 50,
   }) {
@@ -274,6 +280,13 @@ class DriftBundleRepository implements BundleRepository {
   }
 
   @override
+  Stream<List<Bundle>> watchAllBundles() {
+    return _allBundlesQuery().watch().map(
+      (rows) => rows.map(_toEntity).toList(growable: false),
+    );
+  }
+
+  @override
   Stream<List<Bundle>> watchPendingBundles() {
     return _pendingQuery().watch().map(
       (rows) => rows.map(_toEntity).toList(growable: false),
@@ -311,6 +324,13 @@ class DriftBundleRepository implements BundleRepository {
       ..where((tbl) => tbl.acknowledged.equals(false))
       ..orderBy(<OrderingTerm Function($BundleRecordsTable)>[
         (tbl) => OrderingTerm.asc(tbl.createdAtMs),
+      ]));
+  }
+
+  SimpleSelectStatement<$BundleRecordsTable, BundleRecord> _allBundlesQuery() {
+    return (_db.select(_db.bundleRecords)
+      ..orderBy(<OrderingTerm Function($BundleRecordsTable)>[
+        (tbl) => OrderingTerm.desc(tbl.createdAtMs),
       ]));
   }
 

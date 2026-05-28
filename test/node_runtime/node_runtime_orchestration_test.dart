@@ -460,6 +460,9 @@ class _FakeContentStore implements ContentStore {
 
   @override
   Future<Uint8List?> read({required String contentHash}) async => null;
+
+  @override
+  Future<void> clear() async {}
 }
 
 class _FakePeerRepository implements PeerRepository {
@@ -547,6 +550,18 @@ class _FakeBundleRepository implements BundleRepository {
   @override
   Stream<List<AckAuditEvent>> watchRecentAckEvents({int limit = 20}) {
     return const Stream<List<AckAuditEvent>>.empty();
+  }
+
+  @override
+  Future<List<Bundle>> getAllBundles() async {
+    return existingBundlesById.values.toList(growable: false);
+  }
+
+  @override
+  Stream<List<Bundle>> watchAllBundles() {
+    return Stream<List<Bundle>>.value(
+      existingBundlesById.values.toList(growable: false),
+    );
   }
 
   final List<String> rejectedBundles = <String>[];

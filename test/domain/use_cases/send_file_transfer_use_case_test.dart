@@ -196,6 +196,9 @@ class _FakeContentStore implements ContentStore {
   Future<Uint8List?> read({required String contentHash}) async {
     return null;
   }
+
+  @override
+  Future<void> clear() async {}
 }
 
 class _FakeBundleRepository implements BundleRepository {
@@ -270,6 +273,18 @@ class _FakeBundleRepository implements BundleRepository {
   @override
   Stream<List<AckAuditEvent>> watchRecentAckEvents({int limit = 20}) {
     return const Stream<List<AckAuditEvent>>.empty();
+  }
+
+  @override
+  Future<List<Bundle>> getAllBundles() async {
+    return _bundlesById.values.toList(growable: false);
+  }
+
+  @override
+  Stream<List<Bundle>> watchAllBundles() {
+    return Stream<List<Bundle>>.value(
+      _bundlesById.values.toList(growable: false),
+    );
   }
 }
 

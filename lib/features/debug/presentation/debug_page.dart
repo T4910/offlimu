@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offlimu/core/debug/runtime_log_store.dart';
 import 'package:offlimu/core/di/providers.dart';
@@ -106,6 +107,11 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                   OutlinedButton(
                     onPressed: () => _runAction(context, runtime.refreshPeersNow),
                     child: const Text('Refresh Peers'),
+                  ),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.delete_sweep_outlined),
+                    label: const Text('Reset Data'),
+                    onPressed: () => _confirmAndResetData(context),
                   ),
                   OutlinedButton(
                     onPressed: () {
@@ -376,6 +382,11 @@ class _DebugPageState extends ConsumerState<DebugPage> {
             _SectionCard(
               title: 'Bundle Timeline',
               subtitle: 'Pending and typed bundle history, including relay and rejection states.',
+              trailing: OutlinedButton.icon(
+                icon: const Icon(Icons.view_list_outlined),
+                label: const Text('Bundle Explorer'),
+                onPressed: () => context.push('/debug/bundles'),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -589,6 +600,46 @@ class _DebugPageState extends ConsumerState<DebugPage> {
         SnackBar(content: Text('Action failed: $error')),
       );
     }
+  }
+
+  Future<void> _confirmAndResetData(BuildContext context) async {
+    final shouldReset = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Reset all local data?'),
+          content: const Text(
+            'This clears chats, bundles, peers, sync history, logs, and cached content. Node identity stays intact.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Reset'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldReset != true || !context.mounted) {
+      return;
+    }
+
+    await _runAction(context, () async {
+      await ref.read(appDataResetServiceProvider).resetAll();
+      ref.read(gatewayEnabledProvider.notifier).state = true;
+      ref.read(gatewaySyncStatusProvider.notifier).state =
+          const GatewaySyncCoordinatorStatus();
+      ref.read(syncRunStateProvider.notifier).state = null;
+      setState(() {
+        _filter = '';
+        _failuresOnly = false;
+      });
+    });
   }
 
   Future<void> _copyDiagnostics({
