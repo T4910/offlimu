@@ -617,7 +617,7 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
       bundleId: Value(bundleId),
       type: Value(type),
       sourceNodeId: Value(sourceNodeId),
-        sourcePublicKey: sourcePublicKey == null && nullToAbsent
+      sourcePublicKey: sourcePublicKey == null && nullToAbsent
           ? const Value.absent()
           : Value(sourcePublicKey),
       destinationNodeId: destinationNodeId == null && nullToAbsent
@@ -738,8 +738,8 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
     type: type ?? this.type,
     sourceNodeId: sourceNodeId ?? this.sourceNodeId,
     sourcePublicKey: sourcePublicKey.present
-      ? sourcePublicKey.value
-      : this.sourcePublicKey,
+        ? sourcePublicKey.value
+        : this.sourcePublicKey,
     destinationNodeId: destinationNodeId.present
         ? destinationNodeId.value
         : this.destinationNodeId,
@@ -768,7 +768,7 @@ class BundleRecord extends DataClass implements Insertable<BundleRecord> {
       sourceNodeId: data.sourceNodeId.present
           ? data.sourceNodeId.value
           : this.sourceNodeId,
-        sourcePublicKey: data.sourcePublicKey.present
+      sourcePublicKey: data.sourcePublicKey.present
           ? data.sourcePublicKey.value
           : this.sourcePublicKey,
       destinationNodeId: data.destinationNodeId.present
@@ -1127,6 +1127,7 @@ class BundleRecordsCompanion extends UpdateCompanion<BundleRecord> {
           ..write('bundleId: $bundleId, ')
           ..write('type: $type, ')
           ..write('sourceNodeId: $sourceNodeId, ')
+          ..write('sourcePublicKey: $sourcePublicKey, ')
           ..write('destinationNodeId: $destinationNodeId, ')
           ..write('destinationScope: $destinationScope, ')
           ..write('priority: $priority, ')
@@ -3672,6 +3673,7 @@ typedef $$BundleRecordsTableCreateCompanionBuilder =
       required String bundleId,
       required String type,
       required String sourceNodeId,
+      Value<String?> sourcePublicKey,
       Value<String?> destinationNodeId,
       Value<String> destinationScope,
       Value<String> priority,
@@ -3695,6 +3697,7 @@ typedef $$BundleRecordsTableUpdateCompanionBuilder =
       Value<String> bundleId,
       Value<String> type,
       Value<String> sourceNodeId,
+      Value<String?> sourcePublicKey,
       Value<String?> destinationNodeId,
       Value<String> destinationScope,
       Value<String> priority,
@@ -3735,6 +3738,11 @@ class $$BundleRecordsTableFilterComposer
 
   ColumnFilters<String> get sourceNodeId => $composableBuilder(
     column: $table.sourceNodeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourcePublicKey => $composableBuilder(
+    column: $table.sourcePublicKey,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3843,6 +3851,11 @@ class $$BundleRecordsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourcePublicKey => $composableBuilder(
+    column: $table.sourcePublicKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get destinationNodeId => $composableBuilder(
     column: $table.destinationNodeId,
     builder: (column) => ColumnOrderings(column),
@@ -3941,6 +3954,11 @@ class $$BundleRecordsTableAnnotationComposer
 
   GeneratedColumn<String> get sourceNodeId => $composableBuilder(
     column: $table.sourceNodeId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourcePublicKey => $composableBuilder(
+    column: $table.sourcePublicKey,
     builder: (column) => column,
   );
 
@@ -4045,6 +4063,7 @@ class $$BundleRecordsTableTableManager
                 Value<String> bundleId = const Value.absent(),
                 Value<String> type = const Value.absent(),
                 Value<String> sourceNodeId = const Value.absent(),
+                Value<String?> sourcePublicKey = const Value.absent(),
                 Value<String?> destinationNodeId = const Value.absent(),
                 Value<String> destinationScope = const Value.absent(),
                 Value<String> priority = const Value.absent(),
@@ -4066,6 +4085,7 @@ class $$BundleRecordsTableTableManager
                 bundleId: bundleId,
                 type: type,
                 sourceNodeId: sourceNodeId,
+                sourcePublicKey: sourcePublicKey,
                 destinationNodeId: destinationNodeId,
                 destinationScope: destinationScope,
                 priority: priority,
@@ -4089,6 +4109,7 @@ class $$BundleRecordsTableTableManager
                 required String bundleId,
                 required String type,
                 required String sourceNodeId,
+                Value<String?> sourcePublicKey = const Value.absent(),
                 Value<String?> destinationNodeId = const Value.absent(),
                 Value<String> destinationScope = const Value.absent(),
                 Value<String> priority = const Value.absent(),
@@ -4110,6 +4131,7 @@ class $$BundleRecordsTableTableManager
                 bundleId: bundleId,
                 type: type,
                 sourceNodeId: sourceNodeId,
+                sourcePublicKey: sourcePublicKey,
                 destinationNodeId: destinationNodeId,
                 destinationScope: destinationScope,
                 priority: priority,
