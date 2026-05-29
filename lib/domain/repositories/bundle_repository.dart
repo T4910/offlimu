@@ -11,6 +11,7 @@ abstract interface class BundleRepository {
     int limit = 50,
   });
   Future<List<Bundle>> getAllBundles();
+  Future<void> deleteBundle(String bundleId);
   Future<void> markSent(String bundleId);
   Future<void> markSendFailed(String bundleId, {required String errorMessage});
   Future<void> markRejected(String bundleId, {required String reason});

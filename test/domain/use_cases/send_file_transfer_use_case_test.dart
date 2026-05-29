@@ -281,6 +281,12 @@ class _FakeBundleRepository implements BundleRepository {
   }
 
   @override
+  Future<void> deleteBundle(String bundleId) async {
+    _bundlesById.remove(bundleId);
+    savedBundles.removeWhere((bundle) => bundle.bundleId == bundleId);
+  }
+
+  @override
   Stream<List<Bundle>> watchAllBundles() {
     return Stream<List<Bundle>>.value(
       _bundlesById.values.toList(growable: false),

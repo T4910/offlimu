@@ -156,6 +156,9 @@ class _FakeBundleRepository implements BundleRepository {
   Future<List<Bundle>> getAllBundles() async => const <Bundle>[];
 
   @override
+  Future<void> deleteBundle(String bundleId) async {}
+
+  @override
   Stream<List<Bundle>> watchAllBundles() {
     return const Stream<List<Bundle>>.empty();
   }

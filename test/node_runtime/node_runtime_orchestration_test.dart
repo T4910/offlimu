@@ -252,6 +252,188 @@ void main() {
     },
   );
 
+  test(
+    'runtime fans out ACK bundles to the source and relay peers',
+    () async {
+      final now = DateTime.now();
+      final inboundBundle = Bundle(
+        bundleId: 'chat-ack-2',
+        type: Bundle.typeChatMessage,
+        sourceNodeId: 'node-b',
+        destinationNodeId: 'node-a',
+        payload: 'hello again',
+        createdAt: now,
+        ttlSeconds: 3600,
+        signature: 'signature-2',
+        sourcePublicKey: 'public-key-2',
+      );
+
+      final fakeDiscovery = _FakeDiscoveryAdapter();
+      final fakeTransport = _FakeTransportAdapter();
+      final fakePeerRepository = _FakePeerRepository(
+        initialPeers: <PeerContact>[
+          PeerContact(
+            nodeId: 'node-b',
+            host: '192.168.1.20',
+            port: 4040,
+            lastSeen: now,
+          ),
+          PeerContact(
+            nodeId: 'node-c',
+            host: '192.168.1.21',
+            port: 4041,
+            lastSeen: now,
+          ),
+        ],
+      );
+      final fakeBundles = _FakeBundleRepository();
+      final fakeSignatureService = _FakeBundleSignatureService(
+        signResultBuilder: (Bundle bundle, String nodeId) {
+          return bundle.copyWith(
+            sourcePublicKey: 'public-key-$nodeId',
+            signature: 'signed-${bundle.bundleId}',
+          );
+        },
+      );
+      final runtime = NodeRuntime(
+        localNodeId: 'node-a',
+        discovery: fakeDiscovery,
+        transport: fakeTransport,
+        bundles: fakeBundles,
+        peers: fakePeerRepository,
+        contentStore: _FakeContentStore(),
+        bundleSignatureService: fakeSignatureService,
+      );
+
+      final startFuture = runtime.start();
+      await Future<void>.delayed(Duration.zero);
+      fakeTransport.releaseStart();
+      await startFuture;
+
+      fakeTransport.emitIncoming(inboundBundle);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(fakeTransport.sentBundles, hasLength(2));
+      expect(
+        fakeTransport.sentBundles.map((record) => record.peerNodeId),
+        containsAllInOrder(<String>['node-b', 'node-c']),
+      );
+      expect(
+        fakeTransport.sentBundles.every(
+          (record) => record.bundle.type == Bundle.typeAck,
+        ),
+        isTrue,
+      );
+
+      await runtime.stop();
+      await runtime.dispose();
+    },
+  );
+
+  test('runtime floods relayed ACK bundles to all reachable peers', () async {
+    final now = DateTime.now();
+    final inboundAck = Bundle(
+      bundleId: 'ack-hop-1',
+      type: Bundle.typeAck,
+      sourceNodeId: 'node-b',
+      destinationNodeId: 'node-z',
+      ackForBundleId: 'chat-1',
+      createdAt: now,
+      ttlSeconds: 3600,
+      signature: 'signature-ack-hop',
+      sourcePublicKey: 'public-key-node-b',
+    );
+
+    final fakeTransport = _FakeTransportAdapter();
+    final fakeBundles = _FakeBundleRepository();
+    final runtime = NodeRuntime(
+      localNodeId: 'node-c',
+      discovery: _FakeDiscoveryAdapter(),
+      transport: fakeTransport,
+      bundles: fakeBundles,
+      peers: _FakePeerRepository(
+        initialPeers: <PeerContact>[
+          PeerContact(
+            nodeId: 'node-z',
+            host: '192.168.1.30',
+            port: 4040,
+            lastSeen: now,
+          ),
+          PeerContact(
+            nodeId: 'node-d',
+            host: '192.168.1.31',
+            port: 4041,
+            lastSeen: now,
+          ),
+          PeerContact(
+            nodeId: 'node-e',
+            host: '192.168.1.32',
+            port: 4042,
+            lastSeen: now,
+          ),
+        ],
+      ),
+      contentStore: _FakeContentStore(),
+      bundleSignatureService: _FakeBundleSignatureService(),
+    );
+
+    final startFuture = runtime.start();
+    await Future<void>.delayed(Duration.zero);
+    fakeTransport.releaseStart();
+    await startFuture;
+
+    fakeTransport.emitIncoming(inboundAck);
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(fakeTransport.sentBundles, hasLength(3));
+    expect(
+      fakeTransport.sentBundles.map((record) => record.peerNodeId).toSet(),
+      containsAll(<String>{'node-z', 'node-d', 'node-e'}),
+    );
+    expect(
+      fakeTransport.sentBundles.every((record) => record.bundle.type == Bundle.typeAck),
+      isTrue,
+    );
+    expect(fakeBundles.savedBundles.any((bundle) => bundle.bundleId == 'ack-hop-1'), isTrue);
+
+    await runtime.stop();
+    await runtime.dispose();
+  });
+
+  test('runtime prunes expired bundles from storage', () async {
+    final expiredBundle = Bundle(
+      bundleId: 'expired-ack-1',
+      type: Bundle.typeAck,
+      sourceNodeId: 'node-a',
+      destinationNodeId: 'node-b',
+      ackForBundleId: 'bundle-1',
+      createdAt: DateTime.now().subtract(const Duration(minutes: 10)),
+      expiresAtOverride: DateTime.now().subtract(const Duration(seconds: 1)),
+      ttlSeconds: 300,
+      signature: 'signature-expired',
+      sourcePublicKey: 'public-key-node-a',
+    );
+
+    final fakeBundles = _FakeBundleRepository(
+      existingBundlesById: <String, Bundle>{expiredBundle.bundleId: expiredBundle},
+    );
+
+    final fakeRuntime = NodeRuntime(
+      localNodeId: 'node-a',
+      discovery: _FakeDiscoveryAdapter(),
+      transport: _FakeTransportAdapter(),
+      bundles: fakeBundles,
+      peers: _FakePeerRepository(),
+      contentStore: _FakeContentStore(),
+      bundleSignatureService: _FakeBundleSignatureService(),
+    );
+
+    await fakeRuntime.pruneExpiredBundlesNow();
+
+    expect(fakeBundles.existingBundlesById, isEmpty);
+    expect(fakeBundles.pendingBundles, isEmpty);
+  });
+
   test('runtime ignores self-discovered peers when relaying bundles', () async {
     final now = DateTime.now();
     final inboundBundle = Bundle(
@@ -555,6 +737,12 @@ class _FakeBundleRepository implements BundleRepository {
   @override
   Future<List<Bundle>> getAllBundles() async {
     return existingBundlesById.values.toList(growable: false);
+  }
+
+  @override
+  Future<void> deleteBundle(String bundleId) async {
+    existingBundlesById.remove(bundleId);
+    pendingBundles.removeWhere((bundle) => bundle.bundleId == bundleId);
   }
 
   @override

@@ -81,6 +81,7 @@ class NodeRuntime {
   StreamSubscription<dynamic>? _incomingBundleSubscription;
   StreamSubscription<List<PeerContact>>? _peerRepositorySubscription;
   Timer? _forwardTimer;
+  Timer? _cleanupTimer;
   Timer? _livenessTimer;
   Future<void> _orchestrationTail = Future<void>.value();
 
@@ -131,6 +132,10 @@ class NodeRuntime {
       final peers = await _peerRepository.watchPeers().first;
       _syncPeersFromRepository(peers);
     });
+  }
+
+  Future<void> pruneExpiredBundlesNow() {
+    return _enqueueOrchestration(_pruneExpiredBundlesLocked);
   }
 
   Future<void> _enqueueOrchestration(Future<void> Function() action) {
@@ -193,7 +198,12 @@ class NodeRuntime {
       unawaited(_flushPendingOutboundBundlesLocked());
     });
 
+    _cleanupTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      unawaited(_pruneExpiredBundlesLocked());
+    });
+
     _livenessTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      unawaited(_pruneExpiredBundlesLocked());
       unawaited(_runPeerLivenessChecks());
     });
 
@@ -213,6 +223,9 @@ class NodeRuntime {
 
     _forwardTimer?.cancel();
     _forwardTimer = null;
+
+    _cleanupTimer?.cancel();
+    _cleanupTimer = null;
 
     _livenessTimer?.cancel();
     _livenessTimer = null;
@@ -733,7 +746,6 @@ class NodeRuntime {
 
     if (bundle.destinationNodeId != null &&
         bundle.destinationNodeId != _localNodeId &&
-        !bundle.isAck &&
         !bundle.isSyncRejection) {
       await _forwardInboundBundle(bundle);
       return;
@@ -768,7 +780,7 @@ class NodeRuntime {
       bundle,
       _pickRelayPeers(bundle, peers),
     );
-    final int fanout = _relayFanoutFor(bundle.priority);
+    final int fanout = bundle.isAck ? rankedRelays.length : _relayFanoutFor(bundle.priority);
 
     final List<DiscoveredPeer> relayTargets = <DiscoveredPeer>[
       ...directTarget == null
@@ -977,6 +989,29 @@ class NodeRuntime {
     await _enqueueAckBundleFor(bundle);
   }
 
+  Future<void> _pruneExpiredBundlesLocked() async {
+    final bundles = await _bundles.getAllBundles();
+    final expiredBundles = bundles
+        .where((bundle) => bundle.isExpired)
+        .toList(growable: false);
+    if (expiredBundles.isEmpty) {
+      return;
+    }
+
+    for (final bundle in expiredBundles) {
+      await _bundles.deleteBundle(bundle.bundleId);
+      _logger?.info(
+        'bundle_pruned_expired',
+        scope: 'runtime',
+        fields: {
+          'bundleId': bundle.bundleId,
+          'type': bundle.type,
+          'sourceNodeId': bundle.sourceNodeId,
+        },
+      );
+    }
+  }
+
   bool _isReadyForRetry(Bundle bundle, DateTime now) {
     if (bundle.failedAttempts == 0) {
       return bundle.sentAt == null;
@@ -1020,21 +1055,38 @@ class NodeRuntime {
     );
 
     await _bundles.save(signedAck);
-    final targetPeer = _peers[inbound.sourceNodeId];
-    if (targetPeer == null) {
+    final List<DiscoveredPeer> relayPeers = _rankPeersForBundle(
+      signedAck,
+      _pickRelayPeers(signedAck, _peers.values.toList(growable: false)),
+    );
+    final DiscoveredPeer? targetPeer = _peers[inbound.sourceNodeId];
+
+    final List<DiscoveredPeer> targets = <DiscoveredPeer>[
+      if (targetPeer != null) targetPeer,
+      ...relayPeers.where((peer) => peer.nodeId != targetPeer?.nodeId),
+    ];
+
+    if (targets.isEmpty) {
       return;
     }
 
-    try {
-      await _transport.sendBundle(
-        peerNodeId: targetPeer.nodeId,
-        bundle: signedAck,
-      );
-      _recordPeerSendSuccess(targetPeer.nodeId);
+    var sentAny = false;
+    for (final peer in targets) {
+      try {
+        await _transport.sendBundle(
+          peerNodeId: peer.nodeId,
+          bundle: signedAck,
+        );
+        _recordPeerSendSuccess(peer.nodeId);
+        sentAny = true;
+      } catch (_) {
+        _recordPeerSendFailure(peer.nodeId);
+        // Keep ACK available for future relays and expiry pruning.
+      }
+    }
+
+    if (sentAny) {
       await _bundles.markAcknowledged(signedAck.bundleId);
-    } catch (_) {
-      _recordPeerSendFailure(targetPeer.nodeId);
-      // Keep ACK pending for retry in periodic flush.
     }
   }
 }
