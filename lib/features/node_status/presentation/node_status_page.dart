@@ -65,6 +65,11 @@ class _NodeStatusPageState extends ConsumerState<NodeStatusPage> {
                       spacing: 8,
                       runSpacing: 8,
                       children: <Widget>[
+                        // FilledButton.tonalIcon(
+                        //   onPressed: () => context.push('/wallet'),
+                        //   icon: const Icon(Icons.account_balance_wallet_rounded),
+                        //   label: const Text('Wallet'),
+                        // ),
                         _StatusChip(
                           label: 'Health',
                           value: runtime.health.name,
@@ -536,6 +541,11 @@ class _NodeStatusPageState extends ConsumerState<NodeStatusPage> {
                         OutlinedButton(
                           onPressed: () => context.push('/files'),
                           child: const Text('Open Files'),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton(
+                          onPressed: () => context.push('/wallet'),
+                          child: const Text('Open Wallet'),
                         ),
                         const SizedBox(width: 8),
                         OutlinedButton(
