@@ -8,83 +8,6 @@ class DriftWalletRepository implements WalletRepository {
 
   final AppDatabase _db;
 
-  static final List<ledger.WalletLedgerEntry> _seedEntries =
-      <ledger.WalletLedgerEntry>[
-    ledger.WalletLedgerEntry(
-      entryId: 'wallet-opening-grant',
-      kind: ledger.WalletLedgerEventKind.openingGrant,
-      title: 'Genesis Grant',
-      subtitle: 'Opening balance seeded locally',
-      amountMinorUnits: 5000,
-      balanceImpactMinorUnits: 5000,
-      status: ledger.WalletLedgerStatus.confirmed,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(1700000000000),
-    ),
-    ledger.WalletLedgerEntry(
-      entryId: 'wallet-relay-reward',
-      kind: ledger.WalletLedgerEventKind.relayReward,
-      title: 'Relay Reward',
-      subtitle: 'Delivered via DTN fanout',
-      amountMinorUnits: 1250,
-      balanceImpactMinorUnits: 1250,
-      status: ledger.WalletLedgerStatus.confirmed,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(1700003600000),
-    ),
-    ledger.WalletLedgerEntry(
-      entryId: 'wallet-gateway-reward',
-      kind: ledger.WalletLedgerEventKind.gatewayReward,
-      title: 'Gateway Reward',
-      subtitle: 'Sync acknowledgement credited',
-      amountMinorUnits: 120,
-      balanceImpactMinorUnits: 120,
-      status: ledger.WalletLedgerStatus.confirmed,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(1700007200000),
-    ),
-    ledger.WalletLedgerEntry(
-      entryId: 'wallet-relay-reward-2',
-      kind: ledger.WalletLedgerEventKind.relayReward,
-      title: 'Relay Reward',
-      subtitle: 'Acknowledged on intermediate hop',
-      amountMinorUnits: 310,
-      balanceImpactMinorUnits: 310,
-      status: ledger.WalletLedgerStatus.confirmed,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(1700008000000),
-    ),
-    ledger.WalletLedgerEntry(
-      entryId: 'wallet-relay-reward-3',
-      kind: ledger.WalletLedgerEventKind.relayReward,
-      title: 'Relay Reward',
-      subtitle: 'Fanout preserved by DTN delivery',
-      amountMinorUnits: 150,
-      balanceImpactMinorUnits: 150,
-      status: ledger.WalletLedgerStatus.confirmed,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(1700009000000),
-    ),
-    ledger.WalletLedgerEntry(
-      entryId: 'wallet-settled-spend',
-      kind: ledger.WalletLedgerEventKind.spend,
-      title: 'Settled Spend',
-      subtitle: 'Signed transfer reconciled',
-      amountMinorUnits: -1830,
-      balanceImpactMinorUnits: -1830,
-      status: ledger.WalletLedgerStatus.confirmed,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(1700010800000),
-      counterpartyNodeId: 'node-settlement',
-    ),
-    ledger.WalletLedgerEntry(
-      entryId: 'wallet-rejected-spend',
-      kind: ledger.WalletLedgerEventKind.rejection,
-      title: 'Rejected Spend',
-      subtitle: 'Rejected by reconciliation',
-      amountMinorUnits: -4500,
-      balanceImpactMinorUnits: 0,
-      status: ledger.WalletLedgerStatus.rejected,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(1700014400000),
-      counterpartyNodeId: 'node-reject',
-      memo: 'Replay protection tripped',
-    ),
-  ];
-
   @override
   Future<void> appendEntry(ledger.WalletLedgerEntry entry) async {
     await _db.into(_db.walletLedgerEntries).insertOnConflictUpdate(
@@ -105,29 +28,11 @@ class DriftWalletRepository implements WalletRepository {
   }
 
   @override
-  Future<void> seedIfEmpty() async {
-    final existing = await (_db.select(_db.walletLedgerEntries)..limit(1))
-        .getSingleOrNull();
-    if (existing != null) {
-      return;
-    }
-
-  // Commenting out seeding for now to avoid confusion with real entries during development.
-    // await _db.transaction(() async {
-    //   for (final entry in _seedEntries) {
-    //     await appendEntry(entry);
-    //   }
-    // });
-  }
-
-  @override
   Stream<ledger.WalletLedgerDashboard> watchDashboard({
     int recentLimit = 3,
     int rewardLimit = 4,
     int logLimit = 6,
   }) async* {
-    await seedIfEmpty();
-
     final query = (_db.select(_db.walletLedgerEntries)
       ..orderBy(<OrderingTerm Function($WalletLedgerEntriesTable)>[
         (tbl) => OrderingTerm.desc(tbl.createdAtMs),
@@ -168,7 +73,10 @@ class DriftWalletRepository implements WalletRepository {
         .take(logLimit)
         .toList(growable: false);
     final recentEntries = entries.take(recentLimit).toList(growable: false);
-    final logEntries = entries.take(logLimit).toList(growable: false);
+    final logEntries = entries
+      .where((entry) => entry.kind != ledger.WalletLedgerEventKind.openingGrant)
+      .take(logLimit)
+      .toList(growable: false);
 
     final balanceMinorUnits = entries.fold<int>(
       0,
@@ -184,6 +92,13 @@ class DriftWalletRepository implements WalletRepository {
       0,
       (sum, entry) => sum + entry.amountMinorUnits,
     );
+    final resolvedSpendSourceIds = entries
+        .where(
+        (entry) => entry.status != ledger.WalletLedgerStatus.pending &&
+          entry.sourceBundleId != null,
+        )
+        .map((entry) => entry.sourceBundleId!)
+        .toSet();
     final pendingRewardMinorUnits = entries
         .where(
           (entry) =>
@@ -196,14 +111,18 @@ class DriftWalletRepository implements WalletRepository {
         .where(
           (entry) =>
               entry.kind == ledger.WalletLedgerEventKind.spend &&
-              entry.status == ledger.WalletLedgerStatus.pending,
+          entry.status == ledger.WalletLedgerStatus.pending &&
+          (entry.sourceBundleId == null ||
+            !resolvedSpendSourceIds.contains(entry.sourceBundleId)),
         )
         .length;
     final pendingSpendMinorUnits = entries
         .where(
           (entry) =>
               entry.kind == ledger.WalletLedgerEventKind.spend &&
-              entry.status == ledger.WalletLedgerStatus.pending,
+          entry.status == ledger.WalletLedgerStatus.pending &&
+          (entry.sourceBundleId == null ||
+            !resolvedSpendSourceIds.contains(entry.sourceBundleId)),
         )
         .fold<int>(0, (sum, entry) => sum + entry.amountMinorUnits.abs());
     final trustScore = _deriveTrustScore(entries);

@@ -70,9 +70,6 @@ class _FakeWalletRepository implements WalletRepository {
   }
 
   @override
-  Future<void> seedIfEmpty() async {}
-
-  @override
   Stream<WalletLedgerDashboard> watchDashboard({
     int recentLimit = 3,
     int rewardLimit = 4,

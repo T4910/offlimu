@@ -145,13 +145,13 @@ class _WalletHeader extends StatelessWidget {
         WalletSection.overview => 'Local Balance',
         WalletSection.pay => 'Offline Transfer',
         WalletSection.logs => 'Transaction Logs',
-        WalletSection.rewards => 'Incentive Earnings',
+        WalletSection.rewards => 'Reward Earnings',
         WalletSection.identity => 'My Node Identity',
       };
 
   String get _subtitle => switch (section) {
-        WalletSection.overview =>
-          'Everyone starts with 50 DTN. The ledger stays append-only and updates live.',
+          WalletSection.overview =>
+            'The ledger stays append-only and updates live.',
         WalletSection.pay =>
           'Prepare a signed spend event and persist it as a pending ledger entry.',
         WalletSection.logs =>
@@ -190,6 +190,18 @@ class _WalletHeader extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            if (showBackHome) ...<Widget>[
+              _HomeButton(onTap: () => context.go('/')),
+              const SizedBox(height: 8),
+            ],
+            _StatusBadge(label: 'NODE', value: _shortId(nodeId)),
+          ],
         ),
       ],
     );
@@ -327,7 +339,7 @@ class _WalletOverviewSection extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         _SectionCard(
-          title: 'Incentive Snapshot',
+          title: 'Reward Snapshot',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -446,15 +458,6 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
 
   @override
   Widget build(BuildContext context) {
-    WalletLedgerEntry? latestSpend;
-    for (final entry in widget.dashboard.paymentEntries) {
-      if (entry.kind == WalletLedgerEventKind.spend &&
-          entry.status == WalletLedgerStatus.confirmed) {
-        latestSpend = entry;
-        break;
-      }
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -553,12 +556,6 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
               _AuditRow(
                 label: 'Pending value',
                 value: _formatDtn(widget.dashboard.pendingSpendMinorUnits, includeSign: false),
-              ),
-              _AuditRow(
-                label: 'Last settled spend',
-                value: latestSpend == null
-                    ? 'None yet'
-                    : _formatDtn(latestSpend.amountMinorUnits.abs(), includeSign: false),
               ),
               _AuditRow(
                 label: 'Ledger updated',
@@ -714,6 +711,23 @@ class _WalletIdentitySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          const SizedBox(height: 14),
+          Center(
+            child: Container(
+              width: 184,
+              height: 184,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FCF6),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: const Color(0xFFD9E7D4)),
+              ),
+              child: const Icon(
+                Icons.qr_code_2_rounded,
+                size: 92,
+                color: Color(0xFF2E7D32),
+              ),
+            ),
+          ),
           SelectableText(
             nodeId,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -739,37 +753,8 @@ class _WalletIdentitySection extends StatelessWidget {
                   },
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _MiniActionButton(
-                  label: 'Share ID',
-                  icon: Icons.share_rounded,
-                  onTap: () {},
-                ),
-              ),
             ],
           ),
-          const SizedBox(height: 14),
-          Center(
-            child: Container(
-              width: 184,
-              height: 184,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FCF6),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: const Color(0xFFD9E7D4)),
-              ),
-              child: const Icon(
-                Icons.qr_code_2_rounded,
-                size: 92,
-                color: Color(0xFF2E7D32),
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          const _AuditRow(label: 'Node Type', value: 'Wallet-enabled relay'),
-          const _AuditRow(label: 'Transport', value: 'DTN bundle propagation'),
-          const _AuditRow(label: 'Reconciliation', value: 'Gateway signed events'),
         ],
       ),
     );

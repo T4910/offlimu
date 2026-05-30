@@ -37,7 +37,10 @@ import 'package:offlimu/domain/use_cases/receive_chat_message_use_case.dart';
 import 'package:offlimu/domain/use_cases/initiate_wallet_spend_use_case.dart';
 import 'package:offlimu/domain/use_cases/send_chat_message_use_case.dart';
 import 'package:offlimu/domain/use_cases/send_file_transfer_use_case.dart';
+import 'package:offlimu/domain/use_cases/reward_issuance_use_case.dart';
 import 'package:offlimu/domain/use_cases/wallet_event_bundle_mapper.dart';
+import 'package:offlimu/domain/use_cases/wallet_sync_reconciliation_service.dart';
+import 'package:offlimu/domain/use_cases/reward_derivation_service.dart';
 import 'package:offlimu/infrastructure/db/app_database.dart' hide PeerContact;
 import 'package:offlimu/infrastructure/db/drift_bundle_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_chat_message_repository.dart';
@@ -280,6 +283,36 @@ final Provider<InitiateWalletSpendUseCase> initiateWalletSpendUseCaseProvider =
       ),
     );
 
+final Provider<RewardIssuanceUseCase> rewardIssuanceUseCaseProvider =
+    Provider<RewardIssuanceUseCase>(
+      (ref) => RewardIssuanceUseCase(
+        bundleRepository: ref.watch(bundleRepositoryProvider),
+        walletRepository: ref.watch(walletRepositoryProvider),
+        bundleSignatureService: ref.watch(bundleSignatureServiceProvider),
+      ),
+    );
+
+final Provider<RewardDerivationService> rewardDerivationServiceProvider =
+    Provider<RewardDerivationService>((ref) {
+  final runtime = ref.watch(nodeRuntimeProvider);
+  final issuance = ref.watch(rewardIssuanceUseCaseProvider);
+  final localNodeId = ref.watch(localNodeIdentityProvider).nodeId;
+  return RewardDerivationService(
+    runtime: runtime,
+    issuance: issuance,
+    localNodeId: localNodeId,
+  );
+});
+
+final Provider<WalletSyncReconciliationService>
+walletSyncReconciliationServiceProvider =
+    Provider<WalletSyncReconciliationService>(
+      (ref) => WalletSyncReconciliationService(
+        walletRepository: ref.watch(walletRepositoryProvider),
+        mapper: ref.watch(walletEventBundleMapperProvider),
+      ),
+    );
+
 final StreamProvider<List<Bundle>> pendingBundlesProvider =
     StreamProvider<List<Bundle>>(
       (ref) => ref.watch(bundleRepositoryProvider).watchPendingBundles(),
@@ -387,6 +420,8 @@ final Provider<SyncEngine> syncEngineProvider = Provider<SyncEngine>(
     syncApi: ref.watch(syncApiProvider),
     syncJobs: ref.watch(syncJobRepositoryProvider),
     deviceConditions: ref.watch(deviceConditionsServiceProvider),
+    walletSyncReconciliationService:
+        ref.watch(walletSyncReconciliationServiceProvider),
     logger: ref.watch(loggerServiceProvider),
     devicePolicy: SyncDevicePolicy(
       allowMeteredNetwork: _appConfig.syncAllowMeteredNetwork,
@@ -594,6 +629,12 @@ Future<void> _runScheduledTask(Ref ref, String taskId) async {
           .runManual(gatewayEnabled: gatewayEnabled);
     } catch (_) {
       // Sync failures are already reflected in sync history and status providers.
+    }
+    // After a scheduled sync run, attempt reward derivation and issuance.
+    try {
+      await ref.read(rewardDerivationServiceProvider).deriveAndIssueIfEligible();
+    } catch (_) {
+      // Non-fatal: reward derivation should not break scheduled tasks.
     }
     return;
   }

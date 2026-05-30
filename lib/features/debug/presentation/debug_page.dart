@@ -14,6 +14,7 @@ import 'package:offlimu/domain/entities/bundle.dart';
 import 'package:offlimu/domain/entities/chat_message.dart'
   show ChatMessage, MessageDeliveryStatus;
 import 'package:offlimu/domain/entities/content_metadata_record.dart';
+import 'package:offlimu/domain/entities/wallet_ledger_entry.dart' as ledger;
 import 'package:offlimu/domain/entities/peer_contact.dart';
 import 'package:offlimu/domain/entities/sync_job_history_entry.dart';
 
@@ -27,6 +28,14 @@ class DebugPage extends ConsumerStatefulWidget {
 class _DebugPageState extends ConsumerState<DebugPage> {
   String _filter = '';
   bool _failuresOnly = false;
+  final TextEditingController _walletGrantAmountController =
+      TextEditingController(text: '50');
+
+  @override
+  void dispose() {
+    _walletGrantAmountController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +55,7 @@ class _DebugPageState extends ConsumerState<DebugPage> {
     final errorLogStore = ref.watch(appErrorLogStoreProvider);
     final runtimeLogStore = ref.watch(runtimeLogStoreProvider);
     final bundleRepository = ref.watch(bundleRepositoryProvider);
+    final walletDashboardAsync = ref.watch(walletDashboardProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -204,6 +214,48 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                     },
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            _SectionCard(
+              title: 'Wallet Grant',
+              subtitle: 'Issue a manual confirmed reward entry for wallet bootstrap or testing.',
+              child: walletDashboardAsync.when(
+                loading: () => const Text('Loading wallet state...'),
+                error: (error, stackTrace) => Text('Wallet error: $error'),
+                data: (dashboard) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      _LabelValueRow(
+                        label: 'Current balance',
+                        value: _formatMinorUnits(dashboard.balanceMinorUnits),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: TextField(
+                              controller: _walletGrantAmountController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                isDense: true,
+                                labelText: 'Coins to grant',
+                                hintText: '50',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          FilledButton(
+                            onPressed: () => _grantWalletCoins(context),
+                            child: const Text('Grant Coins'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
             const SizedBox(height: 10),
@@ -609,7 +661,7 @@ class _DebugPageState extends ConsumerState<DebugPage> {
         return AlertDialog(
           title: const Text('Reset all local data?'),
           content: const Text(
-            'This clears chats, bundles, peers, sync history, logs, and cached content. Node identity stays intact.',
+            'This clears chats, bundles, wallet data, peers, sync history, logs, and cached content. Node identity stays intact.',
           ),
           actions: <Widget>[
             TextButton(
@@ -640,6 +692,39 @@ class _DebugPageState extends ConsumerState<DebugPage> {
         _failuresOnly = false;
       });
     });
+  }
+
+  Future<void> _grantWalletCoins(BuildContext context) async {
+    final amountText = _walletGrantAmountController.text.trim();
+    final amountCoins = double.tryParse(amountText);
+
+    if (amountCoins == null || amountCoins <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid coin amount before granting.')),
+      );
+      return;
+    }
+
+    final amountMinorUnits = (amountCoins * 100).round();
+    final entry = ledger.WalletLedgerEntry(
+      entryId: 'debug-wallet-grant-${DateTime.now().microsecondsSinceEpoch}',
+      kind: ledger.WalletLedgerEventKind.gatewayReward,
+      title: 'Debugger Grant',
+      subtitle: 'Manual coin grant from debugger',
+      amountMinorUnits: amountMinorUnits,
+      balanceImpactMinorUnits: amountMinorUnits,
+      status: ledger.WalletLedgerStatus.confirmed,
+      createdAt: DateTime.now(),
+      memo: 'Debug grant',
+    );
+
+    await _runAction(context, () => ref.read(walletRepositoryProvider).appendEntry(entry));
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Granted ${_formatMinorUnits(amountMinorUnits)} to the wallet.')),
+    );
   }
 
   Future<void> _copyDiagnostics({
@@ -928,6 +1013,11 @@ class _DebugPageState extends ConsumerState<DebugPage> {
 
   String _appErrorToLine(AppErrorLogEntry entry) {
     return '${entry.timestamp.toIso8601String()} ${entry.source} ${entry.error}';
+  }
+
+  String _formatMinorUnits(int minorUnits) {
+    final coins = minorUnits / 100;
+    return '${coins.toStringAsFixed(2)} DTN';
   }
 
   Map<String, Object?> _telemetryToJson(RuntimeTelemetry telemetry) {

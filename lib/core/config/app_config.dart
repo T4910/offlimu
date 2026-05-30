@@ -68,7 +68,7 @@ class AppConfig {
       ),
       syncBaseUrl: const String.fromEnvironment(
         'OFFLIMU_SYNC_BASE_URL',
-        defaultValue: 'http://127.0.0.1:8080',
+        defaultValue: 'http://localhost:7774',
       ),
       syncAllowMeteredNetwork: const bool.fromEnvironment(
         'OFFLIMU_SYNC_ALLOW_METERED',

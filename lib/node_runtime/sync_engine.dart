@@ -5,6 +5,7 @@ import 'package:offlimu/domain/repositories/sync_job_repository.dart';
 import 'package:offlimu/domain/services/device_conditions_service.dart';
 import 'package:offlimu/domain/services/logger_service.dart';
 import 'package:offlimu/domain/services/sync_api.dart';
+import 'package:offlimu/domain/use_cases/wallet_sync_reconciliation_service.dart';
 
 class SyncDevicePolicy {
   const SyncDevicePolicy({
@@ -43,6 +44,7 @@ class SyncEngine {
     required SyncApi syncApi,
     required SyncJobRepository syncJobs,
     required DeviceConditionsService deviceConditions,
+    WalletSyncReconciliationService? walletSyncReconciliationService,
     LoggerService? logger,
     this.devicePolicy = const SyncDevicePolicy(),
     this.maxHopCount = 5,
@@ -51,6 +53,7 @@ class SyncEngine {
        _syncApi = syncApi,
        _syncJobs = syncJobs,
        _deviceConditions = deviceConditions,
+       _walletSyncReconciliationService = walletSyncReconciliationService,
        _logger = logger;
 
   final String _localNodeId;
@@ -58,6 +61,7 @@ class SyncEngine {
   final SyncApi _syncApi;
   final SyncJobRepository _syncJobs;
   final DeviceConditionsService _deviceConditions;
+  final WalletSyncReconciliationService? _walletSyncReconciliationService;
   final LoggerService? _logger;
   final SyncDevicePolicy devicePolicy;
   final int maxHopCount;
@@ -200,6 +204,17 @@ class SyncEngine {
       uploadedCount = outbound.length;
       final uploadResult = await _syncApi.uploadBundles(outbound);
 
+      await _walletSyncReconciliationService?.applyUploadResult(
+        outboundBundles: outbound,
+        rejectedBundleIds: uploadResult.rejections
+            .map((rejection) => rejection.bundleId)
+            .toSet(),
+        rejectedReasonsByBundleId: {
+          for (final rejection in uploadResult.rejections)
+            rejection.bundleId: rejection.reason,
+        },
+      );
+
       final acknowledgedIds = uploadResult.acknowledgedBundleIds.toSet();
       final rejectedById = {
         for (final rejection in uploadResult.rejections)
@@ -252,6 +267,12 @@ class SyncEngine {
               reason: bundle.payload ?? 'Rejected by sync server',
             );
           }
+          continue;
+        }
+
+        if (bundle.isWalletEvent) {
+          await _walletSyncReconciliationService?.applyInboundWalletBundle(bundle);
+          await _bundles.markAcknowledged(bundle.bundleId);
           continue;
         }
 

@@ -6,26 +6,37 @@ import 'package:offlimu/infrastructure/db/drift_wallet_repository.dart';
 
 void main() {
   group('DriftWalletRepository', () {
-    test('seeds the ledger with a 50 DTN opening balance', () async {
+    test('starts empty until a manual grant is added', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
 
       final repository = DriftWalletRepository(db);
       final dashboard = await repository.watchDashboard().first;
 
-      expect(dashboard.balanceMinorUnits, 5000);
-      expect(dashboard.rewardEntries, hasLength(4));
-      expect(dashboard.recentEntries, isNotEmpty);
+      expect(dashboard.balanceMinorUnits, 0);
+      expect(dashboard.rewardEntries, isEmpty);
+      expect(dashboard.recentEntries, isEmpty);
       expect(dashboard.pendingSpendCount, 0);
-      expect(dashboard.logEntries.first.title, 'Rejected Spend');
+      expect(dashboard.logEntries, isEmpty);
     });
 
-    test('persists a pending spend without changing the balance', () async {
+    test('persists a manual grant and a pending spend without changing the grant balance', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
 
       final repository = DriftWalletRepository(db);
-      await repository.seedIfEmpty();
+      await repository.appendEntry(
+        ledger.WalletLedgerEntry(
+          entryId: 'debug-grant-1',
+          kind: ledger.WalletLedgerEventKind.gatewayReward,
+          title: 'Debugger Grant',
+          subtitle: 'Manual coin grant',
+          amountMinorUnits: 5000,
+          balanceImpactMinorUnits: 5000,
+          status: ledger.WalletLedgerStatus.confirmed,
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1700017000000),
+        ),
+      );
       await repository.appendEntry(
         ledger.WalletLedgerEntry(
           entryId: 'pending-test-spend',
@@ -44,6 +55,7 @@ void main() {
 
       expect(dashboard.balanceMinorUnits, 5000);
       expect(dashboard.pendingSpendCount, 1);
+      expect(dashboard.rewardEntries, hasLength(1));
       expect(
         dashboard.paymentEntries.any((entry) => entry.entryId == 'pending-test-spend'),
         isTrue,
