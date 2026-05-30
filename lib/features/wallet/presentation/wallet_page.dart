@@ -421,6 +421,7 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
     }
 
     final amountMinorUnits = (amount * 100).round();
+    String? errorMessage;
     try {
       await ref.read(initiateWalletSpendUseCaseProvider).initiate(
             localNodeId: widget.nodeId,
@@ -429,14 +430,14 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
             memo: _memoController.text.trim(),
           );
     } on ArgumentError catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message ?? error.toString())),
-      );
-      return;
+      errorMessage = error.message ?? error.toString();
     } on StateError catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      errorMessage = error.message;
+    }
+
+    if (errorMessage != null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
       return;
     }
 
@@ -902,7 +903,7 @@ class _SectionCard extends StatelessWidget {
                         ),
                   ),
                 ),
-                if (trailing != null) trailing!,
+                ?trailing,
               ],
             ),
             const SizedBox(height: 12),

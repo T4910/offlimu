@@ -57,6 +57,11 @@ class WalletSyncReconciliationService {
   }
 
   Future<void> applyInboundWalletBundle(Bundle bundle) async {
+    if (bundle.type == Bundle.typeWalletSpend) {
+      await _applyInboundSpend(bundle);
+      return;
+    }
+
     if (bundle.type == Bundle.typeWalletConfirmation) {
       await _applyConfirmation(bundle);
       return;
@@ -144,6 +149,29 @@ class WalletSyncReconciliationService {
         memo: payload.memo ?? reason,
         counterpartyNodeId: payload.recipientNodeId,
         sourceBundleId: payload.sourceSpendBundleId,
+      ),
+    );
+  }
+
+  Future<void> _applyInboundSpend(Bundle bundle) async {
+    final WalletSpendPayload? payload = _mapper.decodeSpendPayload(bundle);
+    if (payload == null) {
+      return;
+    }
+
+    await _walletRepository.appendEntry(
+      ledger.WalletLedgerEntry(
+        entryId: 'wallet-received-${bundle.bundleId}',
+        kind: ledger.WalletLedgerEventKind.confirmation,
+        title: 'Received Payment',
+        subtitle: 'From ${bundle.sourceNodeId}',
+        amountMinorUnits: payload.amountMinorUnits,
+        balanceImpactMinorUnits: payload.amountMinorUnits,
+        status: ledger.WalletLedgerStatus.confirmed,
+        createdAt: payload.createdAt,
+        memo: payload.memo,
+        counterpartyNodeId: bundle.sourceNodeId,
+        sourceBundleId: bundle.bundleId,
       ),
     );
   }

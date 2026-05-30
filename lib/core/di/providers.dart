@@ -294,11 +294,10 @@ final Provider<RewardIssuanceUseCase> rewardIssuanceUseCaseProvider =
 
 final Provider<RewardDerivationService> rewardDerivationServiceProvider =
     Provider<RewardDerivationService>((ref) {
-  final runtime = ref.watch(nodeRuntimeProvider);
-  final issuance = ref.watch(rewardIssuanceUseCaseProvider);
+ final issuance = ref.watch(rewardIssuanceUseCaseProvider);
   final localNodeId = ref.watch(localNodeIdentityProvider).nodeId;
   return RewardDerivationService(
-    runtime: runtime,
+    outboundSendSuccessesGetter: () => ref.watch(nodeRuntimeProvider).telemetry.outboundSendSuccesses,
     issuance: issuance,
     localNodeId: localNodeId,
   );
@@ -532,6 +531,7 @@ final Provider<NodeRuntime> nodeRuntimeProvider = Provider<NodeRuntime>((ref) {
     contentStore: ref.watch(contentStoreProvider),
     bundleSignatureService: ref.watch(bundleSignatureServiceProvider),
     maxHopCount: _appConfig.maxBundleHopCount,
+    walletSyncReconciliationService: ref.watch(walletSyncReconciliationServiceProvider),
     logger: ref.watch(loggerServiceProvider),
   );
   ref.onDispose(() {

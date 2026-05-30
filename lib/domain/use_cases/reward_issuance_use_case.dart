@@ -53,7 +53,7 @@ class RewardIssuanceUseCase {
       ttlSeconds: 60 * 60 * 24,
     );
 
-    final Bundle signed = await _bundle_signature_or_sign(unsigned, localNodeId);
+    final Bundle signed = await _bundleSignatureOrSign(unsigned, localNodeId);
 
     final ledger.WalletLedgerEntry pendingEntry = ledger.WalletLedgerEntry(
       entryId: signed.bundleId,
@@ -75,11 +75,11 @@ class RewardIssuanceUseCase {
   }
 
   // Separated to keep tests easier to mock if needed.
-  Future<Bundle> _bundle_signature_or_sign(Bundle unsigned, String nodeId) async {
-    return _bundle_signature_or_sign_impl(unsigned, nodeId);
+  Future<Bundle> _bundleSignatureOrSign(Bundle unsigned, String nodeId) async {
+    return _bundleSignatureOrSignImpl(unsigned, nodeId);
   }
 
-  Future<Bundle> _bundle_signature_or_sign_impl(Bundle unsigned, String nodeId) async {
+  Future<Bundle> _bundleSignatureOrSignImpl(Bundle unsigned, String nodeId) async {
     return _bundleSignatureService.sign(bundle: unsigned, nodeId: nodeId);
   }
 }

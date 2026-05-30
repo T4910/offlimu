@@ -24,6 +24,32 @@ void main() {
     final now = DateTime.now();
 
     final walletRepository = DriftWalletRepository(db);
+    // Seed opening grant so spends have balance in tests.
+    await walletRepository.appendEntry(
+      ledger.WalletLedgerEntry(
+        entryId: 'opening-grant',
+        kind: ledger.WalletLedgerEventKind.openingGrant,
+        title: 'Opening Grant',
+        subtitle: 'Test seed',
+        amountMinorUnits: 5000,
+        balanceImpactMinorUnits: 5000,
+        status: ledger.WalletLedgerStatus.confirmed,
+        createdAt: now.subtract(const Duration(minutes: 5)),
+      ),
+    );
+    // Seed opening grant so spends have balance in tests.
+    await walletRepository.appendEntry(
+      ledger.WalletLedgerEntry(
+        entryId: 'opening-grant',
+        kind: ledger.WalletLedgerEventKind.openingGrant,
+        title: 'Opening Grant',
+        subtitle: 'Test seed',
+        amountMinorUnits: 5000,
+        balanceImpactMinorUnits: 5000,
+        status: ledger.WalletLedgerStatus.confirmed,
+        createdAt: now.subtract(const Duration(minutes: 5)),
+      ),
+    );
     final bundleRepository = DriftBundleRepository(db, localNodeId: 'node-local-001');
     final mapper = WalletEventBundleMapper();
     final signatureService = _PassThroughSignatureService();
@@ -100,6 +126,19 @@ void main() {
     final now = DateTime.now();
 
     final walletRepository = DriftWalletRepository(db);
+    // Seed opening grant so spends have balance in tests.
+    await walletRepository.appendEntry(
+      ledger.WalletLedgerEntry(
+        entryId: 'opening-grant',
+        kind: ledger.WalletLedgerEventKind.openingGrant,
+        title: 'Opening Grant',
+        subtitle: 'Test seed',
+        amountMinorUnits: 5000,
+        balanceImpactMinorUnits: 5000,
+        status: ledger.WalletLedgerStatus.confirmed,
+        createdAt: now.subtract(const Duration(minutes: 5)),
+      ),
+    );
     final bundleRepository = DriftBundleRepository(db, localNodeId: 'node-local-001');
     final mapper = WalletEventBundleMapper();
     final signatureService = _PassThroughSignatureService();
@@ -169,9 +208,22 @@ void main() {
     final now = DateTime.now();
 
     final walletRepository = DriftWalletRepository(db);
+    // Seed opening grant so reward tests start from a baseline.
+    await walletRepository.appendEntry(
+      ledger.WalletLedgerEntry(
+        entryId: 'opening-grant',
+        kind: ledger.WalletLedgerEventKind.openingGrant,
+        title: 'Opening Grant',
+        subtitle: 'Test seed',
+        amountMinorUnits: 5000,
+        balanceImpactMinorUnits: 5000,
+        status: ledger.WalletLedgerStatus.confirmed,
+        createdAt: now.subtract(const Duration(minutes: 5)),
+      ),
+    );
     final bundleRepository = DriftBundleRepository(db, localNodeId: 'node-local-001');
     final mapper = WalletEventBundleMapper();
-    final signatureService = _PassThroughSignatureService();
+    // final signatureService = _PassThroughSignatureService();
 
     final walletSyncReconciliationService = WalletSyncReconciliationService(
       walletRepository: walletRepository,

@@ -13,6 +13,7 @@ import 'package:offlimu/domain/services/discovery_adapter.dart';
 import 'package:offlimu/domain/services/content_store.dart';
 import 'package:offlimu/domain/services/logger_service.dart';
 import 'package:offlimu/domain/services/transport_adapter.dart';
+import 'package:offlimu/domain/use_cases/wallet_sync_reconciliation_service.dart';
 import 'package:offlimu/node_runtime/node_runtime_state.dart';
 
 class NodeRuntime {
@@ -32,6 +33,7 @@ class NodeRuntime {
     this.duplicatePeerSuppressionWindow = const Duration(seconds: 8),
     this.peerLivenessFailureThreshold = 2,
     LoggerService? logger,
+     WalletSyncReconciliationService? walletSyncReconciliationService,
   }) : _localNodeId = localNodeId,
        _discovery = discovery,
        _transport = transport,
@@ -39,7 +41,8 @@ class NodeRuntime {
        _peerRepository = peers,
        _contentStore = contentStore,
        _bundleSignatureService = bundleSignatureService,
-       _logger = logger {
+       _logger = logger,
+       _walletSyncReconciliationService = walletSyncReconciliationService {
     _healthController.add(_health);
     _peerCountController.add(_peerCount);
     _telemetryController.add(_telemetry);
@@ -54,6 +57,7 @@ class NodeRuntime {
   final ContentStore _contentStore;
   final BundleSignatureService _bundleSignatureService;
   final LoggerService? _logger;
+  final WalletSyncReconciliationService? _walletSyncReconciliationService;
   final int maxHopCount;
   final int maxSendAttempts;
   final Duration retryBaseDelay;
@@ -292,7 +296,6 @@ class NodeRuntime {
           // .where((bundle) => bundle.sourceNodeId == _localNodeId)
           // .toList(growable: false);
 
-      print(outbound);
       if (outbound.isEmpty) {
         return;
       }
@@ -986,6 +989,10 @@ class NodeRuntime {
 
   Future<void> _handleInboundAppBundle(Bundle bundle) async {
     await _bundles.markAcknowledged(bundle.bundleId);
+    if (bundle.isWalletEvent && bundle.destinationNodeId == _localNodeId) {
+      // Apply wallet event immediately so recipient is credited on receipt.
+      await _walletSyncReconciliationService?.applyInboundWalletBundle(bundle);
+    }
     await _enqueueAckBundleFor(bundle);
   }
 
@@ -1062,7 +1069,7 @@ class NodeRuntime {
     final DiscoveredPeer? targetPeer = _peers[inbound.sourceNodeId];
 
     final List<DiscoveredPeer> targets = <DiscoveredPeer>[
-      if (targetPeer != null) targetPeer,
+      ?targetPeer,
       ...relayPeers.where((peer) => peer.nodeId != targetPeer?.nodeId),
     ];
 
