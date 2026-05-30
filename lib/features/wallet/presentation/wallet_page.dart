@@ -19,6 +19,7 @@ class WalletPage extends ConsumerWidget {
         WalletLedgerDashboard.empty();
 
     return Scaffold(
+      appBar: AppBar(title: const Text('Wallet')),
       backgroundColor: const Color(0xFFF5F8F2),
       body: Stack(
         children: <Widget>[
@@ -189,18 +190,6 @@ class _WalletHeader extends StatelessWidget {
               ),
             ],
           ),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: <Widget>[
-            // if (showBackHome) ...<Widget>[
-              _HomeButton(onTap: () => context.go('/')),
-              const SizedBox(height: 8),
-            // ],
-            // _StatusBadge(label: 'NODE', value: _shortId(nodeId)),
-          ],
         ),
       ],
     );
@@ -420,21 +409,24 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
     }
 
     final amountMinorUnits = (amount * 100).round();
-    final now = DateTime.now();
-    final entry = WalletLedgerEntry(
-      entryId: 'pending-${now.millisecondsSinceEpoch}',
-      kind: WalletLedgerEventKind.spend,
-      title: 'Pending Spend',
-      subtitle: recipient.isEmpty ? 'Awaiting reconciliation' : 'To $recipient',
-      amountMinorUnits: -amountMinorUnits,
-      balanceImpactMinorUnits: 0,
-      status: WalletLedgerStatus.pending,
-      createdAt: now,
-      memo: _memoController.text.trim().isEmpty ? null : _memoController.text.trim(),
-      counterpartyNodeId: recipient.isEmpty ? null : recipient,
-    );
-
-    await ref.read(walletRepositoryProvider).appendEntry(entry);
+    try {
+      await ref.read(initiateWalletSpendUseCaseProvider).initiate(
+            localNodeId: widget.nodeId,
+            recipientNodeId: recipient,
+            amountMinorUnits: amountMinorUnits,
+            memo: _memoController.text.trim(),
+          );
+    } on ArgumentError catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message ?? error.toString())),
+      );
+      return;
+    } on StateError catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+      return;
+    }
 
     if (!mounted) {
       return;

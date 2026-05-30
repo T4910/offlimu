@@ -33,6 +33,10 @@ class Bundle {
   static const String typeFileShareChunk = 'file_share_chunk';
   static const String typeAck = 'ack';
   static const String typeSyncRejection = 'sync_rejection';
+  static const String typeWalletSpend = 'wallet_spend';
+  static const String typeWalletConfirmation = 'wallet_confirmation';
+  static const String typeWalletRejection = 'wallet_rejection';
+  static const String typeWalletReward = 'wallet_reward';
 
   final String bundleId;
   final String type;
@@ -57,6 +61,11 @@ class Bundle {
 
   bool get isAck => type == typeAck;
   bool get isSyncRejection => type == typeSyncRejection;
+  bool get isWalletEvent =>
+      type == typeWalletSpend ||
+      type == typeWalletConfirmation ||
+      type == typeWalletRejection ||
+      type == typeWalletReward;
 
   String get signaturePayload => jsonEncode(<String, Object?>{
     'bundleId': bundleId,

@@ -34,8 +34,10 @@ import 'package:offlimu/domain/services/content_store.dart';
 import 'package:offlimu/domain/use_cases/chat_message_bundle_mapper.dart';
 import 'package:offlimu/domain/use_cases/prepare_bundle_content_use_case.dart';
 import 'package:offlimu/domain/use_cases/receive_chat_message_use_case.dart';
+import 'package:offlimu/domain/use_cases/initiate_wallet_spend_use_case.dart';
 import 'package:offlimu/domain/use_cases/send_chat_message_use_case.dart';
 import 'package:offlimu/domain/use_cases/send_file_transfer_use_case.dart';
+import 'package:offlimu/domain/use_cases/wallet_event_bundle_mapper.dart';
 import 'package:offlimu/infrastructure/db/app_database.dart' hide PeerContact;
 import 'package:offlimu/infrastructure/db/drift_bundle_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_chat_message_repository.dart';
@@ -263,6 +265,19 @@ final Provider<SyncJobRepository> syncJobRepositoryProvider =
 final Provider<WalletRepository> walletRepositoryProvider =
     Provider<WalletRepository>(
       (ref) => DriftWalletRepository(ref.watch(appDatabaseProvider)),
+    );
+
+final Provider<WalletEventBundleMapper> walletEventBundleMapperProvider =
+    Provider<WalletEventBundleMapper>((ref) => const WalletEventBundleMapper());
+
+final Provider<InitiateWalletSpendUseCase> initiateWalletSpendUseCaseProvider =
+    Provider<InitiateWalletSpendUseCase>(
+      (ref) => InitiateWalletSpendUseCase(
+        walletRepository: ref.watch(walletRepositoryProvider),
+        bundleRepository: ref.watch(bundleRepositoryProvider),
+        bundleSignatureService: ref.watch(bundleSignatureServiceProvider),
+        mapper: ref.watch(walletEventBundleMapperProvider),
+      ),
     );
 
 final StreamProvider<List<Bundle>> pendingBundlesProvider =
