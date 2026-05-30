@@ -100,6 +100,23 @@ class ContentMetadata extends Table {
   Set<Column<Object>>? get primaryKey => {contentHash};
 }
 
+class WalletLedgerEntries extends Table {
+  TextColumn get entryId => text()();
+  TextColumn get kind => text()();
+  TextColumn get title => text()();
+  TextColumn get subtitle => text()();
+  IntColumn get amountMinorUnits => integer()();
+  IntColumn get balanceImpactMinorUnits => integer()();
+  TextColumn get status => text()();
+  IntColumn get createdAtMs => integer()();
+  TextColumn get memo => text().nullable()();
+  TextColumn get counterpartyNodeId => text().nullable()();
+  TextColumn get sourceBundleId => text().nullable()();
+
+  @override
+  Set<Column<Object>>? get primaryKey => {entryId};
+}
+
 @DriftDatabase(
   tables: <Type>[
     BundleRecords,
@@ -108,6 +125,7 @@ class ContentMetadata extends Table {
     MessageProjections,
     AckEvents,
     ContentMetadata,
+    WalletLedgerEntries,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -116,7 +134,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -169,6 +187,9 @@ class AppDatabase extends _$AppDatabase {
       if (from < 12) {
         await m.addColumn(bundleRecords, bundleRecords.sourcePublicKey);
       }
+      if (from < 13) {
+        await m.createTable(walletLedgerEntries);
+      }
     },
   );
 
@@ -194,6 +215,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(peerContacts).go();
       await delete(syncJobs).go();
       await delete(contentMetadata).go();
+      await delete(walletLedgerEntries).go();
       await customStatement('DELETE FROM sqlite_sequence;');
     });
   }

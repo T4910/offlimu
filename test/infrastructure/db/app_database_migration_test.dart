@@ -9,7 +9,7 @@ import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 void main() {
   group('AppDatabase migrations', () {
-    test('migrates v9 schema to v12 and preserves rows', () async {
+    test('migrates v9 schema to v13 and preserves rows', () async {
       final tempDir = await Directory.systemTemp.createTemp('offlimu-db-');
       final dbFile = File(p.join(tempDir.path, 'offlimu.sqlite'));
 
@@ -173,15 +173,15 @@ WHERE bundle_id = ?
     });
 
     test(
-    'fresh v12 schema includes DTN metadata and content metadata table',
-    () async {
+      'fresh v13 schema includes DTN metadata, wallet ledger, and content metadata table',
+      () async {
         final db = AppDatabase.forTesting(NativeDatabase.memory());
         addTearDown(db.close);
 
         final version = await db
             .customSelect('PRAGMA user_version')
             .getSingle();
-        expect(version.data['user_version'], 12);
+      expect(version.data['user_version'], 13);
 
         final columnRows = await db
             .customSelect('PRAGMA table_info(bundle_records)')
@@ -200,6 +200,30 @@ WHERE bundle_id = ?
             'signature',
             'app_id',
             'expires_at_ms',
+          }),
+        );
+
+        final walletColumns = await db
+            .customSelect('PRAGMA table_info(wallet_ledger_entries)')
+            .get();
+        final walletColumnNames = walletColumns
+            .map((row) => row.data['name'] as String)
+            .toSet();
+
+        expect(
+          walletColumnNames,
+          containsAll(<String>{
+            'entry_id',
+            'kind',
+            'title',
+            'subtitle',
+            'amount_minor_units',
+            'balance_impact_minor_units',
+            'status',
+            'created_at_ms',
+            'memo',
+            'counterparty_node_id',
+            'source_bundle_id',
           }),
         );
 

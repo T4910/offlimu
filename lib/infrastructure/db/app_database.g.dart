@@ -3642,6 +3642,702 @@ class ContentMetadataCompanion extends UpdateCompanion<ContentMetadataData> {
   }
 }
 
+class $WalletLedgerEntriesTable extends WalletLedgerEntries
+    with TableInfo<$WalletLedgerEntriesTable, WalletLedgerEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WalletLedgerEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _entryIdMeta = const VerificationMeta(
+    'entryId',
+  );
+  @override
+  late final GeneratedColumn<String> entryId = GeneratedColumn<String>(
+    'entry_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _subtitleMeta = const VerificationMeta(
+    'subtitle',
+  );
+  @override
+  late final GeneratedColumn<String> subtitle = GeneratedColumn<String>(
+    'subtitle',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMinorUnitsMeta = const VerificationMeta(
+    'amountMinorUnits',
+  );
+  @override
+  late final GeneratedColumn<int> amountMinorUnits = GeneratedColumn<int>(
+    'amount_minor_units',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _balanceImpactMinorUnitsMeta =
+      const VerificationMeta('balanceImpactMinorUnits');
+  @override
+  late final GeneratedColumn<int> balanceImpactMinorUnits =
+      GeneratedColumn<int>(
+        'balance_impact_minor_units',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMsMeta = const VerificationMeta(
+    'createdAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtMs = GeneratedColumn<int>(
+    'created_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _memoMeta = const VerificationMeta('memo');
+  @override
+  late final GeneratedColumn<String> memo = GeneratedColumn<String>(
+    'memo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _counterpartyNodeIdMeta =
+      const VerificationMeta('counterpartyNodeId');
+  @override
+  late final GeneratedColumn<String> counterpartyNodeId =
+      GeneratedColumn<String>(
+        'counterparty_node_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sourceBundleIdMeta = const VerificationMeta(
+    'sourceBundleId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceBundleId = GeneratedColumn<String>(
+    'source_bundle_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    entryId,
+    kind,
+    title,
+    subtitle,
+    amountMinorUnits,
+    balanceImpactMinorUnits,
+    status,
+    createdAtMs,
+    memo,
+    counterpartyNodeId,
+    sourceBundleId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'wallet_ledger_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WalletLedgerEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('entry_id')) {
+      context.handle(
+        _entryIdMeta,
+        entryId.isAcceptableOrUnknown(data['entry_id']!, _entryIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entryIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('subtitle')) {
+      context.handle(
+        _subtitleMeta,
+        subtitle.isAcceptableOrUnknown(data['subtitle']!, _subtitleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_subtitleMeta);
+    }
+    if (data.containsKey('amount_minor_units')) {
+      context.handle(
+        _amountMinorUnitsMeta,
+        amountMinorUnits.isAcceptableOrUnknown(
+          data['amount_minor_units']!,
+          _amountMinorUnitsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMinorUnitsMeta);
+    }
+    if (data.containsKey('balance_impact_minor_units')) {
+      context.handle(
+        _balanceImpactMinorUnitsMeta,
+        balanceImpactMinorUnits.isAcceptableOrUnknown(
+          data['balance_impact_minor_units']!,
+          _balanceImpactMinorUnitsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_balanceImpactMinorUnitsMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('created_at_ms')) {
+      context.handle(
+        _createdAtMsMeta,
+        createdAtMs.isAcceptableOrUnknown(
+          data['created_at_ms']!,
+          _createdAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMsMeta);
+    }
+    if (data.containsKey('memo')) {
+      context.handle(
+        _memoMeta,
+        memo.isAcceptableOrUnknown(data['memo']!, _memoMeta),
+      );
+    }
+    if (data.containsKey('counterparty_node_id')) {
+      context.handle(
+        _counterpartyNodeIdMeta,
+        counterpartyNodeId.isAcceptableOrUnknown(
+          data['counterparty_node_id']!,
+          _counterpartyNodeIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('source_bundle_id')) {
+      context.handle(
+        _sourceBundleIdMeta,
+        sourceBundleId.isAcceptableOrUnknown(
+          data['source_bundle_id']!,
+          _sourceBundleIdMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {entryId};
+  @override
+  WalletLedgerEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WalletLedgerEntry(
+      entryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entry_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      subtitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}subtitle'],
+      )!,
+      amountMinorUnits: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_minor_units'],
+      )!,
+      balanceImpactMinorUnits: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}balance_impact_minor_units'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      createdAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_ms'],
+      )!,
+      memo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}memo'],
+      ),
+      counterpartyNodeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}counterparty_node_id'],
+      ),
+      sourceBundleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_bundle_id'],
+      ),
+    );
+  }
+
+  @override
+  $WalletLedgerEntriesTable createAlias(String alias) {
+    return $WalletLedgerEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class WalletLedgerEntry extends DataClass
+    implements Insertable<WalletLedgerEntry> {
+  final String entryId;
+  final String kind;
+  final String title;
+  final String subtitle;
+  final int amountMinorUnits;
+  final int balanceImpactMinorUnits;
+  final String status;
+  final int createdAtMs;
+  final String? memo;
+  final String? counterpartyNodeId;
+  final String? sourceBundleId;
+  const WalletLedgerEntry({
+    required this.entryId,
+    required this.kind,
+    required this.title,
+    required this.subtitle,
+    required this.amountMinorUnits,
+    required this.balanceImpactMinorUnits,
+    required this.status,
+    required this.createdAtMs,
+    this.memo,
+    this.counterpartyNodeId,
+    this.sourceBundleId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['entry_id'] = Variable<String>(entryId);
+    map['kind'] = Variable<String>(kind);
+    map['title'] = Variable<String>(title);
+    map['subtitle'] = Variable<String>(subtitle);
+    map['amount_minor_units'] = Variable<int>(amountMinorUnits);
+    map['balance_impact_minor_units'] = Variable<int>(balanceImpactMinorUnits);
+    map['status'] = Variable<String>(status);
+    map['created_at_ms'] = Variable<int>(createdAtMs);
+    if (!nullToAbsent || memo != null) {
+      map['memo'] = Variable<String>(memo);
+    }
+    if (!nullToAbsent || counterpartyNodeId != null) {
+      map['counterparty_node_id'] = Variable<String>(counterpartyNodeId);
+    }
+    if (!nullToAbsent || sourceBundleId != null) {
+      map['source_bundle_id'] = Variable<String>(sourceBundleId);
+    }
+    return map;
+  }
+
+  WalletLedgerEntriesCompanion toCompanion(bool nullToAbsent) {
+    return WalletLedgerEntriesCompanion(
+      entryId: Value(entryId),
+      kind: Value(kind),
+      title: Value(title),
+      subtitle: Value(subtitle),
+      amountMinorUnits: Value(amountMinorUnits),
+      balanceImpactMinorUnits: Value(balanceImpactMinorUnits),
+      status: Value(status),
+      createdAtMs: Value(createdAtMs),
+      memo: memo == null && nullToAbsent ? const Value.absent() : Value(memo),
+      counterpartyNodeId: counterpartyNodeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(counterpartyNodeId),
+      sourceBundleId: sourceBundleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceBundleId),
+    );
+  }
+
+  factory WalletLedgerEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WalletLedgerEntry(
+      entryId: serializer.fromJson<String>(json['entryId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      title: serializer.fromJson<String>(json['title']),
+      subtitle: serializer.fromJson<String>(json['subtitle']),
+      amountMinorUnits: serializer.fromJson<int>(json['amountMinorUnits']),
+      balanceImpactMinorUnits: serializer.fromJson<int>(
+        json['balanceImpactMinorUnits'],
+      ),
+      status: serializer.fromJson<String>(json['status']),
+      createdAtMs: serializer.fromJson<int>(json['createdAtMs']),
+      memo: serializer.fromJson<String?>(json['memo']),
+      counterpartyNodeId: serializer.fromJson<String?>(
+        json['counterpartyNodeId'],
+      ),
+      sourceBundleId: serializer.fromJson<String?>(json['sourceBundleId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'entryId': serializer.toJson<String>(entryId),
+      'kind': serializer.toJson<String>(kind),
+      'title': serializer.toJson<String>(title),
+      'subtitle': serializer.toJson<String>(subtitle),
+      'amountMinorUnits': serializer.toJson<int>(amountMinorUnits),
+      'balanceImpactMinorUnits': serializer.toJson<int>(
+        balanceImpactMinorUnits,
+      ),
+      'status': serializer.toJson<String>(status),
+      'createdAtMs': serializer.toJson<int>(createdAtMs),
+      'memo': serializer.toJson<String?>(memo),
+      'counterpartyNodeId': serializer.toJson<String?>(counterpartyNodeId),
+      'sourceBundleId': serializer.toJson<String?>(sourceBundleId),
+    };
+  }
+
+  WalletLedgerEntry copyWith({
+    String? entryId,
+    String? kind,
+    String? title,
+    String? subtitle,
+    int? amountMinorUnits,
+    int? balanceImpactMinorUnits,
+    String? status,
+    int? createdAtMs,
+    Value<String?> memo = const Value.absent(),
+    Value<String?> counterpartyNodeId = const Value.absent(),
+    Value<String?> sourceBundleId = const Value.absent(),
+  }) => WalletLedgerEntry(
+    entryId: entryId ?? this.entryId,
+    kind: kind ?? this.kind,
+    title: title ?? this.title,
+    subtitle: subtitle ?? this.subtitle,
+    amountMinorUnits: amountMinorUnits ?? this.amountMinorUnits,
+    balanceImpactMinorUnits:
+        balanceImpactMinorUnits ?? this.balanceImpactMinorUnits,
+    status: status ?? this.status,
+    createdAtMs: createdAtMs ?? this.createdAtMs,
+    memo: memo.present ? memo.value : this.memo,
+    counterpartyNodeId: counterpartyNodeId.present
+        ? counterpartyNodeId.value
+        : this.counterpartyNodeId,
+    sourceBundleId: sourceBundleId.present
+        ? sourceBundleId.value
+        : this.sourceBundleId,
+  );
+  WalletLedgerEntry copyWithCompanion(WalletLedgerEntriesCompanion data) {
+    return WalletLedgerEntry(
+      entryId: data.entryId.present ? data.entryId.value : this.entryId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      title: data.title.present ? data.title.value : this.title,
+      subtitle: data.subtitle.present ? data.subtitle.value : this.subtitle,
+      amountMinorUnits: data.amountMinorUnits.present
+          ? data.amountMinorUnits.value
+          : this.amountMinorUnits,
+      balanceImpactMinorUnits: data.balanceImpactMinorUnits.present
+          ? data.balanceImpactMinorUnits.value
+          : this.balanceImpactMinorUnits,
+      status: data.status.present ? data.status.value : this.status,
+      createdAtMs: data.createdAtMs.present
+          ? data.createdAtMs.value
+          : this.createdAtMs,
+      memo: data.memo.present ? data.memo.value : this.memo,
+      counterpartyNodeId: data.counterpartyNodeId.present
+          ? data.counterpartyNodeId.value
+          : this.counterpartyNodeId,
+      sourceBundleId: data.sourceBundleId.present
+          ? data.sourceBundleId.value
+          : this.sourceBundleId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WalletLedgerEntry(')
+          ..write('entryId: $entryId, ')
+          ..write('kind: $kind, ')
+          ..write('title: $title, ')
+          ..write('subtitle: $subtitle, ')
+          ..write('amountMinorUnits: $amountMinorUnits, ')
+          ..write('balanceImpactMinorUnits: $balanceImpactMinorUnits, ')
+          ..write('status: $status, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('memo: $memo, ')
+          ..write('counterpartyNodeId: $counterpartyNodeId, ')
+          ..write('sourceBundleId: $sourceBundleId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    entryId,
+    kind,
+    title,
+    subtitle,
+    amountMinorUnits,
+    balanceImpactMinorUnits,
+    status,
+    createdAtMs,
+    memo,
+    counterpartyNodeId,
+    sourceBundleId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WalletLedgerEntry &&
+          other.entryId == this.entryId &&
+          other.kind == this.kind &&
+          other.title == this.title &&
+          other.subtitle == this.subtitle &&
+          other.amountMinorUnits == this.amountMinorUnits &&
+          other.balanceImpactMinorUnits == this.balanceImpactMinorUnits &&
+          other.status == this.status &&
+          other.createdAtMs == this.createdAtMs &&
+          other.memo == this.memo &&
+          other.counterpartyNodeId == this.counterpartyNodeId &&
+          other.sourceBundleId == this.sourceBundleId);
+}
+
+class WalletLedgerEntriesCompanion extends UpdateCompanion<WalletLedgerEntry> {
+  final Value<String> entryId;
+  final Value<String> kind;
+  final Value<String> title;
+  final Value<String> subtitle;
+  final Value<int> amountMinorUnits;
+  final Value<int> balanceImpactMinorUnits;
+  final Value<String> status;
+  final Value<int> createdAtMs;
+  final Value<String?> memo;
+  final Value<String?> counterpartyNodeId;
+  final Value<String?> sourceBundleId;
+  final Value<int> rowid;
+  const WalletLedgerEntriesCompanion({
+    this.entryId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.title = const Value.absent(),
+    this.subtitle = const Value.absent(),
+    this.amountMinorUnits = const Value.absent(),
+    this.balanceImpactMinorUnits = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdAtMs = const Value.absent(),
+    this.memo = const Value.absent(),
+    this.counterpartyNodeId = const Value.absent(),
+    this.sourceBundleId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WalletLedgerEntriesCompanion.insert({
+    required String entryId,
+    required String kind,
+    required String title,
+    required String subtitle,
+    required int amountMinorUnits,
+    required int balanceImpactMinorUnits,
+    required String status,
+    required int createdAtMs,
+    this.memo = const Value.absent(),
+    this.counterpartyNodeId = const Value.absent(),
+    this.sourceBundleId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : entryId = Value(entryId),
+       kind = Value(kind),
+       title = Value(title),
+       subtitle = Value(subtitle),
+       amountMinorUnits = Value(amountMinorUnits),
+       balanceImpactMinorUnits = Value(balanceImpactMinorUnits),
+       status = Value(status),
+       createdAtMs = Value(createdAtMs);
+  static Insertable<WalletLedgerEntry> custom({
+    Expression<String>? entryId,
+    Expression<String>? kind,
+    Expression<String>? title,
+    Expression<String>? subtitle,
+    Expression<int>? amountMinorUnits,
+    Expression<int>? balanceImpactMinorUnits,
+    Expression<String>? status,
+    Expression<int>? createdAtMs,
+    Expression<String>? memo,
+    Expression<String>? counterpartyNodeId,
+    Expression<String>? sourceBundleId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (entryId != null) 'entry_id': entryId,
+      if (kind != null) 'kind': kind,
+      if (title != null) 'title': title,
+      if (subtitle != null) 'subtitle': subtitle,
+      if (amountMinorUnits != null) 'amount_minor_units': amountMinorUnits,
+      if (balanceImpactMinorUnits != null)
+        'balance_impact_minor_units': balanceImpactMinorUnits,
+      if (status != null) 'status': status,
+      if (createdAtMs != null) 'created_at_ms': createdAtMs,
+      if (memo != null) 'memo': memo,
+      if (counterpartyNodeId != null)
+        'counterparty_node_id': counterpartyNodeId,
+      if (sourceBundleId != null) 'source_bundle_id': sourceBundleId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WalletLedgerEntriesCompanion copyWith({
+    Value<String>? entryId,
+    Value<String>? kind,
+    Value<String>? title,
+    Value<String>? subtitle,
+    Value<int>? amountMinorUnits,
+    Value<int>? balanceImpactMinorUnits,
+    Value<String>? status,
+    Value<int>? createdAtMs,
+    Value<String?>? memo,
+    Value<String?>? counterpartyNodeId,
+    Value<String?>? sourceBundleId,
+    Value<int>? rowid,
+  }) {
+    return WalletLedgerEntriesCompanion(
+      entryId: entryId ?? this.entryId,
+      kind: kind ?? this.kind,
+      title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
+      amountMinorUnits: amountMinorUnits ?? this.amountMinorUnits,
+      balanceImpactMinorUnits:
+          balanceImpactMinorUnits ?? this.balanceImpactMinorUnits,
+      status: status ?? this.status,
+      createdAtMs: createdAtMs ?? this.createdAtMs,
+      memo: memo ?? this.memo,
+      counterpartyNodeId: counterpartyNodeId ?? this.counterpartyNodeId,
+      sourceBundleId: sourceBundleId ?? this.sourceBundleId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (entryId.present) {
+      map['entry_id'] = Variable<String>(entryId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (subtitle.present) {
+      map['subtitle'] = Variable<String>(subtitle.value);
+    }
+    if (amountMinorUnits.present) {
+      map['amount_minor_units'] = Variable<int>(amountMinorUnits.value);
+    }
+    if (balanceImpactMinorUnits.present) {
+      map['balance_impact_minor_units'] = Variable<int>(
+        balanceImpactMinorUnits.value,
+      );
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (createdAtMs.present) {
+      map['created_at_ms'] = Variable<int>(createdAtMs.value);
+    }
+    if (memo.present) {
+      map['memo'] = Variable<String>(memo.value);
+    }
+    if (counterpartyNodeId.present) {
+      map['counterparty_node_id'] = Variable<String>(counterpartyNodeId.value);
+    }
+    if (sourceBundleId.present) {
+      map['source_bundle_id'] = Variable<String>(sourceBundleId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WalletLedgerEntriesCompanion(')
+          ..write('entryId: $entryId, ')
+          ..write('kind: $kind, ')
+          ..write('title: $title, ')
+          ..write('subtitle: $subtitle, ')
+          ..write('amountMinorUnits: $amountMinorUnits, ')
+          ..write('balanceImpactMinorUnits: $balanceImpactMinorUnits, ')
+          ..write('status: $status, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('memo: $memo, ')
+          ..write('counterpartyNodeId: $counterpartyNodeId, ')
+          ..write('sourceBundleId: $sourceBundleId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3654,6 +4350,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ContentMetadataTable contentMetadata = $ContentMetadataTable(
     this,
   );
+  late final $WalletLedgerEntriesTable walletLedgerEntries =
+      $WalletLedgerEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3665,6 +4363,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     messageProjections,
     ackEvents,
     contentMetadata,
+    walletLedgerEntries,
   ];
 }
 
@@ -5437,6 +6136,346 @@ typedef $$ContentMetadataTableProcessedTableManager =
       ContentMetadataData,
       PrefetchHooks Function()
     >;
+typedef $$WalletLedgerEntriesTableCreateCompanionBuilder =
+    WalletLedgerEntriesCompanion Function({
+      required String entryId,
+      required String kind,
+      required String title,
+      required String subtitle,
+      required int amountMinorUnits,
+      required int balanceImpactMinorUnits,
+      required String status,
+      required int createdAtMs,
+      Value<String?> memo,
+      Value<String?> counterpartyNodeId,
+      Value<String?> sourceBundleId,
+      Value<int> rowid,
+    });
+typedef $$WalletLedgerEntriesTableUpdateCompanionBuilder =
+    WalletLedgerEntriesCompanion Function({
+      Value<String> entryId,
+      Value<String> kind,
+      Value<String> title,
+      Value<String> subtitle,
+      Value<int> amountMinorUnits,
+      Value<int> balanceImpactMinorUnits,
+      Value<String> status,
+      Value<int> createdAtMs,
+      Value<String?> memo,
+      Value<String?> counterpartyNodeId,
+      Value<String?> sourceBundleId,
+      Value<int> rowid,
+    });
+
+class $$WalletLedgerEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $WalletLedgerEntriesTable> {
+  $$WalletLedgerEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get entryId => $composableBuilder(
+    column: $table.entryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get subtitle => $composableBuilder(
+    column: $table.subtitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountMinorUnits => $composableBuilder(
+    column: $table.amountMinorUnits,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get balanceImpactMinorUnits => $composableBuilder(
+    column: $table.balanceImpactMinorUnits,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get memo => $composableBuilder(
+    column: $table.memo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get counterpartyNodeId => $composableBuilder(
+    column: $table.counterpartyNodeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceBundleId => $composableBuilder(
+    column: $table.sourceBundleId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WalletLedgerEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $WalletLedgerEntriesTable> {
+  $$WalletLedgerEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get entryId => $composableBuilder(
+    column: $table.entryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get subtitle => $composableBuilder(
+    column: $table.subtitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountMinorUnits => $composableBuilder(
+    column: $table.amountMinorUnits,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get balanceImpactMinorUnits => $composableBuilder(
+    column: $table.balanceImpactMinorUnits,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get memo => $composableBuilder(
+    column: $table.memo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get counterpartyNodeId => $composableBuilder(
+    column: $table.counterpartyNodeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceBundleId => $composableBuilder(
+    column: $table.sourceBundleId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WalletLedgerEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WalletLedgerEntriesTable> {
+  $$WalletLedgerEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get entryId =>
+      $composableBuilder(column: $table.entryId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get subtitle =>
+      $composableBuilder(column: $table.subtitle, builder: (column) => column);
+
+  GeneratedColumn<int> get amountMinorUnits => $composableBuilder(
+    column: $table.amountMinorUnits,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get balanceImpactMinorUnits => $composableBuilder(
+    column: $table.balanceImpactMinorUnits,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get memo =>
+      $composableBuilder(column: $table.memo, builder: (column) => column);
+
+  GeneratedColumn<String> get counterpartyNodeId => $composableBuilder(
+    column: $table.counterpartyNodeId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceBundleId => $composableBuilder(
+    column: $table.sourceBundleId,
+    builder: (column) => column,
+  );
+}
+
+class $$WalletLedgerEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WalletLedgerEntriesTable,
+          WalletLedgerEntry,
+          $$WalletLedgerEntriesTableFilterComposer,
+          $$WalletLedgerEntriesTableOrderingComposer,
+          $$WalletLedgerEntriesTableAnnotationComposer,
+          $$WalletLedgerEntriesTableCreateCompanionBuilder,
+          $$WalletLedgerEntriesTableUpdateCompanionBuilder,
+          (
+            WalletLedgerEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $WalletLedgerEntriesTable,
+              WalletLedgerEntry
+            >,
+          ),
+          WalletLedgerEntry,
+          PrefetchHooks Function()
+        > {
+  $$WalletLedgerEntriesTableTableManager(
+    _$AppDatabase db,
+    $WalletLedgerEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WalletLedgerEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WalletLedgerEntriesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WalletLedgerEntriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> entryId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> subtitle = const Value.absent(),
+                Value<int> amountMinorUnits = const Value.absent(),
+                Value<int> balanceImpactMinorUnits = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> createdAtMs = const Value.absent(),
+                Value<String?> memo = const Value.absent(),
+                Value<String?> counterpartyNodeId = const Value.absent(),
+                Value<String?> sourceBundleId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WalletLedgerEntriesCompanion(
+                entryId: entryId,
+                kind: kind,
+                title: title,
+                subtitle: subtitle,
+                amountMinorUnits: amountMinorUnits,
+                balanceImpactMinorUnits: balanceImpactMinorUnits,
+                status: status,
+                createdAtMs: createdAtMs,
+                memo: memo,
+                counterpartyNodeId: counterpartyNodeId,
+                sourceBundleId: sourceBundleId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String entryId,
+                required String kind,
+                required String title,
+                required String subtitle,
+                required int amountMinorUnits,
+                required int balanceImpactMinorUnits,
+                required String status,
+                required int createdAtMs,
+                Value<String?> memo = const Value.absent(),
+                Value<String?> counterpartyNodeId = const Value.absent(),
+                Value<String?> sourceBundleId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WalletLedgerEntriesCompanion.insert(
+                entryId: entryId,
+                kind: kind,
+                title: title,
+                subtitle: subtitle,
+                amountMinorUnits: amountMinorUnits,
+                balanceImpactMinorUnits: balanceImpactMinorUnits,
+                status: status,
+                createdAtMs: createdAtMs,
+                memo: memo,
+                counterpartyNodeId: counterpartyNodeId,
+                sourceBundleId: sourceBundleId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WalletLedgerEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WalletLedgerEntriesTable,
+      WalletLedgerEntry,
+      $$WalletLedgerEntriesTableFilterComposer,
+      $$WalletLedgerEntriesTableOrderingComposer,
+      $$WalletLedgerEntriesTableAnnotationComposer,
+      $$WalletLedgerEntriesTableCreateCompanionBuilder,
+      $$WalletLedgerEntriesTableUpdateCompanionBuilder,
+      (
+        WalletLedgerEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $WalletLedgerEntriesTable,
+          WalletLedgerEntry
+        >,
+      ),
+      WalletLedgerEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5453,4 +6492,6 @@ class $AppDatabaseManager {
       $$AckEventsTableTableManager(_db, _db.ackEvents);
   $$ContentMetadataTableTableManager get contentMetadata =>
       $$ContentMetadataTableTableManager(_db, _db.contentMetadata);
+  $$WalletLedgerEntriesTableTableManager get walletLedgerEntries =>
+      $$WalletLedgerEntriesTableTableManager(_db, _db.walletLedgerEntries);
 }

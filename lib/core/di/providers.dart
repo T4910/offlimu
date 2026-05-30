@@ -15,10 +15,12 @@ import 'package:offlimu/domain/entities/node_identity.dart';
 import 'package:offlimu/domain/entities/node_public_identity.dart';
 import 'package:offlimu/domain/entities/peer_contact.dart';
 import 'package:offlimu/domain/entities/sync_job_history_entry.dart';
+import 'package:offlimu/domain/entities/wallet_ledger_entry.dart';
 import 'package:offlimu/domain/repositories/bundle_repository.dart';
 import 'package:offlimu/domain/repositories/chat_message_repository.dart';
 import 'package:offlimu/domain/repositories/peer_repository.dart';
 import 'package:offlimu/domain/repositories/sync_job_repository.dart';
+import 'package:offlimu/domain/repositories/wallet_repository.dart';
 import 'package:offlimu/domain/services/discovery_adapter.dart';
 import 'package:offlimu/domain/services/device_conditions_service.dart';
 import 'package:offlimu/domain/services/logger_service.dart';
@@ -39,6 +41,7 @@ import 'package:offlimu/infrastructure/db/drift_bundle_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_chat_message_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_peer_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_sync_job_repository.dart';
+import 'package:offlimu/infrastructure/db/drift_wallet_repository.dart';
 import 'package:offlimu/infrastructure/content/local_file_content_store.dart';
 import 'package:offlimu/infrastructure/crypto/ed25519_bundle_signature_service.dart';
 import 'package:offlimu/infrastructure/crypto/ed25519_crypto_service.dart';
@@ -257,6 +260,11 @@ final Provider<SyncJobRepository> syncJobRepositoryProvider =
       (ref) => DriftSyncJobRepository(ref.watch(appDatabaseProvider)),
     );
 
+final Provider<WalletRepository> walletRepositoryProvider =
+    Provider<WalletRepository>(
+      (ref) => DriftWalletRepository(ref.watch(appDatabaseProvider)),
+    );
+
 final StreamProvider<List<Bundle>> pendingBundlesProvider =
     StreamProvider<List<Bundle>>(
       (ref) => ref.watch(bundleRepositoryProvider).watchPendingBundles(),
@@ -290,6 +298,15 @@ final StreamProvider<List<AckAuditEvent>> recentAckEventsProvider =
     StreamProvider<List<AckAuditEvent>>(
       (ref) =>
           ref.watch(bundleRepositoryProvider).watchRecentAckEvents(limit: 50),
+    );
+
+final StreamProvider<WalletLedgerDashboard> walletDashboardProvider =
+    StreamProvider<WalletLedgerDashboard>(
+      (ref) => ref.watch(walletRepositoryProvider).watchDashboard(
+            recentLimit: 3,
+            rewardLimit: 4,
+            logLimit: 6,
+          ),
     );
 
 final StreamProvider<List<ContentMetadataRecord>>
