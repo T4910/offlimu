@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:offlimu/features/bundle_queue/presentation/bundle_queue_page.dart';
 import 'package:offlimu/features/debug/presentation/debug_page.dart';
 import 'package:offlimu/features/debug/presentation/bundle_explorer_page.dart';
+import 'package:offlimu/features/debug/presentation/file_transfer_explorer_page.dart';
 import 'package:offlimu/features/chat/presentation/chat_page.dart';
 import 'package:offlimu/features/chat/presentation/conversation_page.dart';
 import 'package:offlimu/features/files/presentation/files_page.dart';
@@ -17,6 +18,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/debug/bundles',
       builder: (context, state) => const BundleExplorerPage(),
+    ),
+    GoRoute(
+      path: '/debug/files',
+      builder: (context, state) => const FileTransferExplorerPage(),
     ),
     GoRoute(
       path: '/status',

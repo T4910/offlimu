@@ -522,8 +522,6 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
                       onMax: _fillMaxAmount,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  _MiniBadge(label: 'MAX', onTap: _fillMaxAmount),
                 ],
               ),
               const SizedBox(height: 12),

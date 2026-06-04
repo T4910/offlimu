@@ -545,6 +545,11 @@ class _DebugPageState extends ConsumerState<DebugPage> {
             _SectionCard(
               title: 'Files and Content',
               subtitle: 'Stored content metadata and chunk assembly hints.',
+              trailing: OutlinedButton.icon(
+                icon: const Icon(Icons.folder_open_rounded),
+                label: const Text('File Explorer'),
+                onPressed: () => context.push('/debug/files'),
+              ),
               child: contentMetadataAsync.when(
                 loading: () => const Text('Loading content metadata...'),
                 error: (error, stackTrace) => Text('Content error: $error'),

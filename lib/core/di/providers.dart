@@ -11,6 +11,7 @@ import 'package:offlimu/domain/entities/ack_event.dart';
 import 'package:offlimu/domain/entities/bundle.dart';
 import 'package:offlimu/domain/entities/chat_message.dart';
 import 'package:offlimu/domain/entities/content_metadata_record.dart';
+import 'package:offlimu/domain/entities/file_transfer_explorer_item.dart';
 import 'package:offlimu/domain/entities/node_identity.dart';
 import 'package:offlimu/domain/entities/node_public_identity.dart';
 import 'package:offlimu/domain/entities/peer_contact.dart';
@@ -317,6 +318,25 @@ final StreamProvider<List<Bundle>> pendingBundlesProvider =
       (ref) => ref.watch(bundleRepositoryProvider).watchPendingBundles(),
     );
 
+final StreamProvider<List<Bundle>> allBundlesProvider =
+    StreamProvider<List<Bundle>>(
+      (ref) => ref.watch(bundleRepositoryProvider).watchAllBundles(),
+    );
+
+final StreamProvider<List<Bundle>> fileShareMetadataBundlesProvider =
+    StreamProvider<List<Bundle>>(
+      (ref) => ref
+          .watch(bundleRepositoryProvider)
+          .watchBundlesByType(Bundle.typeFileShareMetadata),
+    );
+
+final StreamProvider<List<Bundle>> fileShareChunkBundlesProvider =
+    StreamProvider<List<Bundle>>(
+      (ref) => ref
+          .watch(bundleRepositoryProvider)
+          .watchBundlesByType(Bundle.typeFileShareChunk),
+    );
+
 final StreamProvider<List<ChatMessage>> chatMessagesProvider =
     StreamProvider<List<ChatMessage>>(
       (ref) => ref
@@ -362,6 +382,36 @@ recentContentMetadataProvider = StreamProvider<List<ContentMetadataRecord>>(
       .watch(bundleRepositoryProvider)
       .watchRecentContentMetadata(limit: 100),
 );
+
+final Provider<AsyncValue<List<FileTransferExplorerItem>>>
+fileTransferExplorerProvider =
+    Provider<AsyncValue<List<FileTransferExplorerItem>>>((ref) {
+      final bundlesAsync = ref.watch(allBundlesProvider);
+      final contentMetadataAsync = ref.watch(recentContentMetadataProvider);
+
+      if (bundlesAsync.hasError) {
+        return AsyncValue.error(
+          bundlesAsync.error!,
+          bundlesAsync.stackTrace ?? StackTrace.current,
+        );
+      }
+      if (contentMetadataAsync.hasError) {
+        return AsyncValue.error(
+          contentMetadataAsync.error!,
+          contentMetadataAsync.stackTrace ?? StackTrace.current,
+        );
+      }
+      if (!bundlesAsync.hasValue || !contentMetadataAsync.hasValue) {
+        return const AsyncValue.loading();
+      }
+
+      return AsyncValue.data(
+        buildFileTransferExplorerItems(
+          bundles: bundlesAsync.value!,
+          contentMetadata: contentMetadataAsync.value!,
+        ),
+      );
+    });
 
 final StreamProvider<int> pendingBundleCountProvider = StreamProvider<int>(
   (ref) => ref
