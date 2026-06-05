@@ -4338,6 +4338,636 @@ class WalletLedgerEntriesCompanion extends UpdateCompanion<WalletLedgerEntry> {
   }
 }
 
+class $WebIndexRecordsTable extends WebIndexRecords
+    with TableInfo<$WebIndexRecordsTable, WebIndexRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WebIndexRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _contentHashMeta = const VerificationMeta(
+    'contentHash',
+  );
+  @override
+  late final GeneratedColumn<String> contentHash = GeneratedColumn<String>(
+    'content_hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _urlMeta = const VerificationMeta('url');
+  @override
+  late final GeneratedColumn<String> url = GeneratedColumn<String>(
+    'url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _snippetMeta = const VerificationMeta(
+    'snippet',
+  );
+  @override
+  late final GeneratedColumn<String> snippet = GeneratedColumn<String>(
+    'snippet',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _queryMeta = const VerificationMeta('query');
+  @override
+  late final GeneratedColumn<String> query = GeneratedColumn<String>(
+    'query',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceRequestIdMeta = const VerificationMeta(
+    'sourceRequestId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceRequestId = GeneratedColumn<String>(
+    'source_request_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _totalBytesMeta = const VerificationMeta(
+    'totalBytes',
+  );
+  @override
+  late final GeneratedColumn<int> totalBytes = GeneratedColumn<int>(
+    'total_bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _expectedChunkCountMeta =
+      const VerificationMeta('expectedChunkCount');
+  @override
+  late final GeneratedColumn<int> expectedChunkCount = GeneratedColumn<int>(
+    'expected_chunk_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _createdAtMsMeta = const VerificationMeta(
+    'createdAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtMs = GeneratedColumn<int>(
+    'created_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMsMeta = const VerificationMeta(
+    'updatedAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtMs = GeneratedColumn<int>(
+    'updated_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    contentHash,
+    title,
+    url,
+    snippet,
+    query,
+    sourceRequestId,
+    totalBytes,
+    expectedChunkCount,
+    createdAtMs,
+    updatedAtMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'web_index_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WebIndexRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('content_hash')) {
+      context.handle(
+        _contentHashMeta,
+        contentHash.isAcceptableOrUnknown(
+          data['content_hash']!,
+          _contentHashMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentHashMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('url')) {
+      context.handle(
+        _urlMeta,
+        url.isAcceptableOrUnknown(data['url']!, _urlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_urlMeta);
+    }
+    if (data.containsKey('snippet')) {
+      context.handle(
+        _snippetMeta,
+        snippet.isAcceptableOrUnknown(data['snippet']!, _snippetMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_snippetMeta);
+    }
+    if (data.containsKey('query')) {
+      context.handle(
+        _queryMeta,
+        query.isAcceptableOrUnknown(data['query']!, _queryMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_queryMeta);
+    }
+    if (data.containsKey('source_request_id')) {
+      context.handle(
+        _sourceRequestIdMeta,
+        sourceRequestId.isAcceptableOrUnknown(
+          data['source_request_id']!,
+          _sourceRequestIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceRequestIdMeta);
+    }
+    if (data.containsKey('total_bytes')) {
+      context.handle(
+        _totalBytesMeta,
+        totalBytes.isAcceptableOrUnknown(data['total_bytes']!, _totalBytesMeta),
+      );
+    }
+    if (data.containsKey('expected_chunk_count')) {
+      context.handle(
+        _expectedChunkCountMeta,
+        expectedChunkCount.isAcceptableOrUnknown(
+          data['expected_chunk_count']!,
+          _expectedChunkCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at_ms')) {
+      context.handle(
+        _createdAtMsMeta,
+        createdAtMs.isAcceptableOrUnknown(
+          data['created_at_ms']!,
+          _createdAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMsMeta);
+    }
+    if (data.containsKey('updated_at_ms')) {
+      context.handle(
+        _updatedAtMsMeta,
+        updatedAtMs.isAcceptableOrUnknown(
+          data['updated_at_ms']!,
+          _updatedAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {contentHash};
+  @override
+  WebIndexRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WebIndexRecord(
+      contentHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_hash'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      url: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}url'],
+      )!,
+      snippet: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}snippet'],
+      )!,
+      query: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}query'],
+      )!,
+      sourceRequestId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_request_id'],
+      )!,
+      totalBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_bytes'],
+      )!,
+      expectedChunkCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}expected_chunk_count'],
+      )!,
+      createdAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_ms'],
+      )!,
+      updatedAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $WebIndexRecordsTable createAlias(String alias) {
+    return $WebIndexRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class WebIndexRecord extends DataClass implements Insertable<WebIndexRecord> {
+  final String contentHash;
+  final String title;
+  final String url;
+  final String snippet;
+  final String query;
+  final String sourceRequestId;
+  final int totalBytes;
+  final int expectedChunkCount;
+  final int createdAtMs;
+  final int updatedAtMs;
+  const WebIndexRecord({
+    required this.contentHash,
+    required this.title,
+    required this.url,
+    required this.snippet,
+    required this.query,
+    required this.sourceRequestId,
+    required this.totalBytes,
+    required this.expectedChunkCount,
+    required this.createdAtMs,
+    required this.updatedAtMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['content_hash'] = Variable<String>(contentHash);
+    map['title'] = Variable<String>(title);
+    map['url'] = Variable<String>(url);
+    map['snippet'] = Variable<String>(snippet);
+    map['query'] = Variable<String>(query);
+    map['source_request_id'] = Variable<String>(sourceRequestId);
+    map['total_bytes'] = Variable<int>(totalBytes);
+    map['expected_chunk_count'] = Variable<int>(expectedChunkCount);
+    map['created_at_ms'] = Variable<int>(createdAtMs);
+    map['updated_at_ms'] = Variable<int>(updatedAtMs);
+    return map;
+  }
+
+  WebIndexRecordsCompanion toCompanion(bool nullToAbsent) {
+    return WebIndexRecordsCompanion(
+      contentHash: Value(contentHash),
+      title: Value(title),
+      url: Value(url),
+      snippet: Value(snippet),
+      query: Value(query),
+      sourceRequestId: Value(sourceRequestId),
+      totalBytes: Value(totalBytes),
+      expectedChunkCount: Value(expectedChunkCount),
+      createdAtMs: Value(createdAtMs),
+      updatedAtMs: Value(updatedAtMs),
+    );
+  }
+
+  factory WebIndexRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WebIndexRecord(
+      contentHash: serializer.fromJson<String>(json['contentHash']),
+      title: serializer.fromJson<String>(json['title']),
+      url: serializer.fromJson<String>(json['url']),
+      snippet: serializer.fromJson<String>(json['snippet']),
+      query: serializer.fromJson<String>(json['query']),
+      sourceRequestId: serializer.fromJson<String>(json['sourceRequestId']),
+      totalBytes: serializer.fromJson<int>(json['totalBytes']),
+      expectedChunkCount: serializer.fromJson<int>(json['expectedChunkCount']),
+      createdAtMs: serializer.fromJson<int>(json['createdAtMs']),
+      updatedAtMs: serializer.fromJson<int>(json['updatedAtMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'contentHash': serializer.toJson<String>(contentHash),
+      'title': serializer.toJson<String>(title),
+      'url': serializer.toJson<String>(url),
+      'snippet': serializer.toJson<String>(snippet),
+      'query': serializer.toJson<String>(query),
+      'sourceRequestId': serializer.toJson<String>(sourceRequestId),
+      'totalBytes': serializer.toJson<int>(totalBytes),
+      'expectedChunkCount': serializer.toJson<int>(expectedChunkCount),
+      'createdAtMs': serializer.toJson<int>(createdAtMs),
+      'updatedAtMs': serializer.toJson<int>(updatedAtMs),
+    };
+  }
+
+  WebIndexRecord copyWith({
+    String? contentHash,
+    String? title,
+    String? url,
+    String? snippet,
+    String? query,
+    String? sourceRequestId,
+    int? totalBytes,
+    int? expectedChunkCount,
+    int? createdAtMs,
+    int? updatedAtMs,
+  }) => WebIndexRecord(
+    contentHash: contentHash ?? this.contentHash,
+    title: title ?? this.title,
+    url: url ?? this.url,
+    snippet: snippet ?? this.snippet,
+    query: query ?? this.query,
+    sourceRequestId: sourceRequestId ?? this.sourceRequestId,
+    totalBytes: totalBytes ?? this.totalBytes,
+    expectedChunkCount: expectedChunkCount ?? this.expectedChunkCount,
+    createdAtMs: createdAtMs ?? this.createdAtMs,
+    updatedAtMs: updatedAtMs ?? this.updatedAtMs,
+  );
+  WebIndexRecord copyWithCompanion(WebIndexRecordsCompanion data) {
+    return WebIndexRecord(
+      contentHash: data.contentHash.present
+          ? data.contentHash.value
+          : this.contentHash,
+      title: data.title.present ? data.title.value : this.title,
+      url: data.url.present ? data.url.value : this.url,
+      snippet: data.snippet.present ? data.snippet.value : this.snippet,
+      query: data.query.present ? data.query.value : this.query,
+      sourceRequestId: data.sourceRequestId.present
+          ? data.sourceRequestId.value
+          : this.sourceRequestId,
+      totalBytes: data.totalBytes.present
+          ? data.totalBytes.value
+          : this.totalBytes,
+      expectedChunkCount: data.expectedChunkCount.present
+          ? data.expectedChunkCount.value
+          : this.expectedChunkCount,
+      createdAtMs: data.createdAtMs.present
+          ? data.createdAtMs.value
+          : this.createdAtMs,
+      updatedAtMs: data.updatedAtMs.present
+          ? data.updatedAtMs.value
+          : this.updatedAtMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WebIndexRecord(')
+          ..write('contentHash: $contentHash, ')
+          ..write('title: $title, ')
+          ..write('url: $url, ')
+          ..write('snippet: $snippet, ')
+          ..write('query: $query, ')
+          ..write('sourceRequestId: $sourceRequestId, ')
+          ..write('totalBytes: $totalBytes, ')
+          ..write('expectedChunkCount: $expectedChunkCount, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('updatedAtMs: $updatedAtMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    contentHash,
+    title,
+    url,
+    snippet,
+    query,
+    sourceRequestId,
+    totalBytes,
+    expectedChunkCount,
+    createdAtMs,
+    updatedAtMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WebIndexRecord &&
+          other.contentHash == this.contentHash &&
+          other.title == this.title &&
+          other.url == this.url &&
+          other.snippet == this.snippet &&
+          other.query == this.query &&
+          other.sourceRequestId == this.sourceRequestId &&
+          other.totalBytes == this.totalBytes &&
+          other.expectedChunkCount == this.expectedChunkCount &&
+          other.createdAtMs == this.createdAtMs &&
+          other.updatedAtMs == this.updatedAtMs);
+}
+
+class WebIndexRecordsCompanion extends UpdateCompanion<WebIndexRecord> {
+  final Value<String> contentHash;
+  final Value<String> title;
+  final Value<String> url;
+  final Value<String> snippet;
+  final Value<String> query;
+  final Value<String> sourceRequestId;
+  final Value<int> totalBytes;
+  final Value<int> expectedChunkCount;
+  final Value<int> createdAtMs;
+  final Value<int> updatedAtMs;
+  final Value<int> rowid;
+  const WebIndexRecordsCompanion({
+    this.contentHash = const Value.absent(),
+    this.title = const Value.absent(),
+    this.url = const Value.absent(),
+    this.snippet = const Value.absent(),
+    this.query = const Value.absent(),
+    this.sourceRequestId = const Value.absent(),
+    this.totalBytes = const Value.absent(),
+    this.expectedChunkCount = const Value.absent(),
+    this.createdAtMs = const Value.absent(),
+    this.updatedAtMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WebIndexRecordsCompanion.insert({
+    required String contentHash,
+    required String title,
+    required String url,
+    required String snippet,
+    required String query,
+    required String sourceRequestId,
+    this.totalBytes = const Value.absent(),
+    this.expectedChunkCount = const Value.absent(),
+    required int createdAtMs,
+    required int updatedAtMs,
+    this.rowid = const Value.absent(),
+  }) : contentHash = Value(contentHash),
+       title = Value(title),
+       url = Value(url),
+       snippet = Value(snippet),
+       query = Value(query),
+       sourceRequestId = Value(sourceRequestId),
+       createdAtMs = Value(createdAtMs),
+       updatedAtMs = Value(updatedAtMs);
+  static Insertable<WebIndexRecord> custom({
+    Expression<String>? contentHash,
+    Expression<String>? title,
+    Expression<String>? url,
+    Expression<String>? snippet,
+    Expression<String>? query,
+    Expression<String>? sourceRequestId,
+    Expression<int>? totalBytes,
+    Expression<int>? expectedChunkCount,
+    Expression<int>? createdAtMs,
+    Expression<int>? updatedAtMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (contentHash != null) 'content_hash': contentHash,
+      if (title != null) 'title': title,
+      if (url != null) 'url': url,
+      if (snippet != null) 'snippet': snippet,
+      if (query != null) 'query': query,
+      if (sourceRequestId != null) 'source_request_id': sourceRequestId,
+      if (totalBytes != null) 'total_bytes': totalBytes,
+      if (expectedChunkCount != null)
+        'expected_chunk_count': expectedChunkCount,
+      if (createdAtMs != null) 'created_at_ms': createdAtMs,
+      if (updatedAtMs != null) 'updated_at_ms': updatedAtMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WebIndexRecordsCompanion copyWith({
+    Value<String>? contentHash,
+    Value<String>? title,
+    Value<String>? url,
+    Value<String>? snippet,
+    Value<String>? query,
+    Value<String>? sourceRequestId,
+    Value<int>? totalBytes,
+    Value<int>? expectedChunkCount,
+    Value<int>? createdAtMs,
+    Value<int>? updatedAtMs,
+    Value<int>? rowid,
+  }) {
+    return WebIndexRecordsCompanion(
+      contentHash: contentHash ?? this.contentHash,
+      title: title ?? this.title,
+      url: url ?? this.url,
+      snippet: snippet ?? this.snippet,
+      query: query ?? this.query,
+      sourceRequestId: sourceRequestId ?? this.sourceRequestId,
+      totalBytes: totalBytes ?? this.totalBytes,
+      expectedChunkCount: expectedChunkCount ?? this.expectedChunkCount,
+      createdAtMs: createdAtMs ?? this.createdAtMs,
+      updatedAtMs: updatedAtMs ?? this.updatedAtMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (contentHash.present) {
+      map['content_hash'] = Variable<String>(contentHash.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (url.present) {
+      map['url'] = Variable<String>(url.value);
+    }
+    if (snippet.present) {
+      map['snippet'] = Variable<String>(snippet.value);
+    }
+    if (query.present) {
+      map['query'] = Variable<String>(query.value);
+    }
+    if (sourceRequestId.present) {
+      map['source_request_id'] = Variable<String>(sourceRequestId.value);
+    }
+    if (totalBytes.present) {
+      map['total_bytes'] = Variable<int>(totalBytes.value);
+    }
+    if (expectedChunkCount.present) {
+      map['expected_chunk_count'] = Variable<int>(expectedChunkCount.value);
+    }
+    if (createdAtMs.present) {
+      map['created_at_ms'] = Variable<int>(createdAtMs.value);
+    }
+    if (updatedAtMs.present) {
+      map['updated_at_ms'] = Variable<int>(updatedAtMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WebIndexRecordsCompanion(')
+          ..write('contentHash: $contentHash, ')
+          ..write('title: $title, ')
+          ..write('url: $url, ')
+          ..write('snippet: $snippet, ')
+          ..write('query: $query, ')
+          ..write('sourceRequestId: $sourceRequestId, ')
+          ..write('totalBytes: $totalBytes, ')
+          ..write('expectedChunkCount: $expectedChunkCount, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('updatedAtMs: $updatedAtMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4352,6 +4982,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $WalletLedgerEntriesTable walletLedgerEntries =
       $WalletLedgerEntriesTable(this);
+  late final $WebIndexRecordsTable webIndexRecords = $WebIndexRecordsTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4364,6 +4997,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ackEvents,
     contentMetadata,
     walletLedgerEntries,
+    webIndexRecords,
   ];
 }
 
@@ -6476,6 +7110,319 @@ typedef $$WalletLedgerEntriesTableProcessedTableManager =
       WalletLedgerEntry,
       PrefetchHooks Function()
     >;
+typedef $$WebIndexRecordsTableCreateCompanionBuilder =
+    WebIndexRecordsCompanion Function({
+      required String contentHash,
+      required String title,
+      required String url,
+      required String snippet,
+      required String query,
+      required String sourceRequestId,
+      Value<int> totalBytes,
+      Value<int> expectedChunkCount,
+      required int createdAtMs,
+      required int updatedAtMs,
+      Value<int> rowid,
+    });
+typedef $$WebIndexRecordsTableUpdateCompanionBuilder =
+    WebIndexRecordsCompanion Function({
+      Value<String> contentHash,
+      Value<String> title,
+      Value<String> url,
+      Value<String> snippet,
+      Value<String> query,
+      Value<String> sourceRequestId,
+      Value<int> totalBytes,
+      Value<int> expectedChunkCount,
+      Value<int> createdAtMs,
+      Value<int> updatedAtMs,
+      Value<int> rowid,
+    });
+
+class $$WebIndexRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $WebIndexRecordsTable> {
+  $$WebIndexRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get url => $composableBuilder(
+    column: $table.url,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get snippet => $composableBuilder(
+    column: $table.snippet,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get query => $composableBuilder(
+    column: $table.query,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceRequestId => $composableBuilder(
+    column: $table.sourceRequestId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalBytes => $composableBuilder(
+    column: $table.totalBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get expectedChunkCount => $composableBuilder(
+    column: $table.expectedChunkCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WebIndexRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WebIndexRecordsTable> {
+  $$WebIndexRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get url => $composableBuilder(
+    column: $table.url,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get snippet => $composableBuilder(
+    column: $table.snippet,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get query => $composableBuilder(
+    column: $table.query,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceRequestId => $composableBuilder(
+    column: $table.sourceRequestId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalBytes => $composableBuilder(
+    column: $table.totalBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get expectedChunkCount => $composableBuilder(
+    column: $table.expectedChunkCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WebIndexRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WebIndexRecordsTable> {
+  $$WebIndexRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get url =>
+      $composableBuilder(column: $table.url, builder: (column) => column);
+
+  GeneratedColumn<String> get snippet =>
+      $composableBuilder(column: $table.snippet, builder: (column) => column);
+
+  GeneratedColumn<String> get query =>
+      $composableBuilder(column: $table.query, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceRequestId => $composableBuilder(
+    column: $table.sourceRequestId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalBytes => $composableBuilder(
+    column: $table.totalBytes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get expectedChunkCount => $composableBuilder(
+    column: $table.expectedChunkCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => column,
+  );
+}
+
+class $$WebIndexRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WebIndexRecordsTable,
+          WebIndexRecord,
+          $$WebIndexRecordsTableFilterComposer,
+          $$WebIndexRecordsTableOrderingComposer,
+          $$WebIndexRecordsTableAnnotationComposer,
+          $$WebIndexRecordsTableCreateCompanionBuilder,
+          $$WebIndexRecordsTableUpdateCompanionBuilder,
+          (
+            WebIndexRecord,
+            BaseReferences<
+              _$AppDatabase,
+              $WebIndexRecordsTable,
+              WebIndexRecord
+            >,
+          ),
+          WebIndexRecord,
+          PrefetchHooks Function()
+        > {
+  $$WebIndexRecordsTableTableManager(
+    _$AppDatabase db,
+    $WebIndexRecordsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WebIndexRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WebIndexRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WebIndexRecordsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> contentHash = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> url = const Value.absent(),
+                Value<String> snippet = const Value.absent(),
+                Value<String> query = const Value.absent(),
+                Value<String> sourceRequestId = const Value.absent(),
+                Value<int> totalBytes = const Value.absent(),
+                Value<int> expectedChunkCount = const Value.absent(),
+                Value<int> createdAtMs = const Value.absent(),
+                Value<int> updatedAtMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WebIndexRecordsCompanion(
+                contentHash: contentHash,
+                title: title,
+                url: url,
+                snippet: snippet,
+                query: query,
+                sourceRequestId: sourceRequestId,
+                totalBytes: totalBytes,
+                expectedChunkCount: expectedChunkCount,
+                createdAtMs: createdAtMs,
+                updatedAtMs: updatedAtMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String contentHash,
+                required String title,
+                required String url,
+                required String snippet,
+                required String query,
+                required String sourceRequestId,
+                Value<int> totalBytes = const Value.absent(),
+                Value<int> expectedChunkCount = const Value.absent(),
+                required int createdAtMs,
+                required int updatedAtMs,
+                Value<int> rowid = const Value.absent(),
+              }) => WebIndexRecordsCompanion.insert(
+                contentHash: contentHash,
+                title: title,
+                url: url,
+                snippet: snippet,
+                query: query,
+                sourceRequestId: sourceRequestId,
+                totalBytes: totalBytes,
+                expectedChunkCount: expectedChunkCount,
+                createdAtMs: createdAtMs,
+                updatedAtMs: updatedAtMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WebIndexRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WebIndexRecordsTable,
+      WebIndexRecord,
+      $$WebIndexRecordsTableFilterComposer,
+      $$WebIndexRecordsTableOrderingComposer,
+      $$WebIndexRecordsTableAnnotationComposer,
+      $$WebIndexRecordsTableCreateCompanionBuilder,
+      $$WebIndexRecordsTableUpdateCompanionBuilder,
+      (
+        WebIndexRecord,
+        BaseReferences<_$AppDatabase, $WebIndexRecordsTable, WebIndexRecord>,
+      ),
+      WebIndexRecord,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6494,4 +7441,6 @@ class $AppDatabaseManager {
       $$ContentMetadataTableTableManager(_db, _db.contentMetadata);
   $$WalletLedgerEntriesTableTableManager get walletLedgerEntries =>
       $$WalletLedgerEntriesTableTableManager(_db, _db.walletLedgerEntries);
+  $$WebIndexRecordsTableTableManager get webIndexRecords =>
+      $$WebIndexRecordsTableTableManager(_db, _db.webIndexRecords);
 }

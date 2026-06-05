@@ -27,18 +27,21 @@ void main() {
     expect(base64Decode(vault.seed!).length, 32);
   });
 
-  test('rotate keeps the same node id but generates a new public identity', () async {
-    final vault = _InMemoryNodeIdentityVault();
-    final store = SecureNodeIdentityStore(vault: vault, random: Random(42));
+  test(
+    'rotate keeps the same node id but generates a new public identity',
+    () async {
+      final vault = _InMemoryNodeIdentityVault();
+      final store = SecureNodeIdentityStore(vault: vault, random: Random(42));
 
-    final first = await store.loadOrCreate(displayName: 'OffLiMU Node');
-    final rotated = await store.rotate(displayName: 'OffLiMU Node');
+      final first = await store.loadOrCreate(displayName: 'OffLiMU Node');
+      final rotated = await store.rotate(displayName: 'OffLiMU Node');
 
-    expect(rotated.nodeId, first.nodeId);
-    expect(rotated.publicKeyBase64, isNot(first.publicKeyBase64));
-    expect(rotated.publicKeyFingerprint, isNot(first.publicKeyFingerprint));
-    expect(vault.seed, isNotNull);
-  });
+      expect(rotated.nodeId, first.nodeId);
+      expect(rotated.publicKeyBase64, isNot(first.publicKeyBase64));
+      expect(rotated.publicKeyFingerprint, isNot(first.publicKeyFingerprint));
+      expect(vault.seed, isNotNull);
+    },
+  );
 
   test('macOS vault uses shared preferences storage', () async {
     TestWidgetsFlutterBinding.ensureInitialized();

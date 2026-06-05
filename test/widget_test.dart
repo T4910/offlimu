@@ -8,9 +8,7 @@ import 'package:offlimu/features/debug/presentation/debug_page.dart';
 import 'package:offlimu/node_runtime/node_runtime_state.dart';
 
 void main() {
-  testWidgets('Debug console renders', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('Debug console renders', (WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[

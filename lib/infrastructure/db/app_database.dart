@@ -117,6 +117,26 @@ class WalletLedgerEntries extends Table {
   Set<Column<Object>>? get primaryKey => {entryId};
 }
 
+class WebIndexRecords extends Table {
+  @override
+  String get tableName => 'web_index_entries';
+
+  TextColumn get contentHash => text()();
+  TextColumn get title => text()();
+  TextColumn get url => text()();
+  TextColumn get snippet => text()();
+  TextColumn get query => text()();
+  TextColumn get sourceRequestId => text()();
+  IntColumn get totalBytes => integer().withDefault(const Constant(0))();
+  IntColumn get expectedChunkCount =>
+      integer().withDefault(const Constant(1))();
+  IntColumn get createdAtMs => integer()();
+  IntColumn get updatedAtMs => integer()();
+
+  @override
+  Set<Column<Object>>? get primaryKey => {contentHash};
+}
+
 @DriftDatabase(
   tables: <Type>[
     BundleRecords,
@@ -126,6 +146,7 @@ class WalletLedgerEntries extends Table {
     AckEvents,
     ContentMetadata,
     WalletLedgerEntries,
+    WebIndexRecords,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -134,7 +155,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -190,6 +211,9 @@ class AppDatabase extends _$AppDatabase {
       if (from < 13) {
         await m.createTable(walletLedgerEntries);
       }
+      if (from < 14) {
+        await m.createTable(webIndexRecords);
+      }
     },
   );
 
@@ -216,6 +240,7 @@ class AppDatabase extends _$AppDatabase {
       await delete(syncJobs).go();
       await delete(contentMetadata).go();
       await delete(walletLedgerEntries).go();
+      await delete(webIndexRecords).go();
       await customStatement('DELETE FROM sqlite_sequence;');
     });
   }

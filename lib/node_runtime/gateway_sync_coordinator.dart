@@ -25,9 +25,9 @@ class GatewaySyncCoordinator {
     this.interval = const Duration(seconds: 20),
     this.maxConsecutiveFailures = 5,
     this.maxBackoff = const Duration(minutes: 5),
-  })  : _syncEngine = syncEngine,
-        _onState = onState,
-      _onStatus = onStatus;
+  }) : _syncEngine = syncEngine,
+       _onState = onState,
+       _onStatus = onStatus;
 
   final SyncEngine _syncEngine;
   final void Function(AsyncValue<SyncRunResult>) _onState;
@@ -125,7 +125,9 @@ class GatewaySyncCoordinator {
     final int multiplier = 1 << (failures - 1);
     final int delaySeconds = interval.inSeconds * multiplier;
     final int maxSeconds = maxBackoff.inSeconds;
-    return Duration(seconds: delaySeconds > maxSeconds ? maxSeconds : delaySeconds);
+    return Duration(
+      seconds: delaySeconds > maxSeconds ? maxSeconds : delaySeconds,
+    );
   }
 
   void _scheduleNext(Duration delay) {

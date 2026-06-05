@@ -18,11 +18,13 @@ import 'package:offlimu/domain/entities/node_public_identity.dart';
 import 'package:offlimu/domain/entities/peer_contact.dart';
 import 'package:offlimu/domain/entities/sync_job_history_entry.dart';
 import 'package:offlimu/domain/entities/wallet_ledger_entry.dart';
+import 'package:offlimu/domain/entities/web_index_entry.dart';
 import 'package:offlimu/domain/repositories/bundle_repository.dart';
 import 'package:offlimu/domain/repositories/chat_message_repository.dart';
 import 'package:offlimu/domain/repositories/peer_repository.dart';
 import 'package:offlimu/domain/repositories/sync_job_repository.dart';
 import 'package:offlimu/domain/repositories/wallet_repository.dart';
+import 'package:offlimu/domain/repositories/web_search_repository.dart';
 import 'package:offlimu/domain/services/discovery_adapter.dart';
 import 'package:offlimu/domain/services/device_conditions_service.dart';
 import 'package:offlimu/domain/services/logger_service.dart';
@@ -39,16 +41,19 @@ import 'package:offlimu/domain/use_cases/receive_chat_message_use_case.dart';
 import 'package:offlimu/domain/use_cases/initiate_wallet_spend_use_case.dart';
 import 'package:offlimu/domain/use_cases/send_chat_message_use_case.dart';
 import 'package:offlimu/domain/use_cases/send_file_transfer_use_case.dart';
+import 'package:offlimu/domain/use_cases/submit_web_search_request_use_case.dart';
 import 'package:offlimu/domain/use_cases/reward_issuance_use_case.dart';
 import 'package:offlimu/domain/use_cases/wallet_event_bundle_mapper.dart';
 import 'package:offlimu/domain/use_cases/wallet_sync_reconciliation_service.dart';
 import 'package:offlimu/domain/use_cases/reward_derivation_service.dart';
+import 'package:offlimu/domain/use_cases/web_search_result_ingestion_service.dart';
 import 'package:offlimu/infrastructure/db/app_database.dart' hide PeerContact;
 import 'package:offlimu/infrastructure/db/drift_bundle_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_chat_message_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_peer_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_sync_job_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_wallet_repository.dart';
+import 'package:offlimu/infrastructure/db/drift_web_search_repository.dart';
 import 'package:offlimu/infrastructure/content/local_file_content_store.dart';
 import 'package:offlimu/infrastructure/crypto/ed25519_bundle_signature_service.dart';
 import 'package:offlimu/infrastructure/crypto/ed25519_crypto_service.dart';
@@ -291,6 +296,11 @@ final Provider<WalletRepository> walletRepositoryProvider =
       (ref) => DriftWalletRepository(ref.watch(appDatabaseProvider)),
     );
 
+final Provider<WebSearchRepository> webSearchRepositoryProvider =
+    Provider<WebSearchRepository>(
+      (ref) => DriftWebSearchRepository(ref.watch(appDatabaseProvider)),
+    );
+
 final Provider<WalletEventBundleMapper> walletEventBundleMapperProvider =
     Provider<WalletEventBundleMapper>((ref) => const WalletEventBundleMapper());
 
@@ -331,6 +341,25 @@ walletSyncReconciliationServiceProvider =
       (ref) => WalletSyncReconciliationService(
         walletRepository: ref.watch(walletRepositoryProvider),
         mapper: ref.watch(walletEventBundleMapperProvider),
+      ),
+    );
+
+final Provider<SubmitWebSearchRequestUseCase>
+submitWebSearchRequestUseCaseProvider = Provider<SubmitWebSearchRequestUseCase>(
+  (ref) => SubmitWebSearchRequestUseCase(
+    bundles: ref.watch(bundleRepositoryProvider),
+    bundleSignatureService: ref.watch(bundleSignatureServiceProvider),
+  ),
+);
+
+final Provider<WebSearchResultIngestionService>
+webSearchResultIngestionServiceProvider =
+    Provider<WebSearchResultIngestionService>(
+      (ref) => WebSearchResultIngestionService(
+        sendFileTransfer: ref.watch(sendFileTransferUseCaseProvider),
+        webSearchRepository: ref.watch(webSearchRepositoryProvider),
+        bundleRepository: ref.watch(bundleRepositoryProvider),
+        bundleSignatureService: ref.watch(bundleSignatureServiceProvider),
       ),
     );
 
@@ -430,6 +459,23 @@ final StreamProvider<WalletLedgerDashboard> walletDashboardProvider =
           .watchDashboard(recentLimit: 3, rewardLimit: 4, logLimit: 6),
     );
 
+final StreamProvider<List<WebIndexEntry>> recentWebIndexEntriesProvider =
+    StreamProvider<List<WebIndexEntry>>(
+      (ref) => ref.watch(webSearchRepositoryProvider).watchRecent(limit: 50),
+    );
+
+final StreamProviderFamily<List<WebIndexEntry>, String>
+webSearchEntriesProvider = StreamProvider.family<List<WebIndexEntry>, String>(
+  (ref, query) =>
+      ref.watch(webSearchRepositoryProvider).watchSearch(query, limit: 30),
+);
+
+final FutureProviderFamily<WebIndexEntry?, String> webIndexEntryProvider =
+    FutureProvider.family<WebIndexEntry?, String>(
+      (ref, contentHash) =>
+          ref.watch(webSearchRepositoryProvider).getByContentHash(contentHash),
+    );
+
 final StreamProvider<List<ContentMetadataRecord>>
 recentContentMetadataProvider = StreamProvider<List<ContentMetadataRecord>>(
   (ref) => ref
@@ -523,6 +569,9 @@ final Provider<SyncEngine> syncEngineProvider = Provider<SyncEngine>(
     deviceConditions: ref.watch(deviceConditionsServiceProvider),
     walletSyncReconciliationService: ref.watch(
       walletSyncReconciliationServiceProvider,
+    ),
+    webSearchResultIngestionService: ref.watch(
+      webSearchResultIngestionServiceProvider,
     ),
     logger: ref.watch(loggerServiceProvider),
     devicePolicy: SyncDevicePolicy(
@@ -636,6 +685,9 @@ final Provider<NodeRuntime> nodeRuntimeProvider = Provider<NodeRuntime>((ref) {
     maxHopCount: _appConfig.maxBundleHopCount,
     walletSyncReconciliationService: ref.watch(
       walletSyncReconciliationServiceProvider,
+    ),
+    webSearchResultIngestionService: ref.watch(
+      webSearchResultIngestionServiceProvider,
     ),
     logger: ref.watch(loggerServiceProvider),
   );

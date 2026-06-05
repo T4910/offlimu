@@ -10,7 +10,9 @@ class DriftSyncJobRepository implements SyncJobRepository {
 
   @override
   Future<void> saveRun(SyncJobHistoryEntry entry) {
-    return _db.into(_db.syncJobs).insert(
+    return _db
+        .into(_db.syncJobs)
+        .insert(
           SyncJobsCompanion(
             startedAtMs: Value<int>(entry.startedAt.millisecondsSinceEpoch),
             completedAtMs: Value<int>(entry.completedAt.millisecondsSinceEpoch),
@@ -28,31 +30,30 @@ class DriftSyncJobRepository implements SyncJobRepository {
   @override
   Stream<List<SyncJobHistoryEntry>> watchRecentRuns({int limit = 20}) {
     final query = (_db.select(_db.syncJobs)
-      ..orderBy(
-        <OrderingTerm Function($SyncJobsTable)>[
-          (tbl) => OrderingTerm.desc(tbl.completedAtMs),
-        ],
-      )
+      ..orderBy(<OrderingTerm Function($SyncJobsTable)>[
+        (tbl) => OrderingTerm.desc(tbl.completedAtMs),
+      ])
       ..limit(limit));
 
     return query.watch().map(
-          (rows) => rows
-              .map(
-                (row) => SyncJobHistoryEntry(
-                  id: row.id,
-                  startedAt: DateTime.fromMillisecondsSinceEpoch(row.startedAtMs),
-                  completedAt:
-                      DateTime.fromMillisecondsSinceEpoch(row.completedAtMs),
-                  uploadedCount: row.uploadedCount,
-                  downloadedCount: row.downloadedCount,
-                  success: row.success,
-                  mockMode: row.mockMode,
-                  gatewayEnabled: row.gatewayEnabled,
-                  internetReachable: row.internetReachable,
-                  errorMessage: row.errorMessage,
-                ),
-              )
-              .toList(growable: false),
-        );
+      (rows) => rows
+          .map(
+            (row) => SyncJobHistoryEntry(
+              id: row.id,
+              startedAt: DateTime.fromMillisecondsSinceEpoch(row.startedAtMs),
+              completedAt: DateTime.fromMillisecondsSinceEpoch(
+                row.completedAtMs,
+              ),
+              uploadedCount: row.uploadedCount,
+              downloadedCount: row.downloadedCount,
+              success: row.success,
+              mockMode: row.mockMode,
+              gatewayEnabled: row.gatewayEnabled,
+              internetReachable: row.internetReachable,
+              errorMessage: row.errorMessage,
+            ),
+          )
+          .toList(growable: false),
+    );
   }
 }

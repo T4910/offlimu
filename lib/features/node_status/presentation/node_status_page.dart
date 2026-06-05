@@ -153,16 +153,19 @@ class _NodeStatusPageState extends ConsumerState<NodeStatusPage> {
                       error: (error, stackTrace) =>
                           Text('Active peers error: $error'),
                       data: (List<PeerContact> peers) {
-                        final activePeers = peers
-                            .where(
-                              (peer) =>
-                                  DateTime.now()
+                        final activePeers =
+                            peers
+                                .where(
+                                  (peer) =>
+                                      DateTime.now()
                                           .difference(peer.lastSeen)
                                           .inSeconds <=
                                       60,
-                            )
-                            .toList(growable: false)
-                          ..sort((a, b) => b.lastSeen.compareTo(a.lastSeen));
+                                )
+                                .toList(growable: false)
+                              ..sort(
+                                (a, b) => b.lastSeen.compareTo(a.lastSeen),
+                              );
                         if (activePeers.isEmpty) {
                           return const Text('No active peers recently seen.');
                         }
@@ -541,6 +544,11 @@ class _NodeStatusPageState extends ConsumerState<NodeStatusPage> {
                         OutlinedButton(
                           onPressed: () => context.push('/files'),
                           child: const Text('Open Files'),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton(
+                          onPressed: () => context.push('/search'),
+                          child: const Text('Open Search'),
                         ),
                         const SizedBox(width: 8),
                         OutlinedButton(

@@ -52,7 +52,10 @@ class AppConfig {
         defaultValue: 'node-local-001',
       ),
       transportMode: TransportMode.fromWire(
-        const String.fromEnvironment('OFFLIMU_TRANSPORT_MODE', defaultValue: 'http'),
+        const String.fromEnvironment(
+          'OFFLIMU_TRANSPORT_MODE',
+          defaultValue: 'http',
+        ),
       ),
       transportPort: const int.fromEnvironment(
         'OFFLIMU_TCP_PORT',

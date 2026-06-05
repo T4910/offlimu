@@ -62,7 +62,9 @@ void main() {
 
     await sender.sendBundle(peerNodeId: 'node-b', bundle: bundle);
 
-    final inbound = await receivedBundle.future.timeout(const Duration(seconds: 5));
+    final inbound = await receivedBundle.future.timeout(
+      const Duration(seconds: 5),
+    );
 
     expect(inbound.bundleId, bundle.bundleId);
     expect(inbound.type, bundle.type);

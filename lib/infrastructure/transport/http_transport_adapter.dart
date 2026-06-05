@@ -53,10 +53,18 @@ class HttpTransportAdapter implements TransportAdapter {
       return false;
     }
 
-    final client = _client ??= HttpClient()..connectionTimeout = _connectTimeout;
+    final client = _client ??= HttpClient()
+      ..connectionTimeout = _connectTimeout;
     try {
       final request = await client
-          .getUrl(Uri(scheme: 'http', host: peer.host, port: peer.port, path: '/v1/health'))
+          .getUrl(
+            Uri(
+              scheme: 'http',
+              host: peer.host,
+              port: peer.port,
+              path: '/v1/health',
+            ),
+          )
           .timeout(_connectTimeout);
       final response = await request.close().timeout(_requestTimeout);
       await response.drain<void>().timeout(_requestTimeout);
@@ -75,10 +83,7 @@ class HttpTransportAdapter implements TransportAdapter {
 
     _client ??= HttpClient()..connectionTimeout = _connectTimeout;
 
-    final server = await HttpServer.bind(
-      InternetAddress.anyIPv4,
-      _listenPort,
-    );
+    final server = await HttpServer.bind(InternetAddress.anyIPv4, _listenPort);
     _server = server;
     unawaited(server.forEach(_handleRequest));
   }
@@ -104,7 +109,8 @@ class HttpTransportAdapter implements TransportAdapter {
     }
 
     final Map<String, Object?> payload = _toWirePayload(bundle);
-    final client = _client ??= HttpClient()..connectionTimeout = _connectTimeout;
+    final client = _client ??= HttpClient()
+      ..connectionTimeout = _connectTimeout;
 
     Object? lastError;
     final int maxAttempts = _sendMaxAttempts <= 0 ? 1 : _sendMaxAttempts;

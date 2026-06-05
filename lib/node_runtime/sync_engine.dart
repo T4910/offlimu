@@ -6,6 +6,7 @@ import 'package:offlimu/domain/services/device_conditions_service.dart';
 import 'package:offlimu/domain/services/logger_service.dart';
 import 'package:offlimu/domain/services/sync_api.dart';
 import 'package:offlimu/domain/use_cases/wallet_sync_reconciliation_service.dart';
+import 'package:offlimu/domain/use_cases/web_search_result_ingestion_service.dart';
 
 class SyncDevicePolicy {
   const SyncDevicePolicy({
@@ -45,6 +46,7 @@ class SyncEngine {
     required SyncJobRepository syncJobs,
     required DeviceConditionsService deviceConditions,
     WalletSyncReconciliationService? walletSyncReconciliationService,
+    WebSearchResultIngestionService? webSearchResultIngestionService,
     LoggerService? logger,
     this.devicePolicy = const SyncDevicePolicy(),
     this.maxHopCount = 5,
@@ -54,6 +56,7 @@ class SyncEngine {
        _syncJobs = syncJobs,
        _deviceConditions = deviceConditions,
        _walletSyncReconciliationService = walletSyncReconciliationService,
+       _webSearchResultIngestionService = webSearchResultIngestionService,
        _logger = logger;
 
   final String _localNodeId;
@@ -62,6 +65,7 @@ class SyncEngine {
   final SyncJobRepository _syncJobs;
   final DeviceConditionsService _deviceConditions;
   final WalletSyncReconciliationService? _walletSyncReconciliationService;
+  final WebSearchResultIngestionService? _webSearchResultIngestionService;
   final LoggerService? _logger;
   final SyncDevicePolicy devicePolicy;
   final int maxHopCount;
@@ -173,7 +177,12 @@ class SyncEngine {
       final List<Bundle> pending = await _bundles.getPendingBundles();
       final DateTime now = DateTime.now();
       final List<Bundle> outbound = pending
-          .where((bundle) => bundle.sourceNodeId == _localNodeId)
+          .where(
+            (bundle) =>
+                bundle.sourceNodeId == _localNodeId ||
+                (bundle.type == Bundle.typeWebSearchRequest &&
+                    bundle.isWebBundle),
+          )
           .where((bundle) => !bundle.isAck)
           .where((bundle) => !_isExpired(bundle, now))
           .where((bundle) => bundle.hopCount < maxHopCount)
@@ -184,10 +193,12 @@ class SyncEngine {
               .where((bundle) => bundle.sourceNodeId == _localNodeId)
               .where((bundle) => !bundle.isAck)
               .where((bundle) => _isExpired(bundle, now))) {
-        await _bundles.markRejected(
-          expired.bundleId,
-          reason: 'Bundle expired before gateway sync (TTL exceeded).',
+        const reason = 'Bundle expired before gateway sync (TTL exceeded).';
+        await _walletSyncReconciliationService?.applyExpiredSpend(
+          bundle: expired,
+          reason: reason,
         );
+        await _bundles.markRejected(expired.bundleId, reason: reason);
       }
 
       for (final overHop
@@ -203,6 +214,10 @@ class SyncEngine {
 
       uploadedCount = outbound.length;
       final uploadResult = await _syncApi.uploadBundles(outbound);
+      await _webSearchResultIngestionService?.ingest(
+        localNodeId: _localNodeId,
+        results: uploadResult.webSearchResults,
+      );
 
       await _walletSyncReconciliationService?.applyUploadResult(
         outboundBundles: outbound,
@@ -271,7 +286,17 @@ class SyncEngine {
         }
 
         if (bundle.isWalletEvent) {
-          await _walletSyncReconciliationService?.applyInboundWalletBundle(bundle);
+          await _walletSyncReconciliationService?.applyInboundWalletBundle(
+            bundle,
+          );
+          await _bundles.markAcknowledged(bundle.bundleId);
+          continue;
+        }
+
+        if (bundle.type == Bundle.typeWebIndexUpdate) {
+          await _webSearchResultIngestionService?.ingestIndexUpdateBundle(
+            bundle,
+          );
           await _bundles.markAcknowledged(bundle.bundleId);
           continue;
         }

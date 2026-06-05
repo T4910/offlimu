@@ -12,7 +12,7 @@ import 'package:offlimu/core/debug/runtime_models.dart';
 import 'package:offlimu/domain/entities/ack_event.dart';
 import 'package:offlimu/domain/entities/bundle.dart';
 import 'package:offlimu/domain/entities/chat_message.dart'
-  show ChatMessage, MessageDeliveryStatus;
+    show ChatMessage, MessageDeliveryStatus;
 import 'package:offlimu/domain/entities/content_metadata_record.dart';
 import 'package:offlimu/domain/entities/wallet_ledger_entry.dart' as ledger;
 import 'package:offlimu/domain/entities/peer_contact.dart';
@@ -68,16 +68,21 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                     await _copyDiagnostics(
                       context: context,
                       runtimeState: runtimeAsync.requireValue,
-                      peers: peerContactsAsync.valueOrNull ?? const <PeerContact>[],
+                      peers:
+                          peerContactsAsync.valueOrNull ??
+                          const <PeerContact>[],
                       pendingBundles:
                           pendingBundlesAsync.valueOrNull ?? const <Bundle>[],
                       chatMessages:
-                          chatMessagesAsync.valueOrNull ?? const <ChatMessage>[],
+                          chatMessagesAsync.valueOrNull ??
+                          const <ChatMessage>[],
                       ackEvents:
                           ackEventsAsync.valueOrNull ?? const <AckAuditEvent>[],
                       syncJobs:
-                          syncJobsAsync.valueOrNull ?? const <SyncJobHistoryEntry>[],
-                      contentMetadata: contentMetadataAsync.valueOrNull ??
+                          syncJobsAsync.valueOrNull ??
+                          const <SyncJobHistoryEntry>[],
+                      contentMetadata:
+                          contentMetadataAsync.valueOrNull ??
                           const <ContentMetadataRecord>[],
                       errorEntries: errorLogStore.entries.value,
                       runtimeLogs: runtimeLogStore.entries.value,
@@ -99,7 +104,8 @@ class _DebugPageState extends ConsumerState<DebugPage> {
           children: <Widget>[
             _SectionCard(
               title: 'Runtime Overview',
-              subtitle: 'Landing zone for transport, bundle, ACK, and sync debugging.',
+              subtitle:
+                  'Landing zone for transport, bundle, ACK, and sync debugging.',
               trailing: Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -108,14 +114,18 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                     onPressed: runtime.isRunning
                         ? () => _runAction(context, runtime.stop)
                         : () => _runAction(context, runtime.start),
-                    child: Text(runtime.isRunning ? 'Stop Runtime' : 'Start Runtime'),
+                    child: Text(
+                      runtime.isRunning ? 'Stop Runtime' : 'Start Runtime',
+                    ),
                   ),
                   OutlinedButton(
-                    onPressed: () => _runAction(context, runtime.flushPendingNow),
+                    onPressed: () =>
+                        _runAction(context, runtime.flushPendingNow),
                     child: const Text('Flush Pending'),
                   ),
                   OutlinedButton(
-                    onPressed: () => _runAction(context, runtime.refreshPeersNow),
+                    onPressed: () =>
+                        _runAction(context, runtime.refreshPeersNow),
                     child: const Text('Refresh Peers'),
                   ),
                   OutlinedButton.icon(
@@ -148,7 +158,10 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                     spacing: 8,
                     runSpacing: 8,
                     children: <Widget>[
-                      _MetricChip(label: 'Health', value: runtimeState.health.name),
+                      _MetricChip(
+                        label: 'Health',
+                        value: runtimeState.health.name,
+                      ),
                       _MetricChip(
                         label: 'Peers',
                         value: runtimeState.discoveredPeers.toString(),
@@ -159,7 +172,9 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                       ),
                       _MetricChip(
                         label: 'Gateway',
-                        value: runtimeState.gatewayEnabled ? 'Enabled' : 'Disabled',
+                        value: runtimeState.gatewayEnabled
+                            ? 'Enabled'
+                            : 'Disabled',
                       ),
                       _MetricChip(
                         label: 'TX ok/fail',
@@ -168,23 +183,28 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                       ),
                       _MetricChip(
                         label: 'Ingested',
-                        value: runtimeState.telemetry.inboundBundlesReceived.toString(),
+                        value: runtimeState.telemetry.inboundBundlesReceived
+                            .toString(),
                       ),
                       _MetricChip(
                         label: 'Relayed',
-                        value: runtimeState.telemetry.inboundBundlesRelayed.toString(),
+                        value: runtimeState.telemetry.inboundBundlesRelayed
+                            .toString(),
                       ),
                       _MetricChip(
                         label: 'ACKs in',
-                        value: runtimeState.telemetry.inboundAcksReceived.toString(),
+                        value: runtimeState.telemetry.inboundAcksReceived
+                            .toString(),
                       ),
                       _MetricChip(
                         label: 'ACKs out',
-                        value: runtimeState.telemetry.outboundAcksGenerated.toString(),
+                        value: runtimeState.telemetry.outboundAcksGenerated
+                            .toString(),
                       ),
                       _MetricChip(
                         label: 'Liveness fails',
-                        value: runtimeState.telemetry.livenessFailures.toString(),
+                        value: runtimeState.telemetry.livenessFailures
+                            .toString(),
                       ),
                     ],
                   ),
@@ -219,7 +239,8 @@ class _DebugPageState extends ConsumerState<DebugPage> {
             const SizedBox(height: 10),
             _SectionCard(
               title: 'Wallet Grant',
-              subtitle: 'Issue a manual confirmed reward entry for wallet bootstrap or testing.',
+              subtitle:
+                  'Issue a manual confirmed reward entry for wallet bootstrap or testing.',
               child: walletDashboardAsync.when(
                 loading: () => const Text('Loading wallet state...'),
                 error: (error, stackTrace) => Text('Wallet error: $error'),
@@ -261,13 +282,15 @@ class _DebugPageState extends ConsumerState<DebugPage> {
             const SizedBox(height: 10),
             _SectionCard(
               title: 'Receiver Ingest',
-              subtitle: 'What the receiver actually saved into chat and ACK history.',
+              subtitle:
+                  'What the receiver actually saved into chat and ACK history.',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   _LabelValueRow(
                     label: 'Chat projection',
-                    value: runtimeState.telemetry.inboundBundlesReceived.toString(),
+                    value: runtimeState.telemetry.inboundBundlesReceived
+                        .toString(),
                   ),
                   const SizedBox(height: 8),
                   chatMessagesAsync.when(
@@ -349,7 +372,9 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                     builder: (context, entries, _) {
                       final visible = _filterRuntimeLogs(entries);
                       if (visible.isEmpty) {
-                        return const Text('No runtime log entries recorded yet.');
+                        return const Text(
+                          'No runtime log entries recorded yet.',
+                        );
                       }
                       return Column(
                         children: visible
@@ -361,7 +386,8 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                                   entry.timestamp.toIso8601String(),
                                   if (entry.fields.isNotEmpty)
                                     'fields: ${_formatFields(entry.fields)}',
-                                  if (entry.error != null) 'error: ${entry.error}',
+                                  if (entry.error != null)
+                                    'error: ${entry.error}',
                                   if (entry.stackTrace != null)
                                     'stack: ${entry.stackTrace}',
                                 ],
@@ -404,7 +430,8 @@ class _DebugPageState extends ConsumerState<DebugPage> {
             const SizedBox(height: 10),
             _SectionCard(
               title: 'Peers and Discovery',
-              subtitle: 'Persisted peers, discovery hits, and the next-hop map.',
+              subtitle:
+                  'Persisted peers, discovery hits, and the next-hop map.',
               child: peerContactsAsync.when(
                 loading: () => const Text('Loading peers...'),
                 error: (error, stackTrace) => Text('Peer error: $error'),
@@ -433,7 +460,8 @@ class _DebugPageState extends ConsumerState<DebugPage> {
             const SizedBox(height: 10),
             _SectionCard(
               title: 'Bundle Timeline',
-              subtitle: 'Pending and typed bundle history, including relay and rejection states.',
+              subtitle:
+                  'Pending and typed bundle history, including relay and rejection states.',
               trailing: OutlinedButton.icon(
                 icon: const Icon(Icons.view_list_outlined),
                 label: const Text('Bundle Explorer'),
@@ -454,7 +482,9 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                   ),
                   const SizedBox(height: 12),
                   StreamBuilder<List<Bundle>>(
-                    stream: bundleRepository.watchBundlesByType(Bundle.typeChatMessage),
+                    stream: bundleRepository.watchBundlesByType(
+                      Bundle.typeChatMessage,
+                    ),
                     builder: (context, snapshot) => _buildBundleList(
                       context,
                       'Chat bundles',
@@ -476,8 +506,9 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                   ),
                   const SizedBox(height: 12),
                   StreamBuilder<List<Bundle>>(
-                    stream:
-                        bundleRepository.watchBundlesByType(Bundle.typeSyncRejection),
+                    stream: bundleRepository.watchBundlesByType(
+                      Bundle.typeSyncRejection,
+                    ),
                     builder: (context, snapshot) => _buildBundleList(
                       context,
                       'Sync rejection bundles',
@@ -488,7 +519,9 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                   ),
                   const SizedBox(height: 12),
                   StreamBuilder<List<Bundle>>(
-                    stream: bundleRepository.watchBundlesByType(Bundle.typeFileShareMetadata),
+                    stream: bundleRepository.watchBundlesByType(
+                      Bundle.typeFileShareMetadata,
+                    ),
                     builder: (context, snapshot) => _buildBundleList(
                       context,
                       'File metadata bundles',
@@ -499,7 +532,9 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                   ),
                   const SizedBox(height: 12),
                   StreamBuilder<List<Bundle>>(
-                    stream: bundleRepository.watchBundlesByType(Bundle.typeFileShareChunk),
+                    stream: bundleRepository.watchBundlesByType(
+                      Bundle.typeFileShareChunk,
+                    ),
                     builder: (context, snapshot) => _buildBundleList(
                       context,
                       'File chunk bundles',
@@ -533,7 +568,9 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                               'from ${message.sourceNodeId} to ${message.destinationNodeId ?? '(broadcast)'}',
                               message.body,
                             ],
-                            highlight: message.deliveryStatus == MessageDeliveryStatus.failed,
+                            highlight:
+                                message.deliveryStatus ==
+                                MessageDeliveryStatus.failed,
                           ),
                         )
                         .toList(growable: false),
@@ -567,7 +604,8 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                             subtitleLines: <String>[
                               'bytes ${record.totalBytes} • chunks ${record.chunkCount}',
                               'created ${record.createdAt.toIso8601String()}',
-                              if (record.localPath != null) 'path ${record.localPath}',
+                              if (record.localPath != null)
+                                'path ${record.localPath}',
                             ],
                           ),
                         )
@@ -579,7 +617,8 @@ class _DebugPageState extends ConsumerState<DebugPage> {
             const SizedBox(height: 10),
             _SectionCard(
               title: 'Sync and Gateway',
-              subtitle: 'Manual sync state, gateway status, and recent job history.',
+              subtitle:
+                  'Manual sync state, gateway status, and recent job history.',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -608,7 +647,8 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                   const SizedBox(height: 12),
                   syncJobsAsync.when(
                     loading: () => const Text('Loading sync jobs...'),
-                    error: (error, stackTrace) => Text('Sync jobs error: $error'),
+                    error: (error, stackTrace) =>
+                        Text('Sync jobs error: $error'),
                     data: (jobs) {
                       final visible = _filterSyncJobs(jobs);
                       if (visible.isEmpty) {
@@ -625,7 +665,8 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                                   'started ${job.startedAt.toIso8601String()}',
                                   'completed ${job.completedAt.toIso8601String()}',
                                   'gateway ${job.gatewayEnabled ? 'enabled' : 'disabled'} • internet ${job.internetReachable ? 'reachable' : 'offline'}',
-                                  if (job.errorMessage != null) 'error ${job.errorMessage}',
+                                  if (job.errorMessage != null)
+                                    'error ${job.errorMessage}',
                                 ],
                                 highlight: !job.success,
                               ),
@@ -653,9 +694,9 @@ class _DebugPageState extends ConsumerState<DebugPage> {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Action failed: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Action failed: $error')));
     }
   }
 
@@ -705,7 +746,9 @@ class _DebugPageState extends ConsumerState<DebugPage> {
 
     if (amountCoins == null || amountCoins <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid coin amount before granting.')),
+        const SnackBar(
+          content: Text('Enter a valid coin amount before granting.'),
+        ),
       );
       return;
     }
@@ -723,12 +766,19 @@ class _DebugPageState extends ConsumerState<DebugPage> {
       memo: 'Debug grant',
     );
 
-    await _runAction(context, () => ref.read(walletRepositoryProvider).appendEntry(entry));
+    await _runAction(
+      context,
+      () => ref.read(walletRepositoryProvider).appendEntry(entry),
+    );
     if (!context.mounted) {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Granted ${_formatMinorUnits(amountMinorUnits)} to the wallet.')),
+      SnackBar(
+        content: Text(
+          'Granted ${_formatMinorUnits(amountMinorUnits)} to the wallet.',
+        ),
+      ),
     );
   }
 
@@ -750,13 +800,19 @@ class _DebugPageState extends ConsumerState<DebugPage> {
     final buffer = StringBuffer()
       ..writeln('OffLiMU Debug Diagnostics')
       ..writeln('Generated: ${DateTime.now().toIso8601String()}')
-      ..writeln('Node: ${runtimeState.identity.displayName} (${runtimeState.identity.nodeId})')
+      ..writeln(
+        'Node: ${runtimeState.identity.displayName} (${runtimeState.identity.nodeId})',
+      )
       ..writeln('Health: ${runtimeState.health.name}')
       ..writeln('Peers: ${runtimeState.discoveredPeers}')
       ..writeln('Pending bundles: ${runtimeState.pendingBundles}')
       ..writeln('Gateway enabled: $gatewayEnabled')
-      ..writeln('Gateway status: enabled=${gatewayStatus.enabled}, failures=${gatewayStatus.consecutiveFailures}, deadLettered=${gatewayStatus.deadLettered}, nextDelay=${gatewayStatus.nextDelaySeconds}')
-      ..writeln('Telemetry: ${jsonEncode(_telemetryToJson(runtimeState.telemetry))}')
+      ..writeln(
+        'Gateway status: enabled=${gatewayStatus.enabled}, failures=${gatewayStatus.consecutiveFailures}, deadLettered=${gatewayStatus.deadLettered}, nextDelay=${gatewayStatus.nextDelaySeconds}',
+      )
+      ..writeln(
+        'Telemetry: ${jsonEncode(_telemetryToJson(runtimeState.telemetry))}',
+      )
       ..writeln()
       ..writeln('Peers (${peers.length})')
       ..writeln(peers.map(_peerToLine).join('\n'))
@@ -792,15 +848,17 @@ class _DebugPageState extends ConsumerState<DebugPage> {
   }
 
   List<PeerContact> _filterPeers(List<PeerContact> peers) {
-    final visible = peers.where((peer) {
-      if (_filter.isEmpty) {
-        return !_failuresOnly;
-      }
-      final haystack =
-          '${peer.nodeId} ${peer.host} ${peer.port} ${peer.lastSeen.toIso8601String()} ${peer.seenCount}'
-              .toLowerCase();
-      return haystack.contains(_filter);
-    }).toList(growable: false);
+    final visible = peers
+        .where((peer) {
+          if (_filter.isEmpty) {
+            return !_failuresOnly;
+          }
+          final haystack =
+              '${peer.nodeId} ${peer.host} ${peer.port} ${peer.lastSeen.toIso8601String()} ${peer.seenCount}'
+                  .toLowerCase();
+          return haystack.contains(_filter);
+        })
+        .toList(growable: false);
 
     final sorted = visible.toList(growable: false)
       ..sort((a, b) => b.lastSeen.compareTo(a.lastSeen));
@@ -808,18 +866,20 @@ class _DebugPageState extends ConsumerState<DebugPage> {
   }
 
   List<Bundle> _filterBundles(List<Bundle> bundles) {
-    final visible = bundles.where((bundle) {
-      if (_failuresOnly && !_isFailureBundle(bundle)) {
-        return false;
-      }
-      if (_filter.isEmpty) {
-        return true;
-      }
-      final haystack =
-          '${bundle.bundleId} ${bundle.type} ${bundle.sourceNodeId} ${bundle.destinationNodeId ?? ''} ${bundle.ackForBundleId ?? ''} ${bundle.payloadReference ?? ''} ${bundle.hopCount} ${bundle.failedAttempts} ${bundle.lastError ?? ''} ${bundle.sentAt?.toIso8601String() ?? ''}'
-              .toLowerCase();
-      return haystack.contains(_filter);
-    }).toList(growable: false);
+    final visible = bundles
+        .where((bundle) {
+          if (_failuresOnly && !_isFailureBundle(bundle)) {
+            return false;
+          }
+          if (_filter.isEmpty) {
+            return true;
+          }
+          final haystack =
+              '${bundle.bundleId} ${bundle.type} ${bundle.sourceNodeId} ${bundle.destinationNodeId ?? ''} ${bundle.ackForBundleId ?? ''} ${bundle.payloadReference ?? ''} ${bundle.hopCount} ${bundle.failedAttempts} ${bundle.lastError ?? ''} ${bundle.sentAt?.toIso8601String() ?? ''}'
+                  .toLowerCase();
+          return haystack.contains(_filter);
+        })
+        .toList(growable: false);
 
     final sorted = visible.toList(growable: false)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -827,18 +887,20 @@ class _DebugPageState extends ConsumerState<DebugPage> {
   }
 
   List<AckAuditEvent> _filterAckEvents(List<AckAuditEvent> ackEvents) {
-    final visible = ackEvents.where((event) {
-      if (_failuresOnly && event.duplicateCount == 0) {
-        return false;
-      }
-      if (_filter.isEmpty) {
-        return true;
-      }
-      final haystack =
-          '${event.ackBundleId} ${event.ackForBundleId ?? ''} ${event.sourceNodeId} ${event.duplicateCount}'
-              .toLowerCase();
-      return haystack.contains(_filter);
-    }).toList(growable: false);
+    final visible = ackEvents
+        .where((event) {
+          if (_failuresOnly && event.duplicateCount == 0) {
+            return false;
+          }
+          if (_filter.isEmpty) {
+            return true;
+          }
+          final haystack =
+              '${event.ackBundleId} ${event.ackForBundleId ?? ''} ${event.sourceNodeId} ${event.duplicateCount}'
+                  .toLowerCase();
+          return haystack.contains(_filter);
+        })
+        .toList(growable: false);
 
     final sorted = visible.toList(growable: false)
       ..sort((a, b) => b.lastReceivedAt.compareTo(a.lastReceivedAt));
@@ -846,34 +908,41 @@ class _DebugPageState extends ConsumerState<DebugPage> {
   }
 
   List<ChatMessage> _filterChatMessages(List<ChatMessage> messages) {
-    final visible = messages.where((message) {
-      if (_failuresOnly && message.deliveryStatus == MessageDeliveryStatus.acked) {
-        return false;
-      }
-      if (_filter.isEmpty) {
-        return true;
-      }
-      final haystack =
-          '${message.messageId} ${message.sourceNodeId} ${message.destinationNodeId ?? ''} ${message.body} ${message.deliveryStatus.name} ${message.lastError ?? ''}'
-              .toLowerCase();
-      return haystack.contains(_filter);
-    }).toList(growable: false);
+    final visible = messages
+        .where((message) {
+          if (_failuresOnly &&
+              message.deliveryStatus == MessageDeliveryStatus.acked) {
+            return false;
+          }
+          if (_filter.isEmpty) {
+            return true;
+          }
+          final haystack =
+              '${message.messageId} ${message.sourceNodeId} ${message.destinationNodeId ?? ''} ${message.body} ${message.deliveryStatus.name} ${message.lastError ?? ''}'
+                  .toLowerCase();
+          return haystack.contains(_filter);
+        })
+        .toList(growable: false);
 
     final sorted = visible.toList(growable: false)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return sorted;
   }
 
-  List<ContentMetadataRecord> _filterContent(List<ContentMetadataRecord> content) {
-    final visible = content.where((record) {
-      if (_filter.isEmpty) {
-        return true;
-      }
-      final haystack =
-          '${record.contentHash} ${record.mimeType ?? ''} ${record.totalBytes} ${record.chunkCount} ${record.localPath ?? ''}'
-              .toLowerCase();
-      return haystack.contains(_filter);
-    }).toList(growable: false);
+  List<ContentMetadataRecord> _filterContent(
+    List<ContentMetadataRecord> content,
+  ) {
+    final visible = content
+        .where((record) {
+          if (_filter.isEmpty) {
+            return true;
+          }
+          final haystack =
+              '${record.contentHash} ${record.mimeType ?? ''} ${record.totalBytes} ${record.chunkCount} ${record.localPath ?? ''}'
+                  .toLowerCase();
+          return haystack.contains(_filter);
+        })
+        .toList(growable: false);
 
     final sorted = visible.toList(growable: false)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -881,18 +950,20 @@ class _DebugPageState extends ConsumerState<DebugPage> {
   }
 
   List<SyncJobHistoryEntry> _filterSyncJobs(List<SyncJobHistoryEntry> jobs) {
-    final visible = jobs.where((job) {
-      if (_failuresOnly && job.success) {
-        return false;
-      }
-      if (_filter.isEmpty) {
-        return true;
-      }
-      final haystack =
-          '${job.id ?? ''} ${job.uploadedCount} ${job.downloadedCount} ${job.errorMessage ?? ''} ${job.completedAt.toIso8601String()}'
-              .toLowerCase();
-      return haystack.contains(_filter);
-    }).toList(growable: false);
+    final visible = jobs
+        .where((job) {
+          if (_failuresOnly && job.success) {
+            return false;
+          }
+          if (_filter.isEmpty) {
+            return true;
+          }
+          final haystack =
+              '${job.id ?? ''} ${job.uploadedCount} ${job.downloadedCount} ${job.errorMessage ?? ''} ${job.completedAt.toIso8601String()}'
+                  .toLowerCase();
+          return haystack.contains(_filter);
+        })
+        .toList(growable: false);
 
     final sorted = visible.toList(growable: false)
       ..sort((a, b) => b.completedAt.compareTo(a.completedAt));
@@ -900,18 +971,20 @@ class _DebugPageState extends ConsumerState<DebugPage> {
   }
 
   List<RuntimeLogEntry> _filterRuntimeLogs(List<RuntimeLogEntry> entries) {
-    final visible = entries.where((entry) {
-      if (_failuresOnly && entry.level == 'INFO') {
-        return false;
-      }
-      if (_filter.isEmpty) {
-        return true;
-      }
-      final haystack =
-          '${entry.level} ${entry.scope} ${entry.message} ${_formatFields(entry.fields)} ${entry.error ?? ''}'
-              .toLowerCase();
-      return haystack.contains(_filter);
-    }).toList(growable: false);
+    final visible = entries
+        .where((entry) {
+          if (_failuresOnly && entry.level == 'INFO') {
+            return false;
+          }
+          if (_filter.isEmpty) {
+            return true;
+          }
+          final haystack =
+              '${entry.level} ${entry.scope} ${entry.message} ${_formatFields(entry.fields)} ${entry.error ?? ''}'
+                  .toLowerCase();
+          return haystack.contains(_filter);
+        })
+        .toList(growable: false);
 
     final sorted = visible.toList(growable: false)
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
@@ -919,15 +992,17 @@ class _DebugPageState extends ConsumerState<DebugPage> {
   }
 
   List<AppErrorLogEntry> _filterErrorEntries(List<AppErrorLogEntry> entries) {
-    final visible = entries.where((entry) {
-      if (_filter.isEmpty) {
-        return true;
-      }
-      final haystack =
-          '${entry.source} ${entry.error} ${entry.stackTrace} ${entry.timestamp.toIso8601String()}'
-              .toLowerCase();
-      return haystack.contains(_filter);
-    }).toList(growable: false);
+    final visible = entries
+        .where((entry) {
+          if (_filter.isEmpty) {
+            return true;
+          }
+          final haystack =
+              '${entry.source} ${entry.error} ${entry.stackTrace} ${entry.timestamp.toIso8601String()}'
+                  .toLowerCase();
+          return haystack.contains(_filter);
+        })
+        .toList(growable: false);
 
     final sorted = visible.toList(growable: false)
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
@@ -975,11 +1050,15 @@ class _DebugPageState extends ConsumerState<DebugPage> {
                       'from ${bundle.sourceNodeId} to ${bundle.destinationNodeId ?? '(broadcast)'}',
                       'priority ${bundle.priority.name} • scope ${bundle.destinationScope.name} • hopCount ${bundle.hopCount}',
                       'status ${bundle.acknowledged ? 'acknowledged' : 'pending'} • failedAttempts ${bundle.failedAttempts}',
-                      if (bundle.ackForBundleId != null) 'ackFor ${bundle.ackForBundleId}',
-                      if (bundle.payloadReference != null) 'payloadRef ${bundle.payloadReference}',
-                      if (bundle.lastError != null) 'lastError ${bundle.lastError}',
+                      if (bundle.ackForBundleId != null)
+                        'ackFor ${bundle.ackForBundleId}',
+                      if (bundle.payloadReference != null)
+                        'payloadRef ${bundle.payloadReference}',
+                      if (bundle.lastError != null)
+                        'lastError ${bundle.lastError}',
                     ],
-                    highlight: bundle.failedAttempts > 0 || bundle.lastError != null,
+                    highlight:
+                        bundle.failedAttempts > 0 || bundle.lastError != null,
                   ),
                 )
                 .toList(growable: false),
@@ -1047,7 +1126,9 @@ class _DebugPageState extends ConsumerState<DebugPage> {
     if (fields.isEmpty) {
       return '{}';
     }
-    return fields.entries.map((entry) => '${entry.key}=${entry.value}').join(', ');
+    return fields.entries
+        .map((entry) => '${entry.key}=${entry.value}')
+        .join(', ');
   }
 }
 
@@ -1079,7 +1160,10 @@ class _SectionCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text(title, style: Theme.of(context).textTheme.titleSmall),
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
                       if (subtitle != null) ...<Widget>[
                         const SizedBox(height: 4),
                         Text(subtitle!),
@@ -1133,7 +1217,10 @@ class _LabelValueRow extends StatelessWidget {
       children: <Widget>[
         SizedBox(
           width: 120,
-          child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          child: Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ),
         Expanded(child: SelectableText(value)),
       ],

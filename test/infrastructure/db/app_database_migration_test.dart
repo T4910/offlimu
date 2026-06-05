@@ -9,7 +9,7 @@ import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 void main() {
   group('AppDatabase migrations', () {
-    test('migrates v9 schema to v13 and preserves rows', () async {
+    test('migrates v9 schema to v14 and preserves rows', () async {
       final tempDir = await Directory.systemTemp.createTemp('offlimu-db-');
       final dbFile = File(p.join(tempDir.path, 'offlimu.sqlite'));
 
@@ -145,6 +145,13 @@ INSERT INTO bundle_records (
           .get();
       expect(contentMetadataTableRows, isNotEmpty);
 
+      final webIndexTableRows = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'web_index_entries'",
+          )
+          .get();
+      expect(webIndexTableRows, isNotEmpty);
+
       final legacy = await db
           .customSelect(
             '''
@@ -173,7 +180,7 @@ WHERE bundle_id = ?
     });
 
     test(
-      'fresh v13 schema includes DTN metadata, wallet ledger, and content metadata table',
+      'fresh v14 schema includes DTN metadata, wallet ledger, content metadata, and web index tables',
       () async {
         final db = AppDatabase.forTesting(NativeDatabase.memory());
         addTearDown(db.close);
@@ -181,7 +188,7 @@ WHERE bundle_id = ?
         final version = await db
             .customSelect('PRAGMA user_version')
             .getSingle();
-      expect(version.data['user_version'], 13);
+        expect(version.data['user_version'], 14);
 
         final columnRows = await db
             .customSelect('PRAGMA table_info(bundle_records)')
@@ -243,6 +250,29 @@ WHERE bundle_id = ?
             'chunk_count',
             'created_at_ms',
             'local_path',
+          }),
+        );
+
+        final webIndexColumns = await db
+            .customSelect('PRAGMA table_info(web_index_entries)')
+            .get();
+        final webIndexColumnNames = webIndexColumns
+            .map((row) => row.data['name'] as String)
+            .toSet();
+
+        expect(
+          webIndexColumnNames,
+          containsAll(<String>{
+            'content_hash',
+            'title',
+            'url',
+            'snippet',
+            'query',
+            'source_request_id',
+            'total_bytes',
+            'expected_chunk_count',
+            'created_at_ms',
+            'updated_at_ms',
           }),
         );
       },

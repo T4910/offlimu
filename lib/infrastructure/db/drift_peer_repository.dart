@@ -10,13 +10,17 @@ class DriftPeerRepository implements PeerRepository {
 
   @override
   Future<void> upsertPeer(domain.PeerContact peer) async {
-    final existing = await (_db.select(_db.peerContacts)
-          ..where((tbl) => tbl.nodeId.equals(peer.nodeId)))
-        .getSingleOrNull();
+    final existing = await (_db.select(
+      _db.peerContacts,
+    )..where((tbl) => tbl.nodeId.equals(peer.nodeId))).getSingleOrNull();
 
-    final int seenCount = existing == null ? peer.seenCount : existing.seenCount + 1;
+    final int seenCount = existing == null
+        ? peer.seenCount
+        : existing.seenCount + 1;
 
-    await _db.into(_db.peerContacts).insertOnConflictUpdate(
+    await _db
+        .into(_db.peerContacts)
+        .insertOnConflictUpdate(
           PeerContactsCompanion(
             nodeId: Value<String>(peer.nodeId),
             host: Value<String>(peer.host),
@@ -30,24 +34,22 @@ class DriftPeerRepository implements PeerRepository {
   @override
   Stream<List<domain.PeerContact>> watchPeers() {
     final query = (_db.select(_db.peerContacts)
-      ..orderBy(
-        <OrderingTerm Function($PeerContactsTable)>[
-          (tbl) => OrderingTerm.desc(tbl.lastSeenMs),
-        ],
-      ));
+      ..orderBy(<OrderingTerm Function($PeerContactsTable)>[
+        (tbl) => OrderingTerm.desc(tbl.lastSeenMs),
+      ]));
 
     return query.watch().map(
-          (rows) => rows
-              .map(
-                (row) => domain.PeerContact(
-                  nodeId: row.nodeId,
-                  host: row.host,
-                  port: row.port,
-                  lastSeen: DateTime.fromMillisecondsSinceEpoch(row.lastSeenMs),
-                  seenCount: row.seenCount,
-                ),
-              )
-              .toList(growable: false),
-        );
+      (rows) => rows
+          .map(
+            (row) => domain.PeerContact(
+              nodeId: row.nodeId,
+              host: row.host,
+              port: row.port,
+              lastSeen: DateTime.fromMillisecondsSinceEpoch(row.lastSeenMs),
+              seenCount: row.seenCount,
+            ),
+          )
+          .toList(growable: false),
+    );
   }
 }

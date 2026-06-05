@@ -36,15 +36,13 @@ class FileTransferExplorerItem {
   final String? metadataBundleId;
   final String? localPath;
 
-  String get displayName => fileName?.trim().isNotEmpty == true
-      ? fileName!.trim()
-      : contentHash;
+  String get displayName =>
+      fileName?.trim().isNotEmpty == true ? fileName!.trim() : contentHash;
 
   String get destinationLabel => destinationNodeId ?? 'Broadcast';
 
   List<int> get receivedChunkIndices {
-    final indices = chunkBundleIdsByIndex.keys.toList(growable: false)
-      ..sort();
+    final indices = chunkBundleIdsByIndex.keys.toList(growable: false)..sort();
     return indices;
   }
 
@@ -83,8 +81,8 @@ List<FileTransferExplorerItem> buildFileTransferExplorerItems({
 }) {
   final Map<String, ContentMetadataRecord> metadataByHash =
       <String, ContentMetadataRecord>{
-    for (final record in contentMetadata) record.contentHash: record,
-  };
+        for (final record in contentMetadata) record.contentHash: record,
+      };
 
   final Map<String, _FileTransferBuilder> builders =
       <String, _FileTransferBuilder>{};
@@ -128,10 +126,12 @@ List<FileTransferExplorerItem> buildFileTransferExplorerItems({
     builder.absorbContentMetadata(record);
   }
 
-  final items = builders.values.map((builder) {
-    final metadata = metadataByHash[builder.contentHash];
-    return builder.build(metadata);
-  }).toList(growable: false);
+  final items = builders.values
+      .map((builder) {
+        final metadata = metadataByHash[builder.contentHash];
+        return builder.build(metadata);
+      })
+      .toList(growable: false);
 
   items.sort((a, b) => b.lastUpdatedAt.compareTo(a.lastUpdatedAt));
   return items;
@@ -153,10 +153,7 @@ Map<String, Object?>? _decodeObjectPayload(String? payload) {
   }
 }
 
-String? _contentHashFromBundle(
-  Bundle bundle,
-  Map<String, Object?>? payload,
-) {
+String? _contentHashFromBundle(Bundle bundle, Map<String, Object?>? payload) {
   final payloadReference = bundle.payloadReference;
   if (payloadReference != null && payloadReference.isNotEmpty) {
     return payloadReference;
@@ -215,10 +212,7 @@ class _FileTransferBuilder {
   String? localPath;
   final Map<int, String> chunkBundleIdsByIndex = <int, String>{};
 
-  void absorbMetadataBundle(
-    Bundle bundle,
-    Map<String, Object?>? payload,
-  ) {
+  void absorbMetadataBundle(Bundle bundle, Map<String, Object?>? payload) {
     metadataBundleId = bundle.bundleId;
     destinationNodeId ??= bundle.destinationNodeId;
     sourceNodeId ??= bundle.sourceNodeId;
@@ -236,10 +230,7 @@ class _FileTransferBuilder {
     }
   }
 
-  void absorbChunkBundle(
-    Bundle bundle,
-    Map<String, Object?>? payload,
-  ) {
+  void absorbChunkBundle(Bundle bundle, Map<String, Object?>? payload) {
     destinationNodeId ??= bundle.destinationNodeId;
     sourceNodeId ??= bundle.sourceNodeId;
     createdAt = _pickEarliest(createdAt, bundle.createdAt);
@@ -277,11 +268,19 @@ class _FileTransferBuilder {
       kind: fileTransferKindFromMimeType(effectiveMimeType),
       destinationNodeId: destinationNodeId,
       sourceNodeId: sourceNodeId,
-      createdAt: createdAt ?? metadata?.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0),
-      lastUpdatedAt: lastUpdatedAt ?? metadata?.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+      createdAt:
+          createdAt ??
+          metadata?.createdAt ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      lastUpdatedAt:
+          lastUpdatedAt ??
+          metadata?.createdAt ??
+          DateTime.fromMillisecondsSinceEpoch(0),
       totalBytes: effectiveTotalBytes,
       expectedChunkCount: effectiveExpectedCount,
-      chunkBundleIdsByIndex: Map<int, String>.unmodifiable(chunkBundleIdsByIndex),
+      chunkBundleIdsByIndex: Map<int, String>.unmodifiable(
+        chunkBundleIdsByIndex,
+      ),
       metadataBundleId: metadataBundleId,
       localPath: localPath ?? metadata?.localPath,
     );

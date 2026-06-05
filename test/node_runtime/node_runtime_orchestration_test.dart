@@ -227,11 +227,14 @@ void main() {
       expect(fakeSignatureService.signCalls.single.nodeId, 'node-a');
       expect(fakeBundles.savedBundles, hasLength(2));
       expect(
-        fakeBundles.savedBundles.where((bundle) => bundle.type == Bundle.typeAck),
+        fakeBundles.savedBundles.where(
+          (bundle) => bundle.type == Bundle.typeAck,
+        ),
         hasLength(1),
       );
-      final Bundle savedAck = fakeBundles.savedBundles
-          .lastWhere((bundle) => bundle.type == Bundle.typeAck);
+      final Bundle savedAck = fakeBundles.savedBundles.lastWhere(
+        (bundle) => bundle.type == Bundle.typeAck,
+      );
       expect(savedAck.signature, isNotNull);
       expect(savedAck.sourcePublicKey, isNotNull);
       expect(savedAck.ackForBundleId, 'chat-ack-1');
@@ -252,83 +255,80 @@ void main() {
     },
   );
 
-  test(
-    'runtime fans out ACK bundles to the source and relay peers',
-    () async {
-      final now = DateTime.now();
-      final inboundBundle = Bundle(
-        bundleId: 'chat-ack-2',
-        type: Bundle.typeChatMessage,
-        sourceNodeId: 'node-b',
-        destinationNodeId: 'node-a',
-        payload: 'hello again',
-        createdAt: now,
-        ttlSeconds: 3600,
-        signature: 'signature-2',
-        sourcePublicKey: 'public-key-2',
-      );
+  test('runtime fans out ACK bundles to the source and relay peers', () async {
+    final now = DateTime.now();
+    final inboundBundle = Bundle(
+      bundleId: 'chat-ack-2',
+      type: Bundle.typeChatMessage,
+      sourceNodeId: 'node-b',
+      destinationNodeId: 'node-a',
+      payload: 'hello again',
+      createdAt: now,
+      ttlSeconds: 3600,
+      signature: 'signature-2',
+      sourcePublicKey: 'public-key-2',
+    );
 
-      final fakeDiscovery = _FakeDiscoveryAdapter();
-      final fakeTransport = _FakeTransportAdapter();
-      final fakePeerRepository = _FakePeerRepository(
-        initialPeers: <PeerContact>[
-          PeerContact(
-            nodeId: 'node-b',
-            host: '192.168.1.20',
-            port: 4040,
-            lastSeen: now,
-          ),
-          PeerContact(
-            nodeId: 'node-c',
-            host: '192.168.1.21',
-            port: 4041,
-            lastSeen: now,
-          ),
-        ],
-      );
-      final fakeBundles = _FakeBundleRepository();
-      final fakeSignatureService = _FakeBundleSignatureService(
-        signResultBuilder: (Bundle bundle, String nodeId) {
-          return bundle.copyWith(
-            sourcePublicKey: 'public-key-$nodeId',
-            signature: 'signed-${bundle.bundleId}',
-          );
-        },
-      );
-      final runtime = NodeRuntime(
-        localNodeId: 'node-a',
-        discovery: fakeDiscovery,
-        transport: fakeTransport,
-        bundles: fakeBundles,
-        peers: fakePeerRepository,
-        contentStore: _FakeContentStore(),
-        bundleSignatureService: fakeSignatureService,
-      );
-
-      final startFuture = runtime.start();
-      await Future<void>.delayed(Duration.zero);
-      fakeTransport.releaseStart();
-      await startFuture;
-
-      fakeTransport.emitIncoming(inboundBundle);
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-
-      expect(fakeTransport.sentBundles, hasLength(2));
-      expect(
-        fakeTransport.sentBundles.map((record) => record.peerNodeId),
-        containsAllInOrder(<String>['node-b', 'node-c']),
-      );
-      expect(
-        fakeTransport.sentBundles.every(
-          (record) => record.bundle.type == Bundle.typeAck,
+    final fakeDiscovery = _FakeDiscoveryAdapter();
+    final fakeTransport = _FakeTransportAdapter();
+    final fakePeerRepository = _FakePeerRepository(
+      initialPeers: <PeerContact>[
+        PeerContact(
+          nodeId: 'node-b',
+          host: '192.168.1.20',
+          port: 4040,
+          lastSeen: now,
         ),
-        isTrue,
-      );
+        PeerContact(
+          nodeId: 'node-c',
+          host: '192.168.1.21',
+          port: 4041,
+          lastSeen: now,
+        ),
+      ],
+    );
+    final fakeBundles = _FakeBundleRepository();
+    final fakeSignatureService = _FakeBundleSignatureService(
+      signResultBuilder: (Bundle bundle, String nodeId) {
+        return bundle.copyWith(
+          sourcePublicKey: 'public-key-$nodeId',
+          signature: 'signed-${bundle.bundleId}',
+        );
+      },
+    );
+    final runtime = NodeRuntime(
+      localNodeId: 'node-a',
+      discovery: fakeDiscovery,
+      transport: fakeTransport,
+      bundles: fakeBundles,
+      peers: fakePeerRepository,
+      contentStore: _FakeContentStore(),
+      bundleSignatureService: fakeSignatureService,
+    );
 
-      await runtime.stop();
-      await runtime.dispose();
-    },
-  );
+    final startFuture = runtime.start();
+    await Future<void>.delayed(Duration.zero);
+    fakeTransport.releaseStart();
+    await startFuture;
+
+    fakeTransport.emitIncoming(inboundBundle);
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(fakeTransport.sentBundles, hasLength(2));
+    expect(
+      fakeTransport.sentBundles.map((record) => record.peerNodeId),
+      containsAllInOrder(<String>['node-b', 'node-c']),
+    );
+    expect(
+      fakeTransport.sentBundles.every(
+        (record) => record.bundle.type == Bundle.typeAck,
+      ),
+      isTrue,
+    );
+
+    await runtime.stop();
+    await runtime.dispose();
+  });
 
   test('runtime floods relayed ACK bundles to all reachable peers', () async {
     final now = DateTime.now();
@@ -391,10 +391,15 @@ void main() {
       containsAll(<String>{'node-z', 'node-d', 'node-e'}),
     );
     expect(
-      fakeTransport.sentBundles.every((record) => record.bundle.type == Bundle.typeAck),
+      fakeTransport.sentBundles.every(
+        (record) => record.bundle.type == Bundle.typeAck,
+      ),
       isTrue,
     );
-    expect(fakeBundles.savedBundles.any((bundle) => bundle.bundleId == 'ack-hop-1'), isTrue);
+    expect(
+      fakeBundles.savedBundles.any((bundle) => bundle.bundleId == 'ack-hop-1'),
+      isTrue,
+    );
 
     await runtime.stop();
     await runtime.dispose();
@@ -415,7 +420,9 @@ void main() {
     );
 
     final fakeBundles = _FakeBundleRepository(
-      existingBundlesById: <String, Bundle>{expiredBundle.bundleId: expiredBundle},
+      existingBundlesById: <String, Bundle>{
+        expiredBundle.bundleId: expiredBundle,
+      },
     );
 
     final fakeRuntime = NodeRuntime(
@@ -491,7 +498,9 @@ void main() {
     expect(fakeTransport.sentBundles, hasLength(1));
     expect(fakeTransport.sentBundles.single.peerNodeId, 'node-d');
     expect(
-      fakeBundles.savedBundles.any((bundle) => bundle.bundleId == 'relay-self-1'),
+      fakeBundles.savedBundles.any(
+        (bundle) => bundle.bundleId == 'relay-self-1',
+      ),
       isTrue,
     );
 
@@ -499,59 +508,62 @@ void main() {
     await runtime.dispose();
   });
 
-  test('runtime does not resend successfully sent outbound bundles immediately', () async {
-    final now = DateTime.now();
-    final outboundBundle = Bundle(
-      bundleId: 'outbound-1',
-      type: Bundle.typeChatMessage,
-      sourceNodeId: 'node-a',
-      sourcePublicKey: 'public-key-a',
-      destinationNodeId: 'node-b',
-      payload: 'hello world',
-      createdAt: now,
-      ttlSeconds: 3600,
-    );
+  test(
+    'runtime does not resend successfully sent outbound bundles immediately',
+    () async {
+      final now = DateTime.now();
+      final outboundBundle = Bundle(
+        bundleId: 'outbound-1',
+        type: Bundle.typeChatMessage,
+        sourceNodeId: 'node-a',
+        sourcePublicKey: 'public-key-a',
+        destinationNodeId: 'node-b',
+        payload: 'hello world',
+        createdAt: now,
+        ttlSeconds: 3600,
+      );
 
-    final fakeDiscovery = _FakeDiscoveryAdapter();
-    final fakeTransport = _FakeTransportAdapter();
-    final fakeBundles = _FakeBundleRepository(
-      pendingBundles: <Bundle>[outboundBundle],
-    );
-    final runtime = NodeRuntime(
-      localNodeId: 'node-a',
-      discovery: fakeDiscovery,
-      transport: fakeTransport,
-      bundles: fakeBundles,
-      peers: _FakePeerRepository(
-        initialPeers: <PeerContact>[
-          PeerContact(
-            nodeId: 'node-b',
-            host: '192.168.1.20',
-            port: 4040,
-            lastSeen: now,
-          ),
-        ],
-      ),
-      contentStore: _FakeContentStore(),
-      bundleSignatureService: _FakeBundleSignatureService(),
-    );
+      final fakeDiscovery = _FakeDiscoveryAdapter();
+      final fakeTransport = _FakeTransportAdapter();
+      final fakeBundles = _FakeBundleRepository(
+        pendingBundles: <Bundle>[outboundBundle],
+      );
+      final runtime = NodeRuntime(
+        localNodeId: 'node-a',
+        discovery: fakeDiscovery,
+        transport: fakeTransport,
+        bundles: fakeBundles,
+        peers: _FakePeerRepository(
+          initialPeers: <PeerContact>[
+            PeerContact(
+              nodeId: 'node-b',
+              host: '192.168.1.20',
+              port: 4040,
+              lastSeen: now,
+            ),
+          ],
+        ),
+        contentStore: _FakeContentStore(),
+        bundleSignatureService: _FakeBundleSignatureService(),
+      );
 
-    final startFuture = runtime.start();
-    await Future<void>.delayed(Duration.zero);
-    fakeTransport.releaseStart();
-    await startFuture;
+      final startFuture = runtime.start();
+      await Future<void>.delayed(Duration.zero);
+      fakeTransport.releaseStart();
+      await startFuture;
 
-    await runtime.flushPendingNow();
-    await runtime.flushPendingNow();
+      await runtime.flushPendingNow();
+      await runtime.flushPendingNow();
 
-    expect(fakeTransport.sentBundles, hasLength(1));
-    expect(fakeTransport.sentBundles.single.bundle.bundleId, 'outbound-1');
-    expect(fakeBundles.getSavedBundle('outbound-1')?.sentAt, isNotNull);
-    expect(fakeBundles.getSavedBundle('outbound-1')?.failedAttempts, 0);
+      expect(fakeTransport.sentBundles, hasLength(1));
+      expect(fakeTransport.sentBundles.single.bundle.bundleId, 'outbound-1');
+      expect(fakeBundles.getSavedBundle('outbound-1')?.sentAt, isNotNull);
+      expect(fakeBundles.getSavedBundle('outbound-1')?.failedAttempts, 0);
 
-    await runtime.stop();
-    await runtime.dispose();
-  });
+      await runtime.stop();
+      await runtime.dispose();
+    },
+  );
 }
 
 class _FakeDiscoveryAdapter implements DiscoveryAdapter {
@@ -666,9 +678,8 @@ class _FakeBundleRepository implements BundleRepository {
   _FakeBundleRepository({
     Map<String, Bundle>? existingBundlesById,
     List<Bundle>? pendingBundles,
-  })
-    : existingBundlesById = existingBundlesById ?? <String, Bundle>{},
-      pendingBundles = pendingBundles ?? <Bundle>[];
+  }) : existingBundlesById = existingBundlesById ?? <String, Bundle>{},
+       pendingBundles = pendingBundles ?? <Bundle>[];
 
   @override
   Future<void> saveContentMetadata(ContentMetadataRecord metadata) async {}

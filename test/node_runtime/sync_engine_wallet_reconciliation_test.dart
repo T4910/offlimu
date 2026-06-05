@@ -18,107 +18,113 @@ import 'package:offlimu/infrastructure/db/drift_wallet_repository.dart';
 import 'package:offlimu/node_runtime/sync_engine.dart';
 
 void main() {
-  test('sync uploads a pending spend and applies a confirmed settlement', () async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    addTearDown(db.close);
-    final now = DateTime.now();
+  test(
+    'sync uploads a pending spend and applies a confirmed settlement',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final now = DateTime.now();
 
-    final walletRepository = DriftWalletRepository(db);
-    // Seed opening grant so spends have balance in tests.
-    await walletRepository.appendEntry(
-      ledger.WalletLedgerEntry(
-        entryId: 'opening-grant',
-        kind: ledger.WalletLedgerEventKind.openingGrant,
-        title: 'Opening Grant',
-        subtitle: 'Test seed',
-        amountMinorUnits: 5000,
-        balanceImpactMinorUnits: 5000,
-        status: ledger.WalletLedgerStatus.confirmed,
-        createdAt: now.subtract(const Duration(minutes: 5)),
-      ),
-    );
-    // Seed opening grant so spends have balance in tests.
-    await walletRepository.appendEntry(
-      ledger.WalletLedgerEntry(
-        entryId: 'opening-grant',
-        kind: ledger.WalletLedgerEventKind.openingGrant,
-        title: 'Opening Grant',
-        subtitle: 'Test seed',
-        amountMinorUnits: 5000,
-        balanceImpactMinorUnits: 5000,
-        status: ledger.WalletLedgerStatus.confirmed,
-        createdAt: now.subtract(const Duration(minutes: 5)),
-      ),
-    );
-    final bundleRepository = DriftBundleRepository(db, localNodeId: 'node-local-001');
-    final mapper = WalletEventBundleMapper();
-    final signatureService = _PassThroughSignatureService();
-    final spendUseCase = InitiateWalletSpendUseCase(
-      walletRepository: walletRepository,
-      bundleRepository: bundleRepository,
-      bundleSignatureService: signatureService,
-      now: () => now,
-    );
+      final walletRepository = DriftWalletRepository(db);
+      // Seed opening grant so spends have balance in tests.
+      await walletRepository.appendEntry(
+        ledger.WalletLedgerEntry(
+          entryId: 'opening-grant',
+          kind: ledger.WalletLedgerEventKind.openingGrant,
+          title: 'Opening Grant',
+          subtitle: 'Test seed',
+          amountMinorUnits: 5000,
+          balanceImpactMinorUnits: 5000,
+          status: ledger.WalletLedgerStatus.confirmed,
+          createdAt: now.subtract(const Duration(minutes: 5)),
+        ),
+      );
+      // Seed opening grant so spends have balance in tests.
+      await walletRepository.appendEntry(
+        ledger.WalletLedgerEntry(
+          entryId: 'opening-grant',
+          kind: ledger.WalletLedgerEventKind.openingGrant,
+          title: 'Opening Grant',
+          subtitle: 'Test seed',
+          amountMinorUnits: 5000,
+          balanceImpactMinorUnits: 5000,
+          status: ledger.WalletLedgerStatus.confirmed,
+          createdAt: now.subtract(const Duration(minutes: 5)),
+        ),
+      );
+      final bundleRepository = DriftBundleRepository(
+        db,
+        localNodeId: 'node-local-001',
+      );
+      final mapper = WalletEventBundleMapper();
+      final signatureService = _PassThroughSignatureService();
+      final spendUseCase = InitiateWalletSpendUseCase(
+        walletRepository: walletRepository,
+        bundleRepository: bundleRepository,
+        bundleSignatureService: signatureService,
+        now: () => now,
+      );
 
-    final spendResult = await spendUseCase.initiate(
-      localNodeId: 'node-local-001',
-      recipientNodeId: 'node-remote-123',
-      amountMinorUnits: 1250,
-      memo: 'Sync settlement test',
-    );
+      final spendResult = await spendUseCase.initiate(
+        localNodeId: 'node-local-001',
+        recipientNodeId: 'node-remote-123',
+        amountMinorUnits: 1250,
+        memo: 'Sync settlement test',
+      );
 
-    final walletSyncReconciliationService = WalletSyncReconciliationService(
-      walletRepository: walletRepository,
-      mapper: mapper,
-      now: () => DateTime.fromMillisecondsSinceEpoch(1700001000000),
-    );
-    final fakeSyncApi = _FakeSyncApi(
-      uploadResult: SyncUploadResult(
-        acknowledgedBundleIds: <String>[spendResult.bundle.bundleId],
-        rejections: const <SyncRejection>[],
-      ),
-      fetchResult: SyncFetchResult(
-        bundles: <Bundle>[
-          mapper.toConfirmationBundle(
-            bundleId: 'wallet-confirmation-1',
-            localNodeId: 'server-gateway',
-            sourceSpendBundleId: spendResult.bundle.bundleId,
-            recipientNodeId: 'node-remote-123',
-            amountMinorUnits: 1250,
-            createdAt: now.add(const Duration(minutes: 1)),
-            memo: 'Sync settlement test',
-          ),
-        ],
-      ),
-    );
-    final engine = SyncEngine(
-      localNodeId: 'node-local-001',
-      bundles: bundleRepository,
-      syncApi: fakeSyncApi,
-      syncJobs: _FakeSyncJobRepository(),
-      deviceConditions: _AlwaysOnlineDeviceConditionsService(),
-      walletSyncReconciliationService: walletSyncReconciliationService,
-    );
+      final walletSyncReconciliationService = WalletSyncReconciliationService(
+        walletRepository: walletRepository,
+        mapper: mapper,
+        now: () => DateTime.fromMillisecondsSinceEpoch(1700001000000),
+      );
+      final fakeSyncApi = _FakeSyncApi(
+        uploadResult: SyncUploadResult(
+          acknowledgedBundleIds: <String>[spendResult.bundle.bundleId],
+          rejections: const <SyncRejection>[],
+        ),
+        fetchResult: SyncFetchResult(
+          bundles: <Bundle>[
+            mapper.toConfirmationBundle(
+              bundleId: 'wallet-confirmation-1',
+              localNodeId: 'server-gateway',
+              sourceSpendBundleId: spendResult.bundle.bundleId,
+              recipientNodeId: 'node-remote-123',
+              amountMinorUnits: 1250,
+              createdAt: now.add(const Duration(minutes: 1)),
+              memo: 'Sync settlement test',
+            ),
+          ],
+        ),
+      );
+      final engine = SyncEngine(
+        localNodeId: 'node-local-001',
+        bundles: bundleRepository,
+        syncApi: fakeSyncApi,
+        syncJobs: _FakeSyncJobRepository(),
+        deviceConditions: _AlwaysOnlineDeviceConditionsService(),
+        walletSyncReconciliationService: walletSyncReconciliationService,
+      );
 
-    final result = await engine.syncNow(gatewayEnabled: true);
-    final dashboard = await walletRepository.watchDashboard().first;
+      final result = await engine.syncNow(gatewayEnabled: true);
+      final dashboard = await walletRepository.watchDashboard().first;
 
-    expect(result.uploadedCount, 1);
-    expect(result.downloadedCount, 1);
-    expect(fakeSyncApi.uploadedBundles, hasLength(1));
-    expect(fakeSyncApi.uploadedBundles.single.type, Bundle.typeWalletSpend);
-    expect(dashboard.balanceMinorUnits, 3750);
-    expect(dashboard.pendingSpendCount, 0);
-    expect(
-      dashboard.paymentEntries.any(
-        (entry) =>
-            entry.kind == ledger.WalletLedgerEventKind.spend &&
-            entry.status == ledger.WalletLedgerStatus.confirmed &&
-            entry.sourceBundleId == spendResult.bundle.bundleId,
-      ),
-      isTrue,
-    );
-  });
+      expect(result.uploadedCount, 1);
+      expect(result.downloadedCount, 1);
+      expect(fakeSyncApi.uploadedBundles, hasLength(1));
+      expect(fakeSyncApi.uploadedBundles.single.type, Bundle.typeWalletSpend);
+      expect(dashboard.balanceMinorUnits, 3750);
+      expect(dashboard.pendingSpendCount, 0);
+      expect(
+        dashboard.paymentEntries.any(
+          (entry) =>
+              entry.kind == ledger.WalletLedgerEventKind.spend &&
+              entry.status == ledger.WalletLedgerStatus.confirmed &&
+              entry.sourceBundleId == spendResult.bundle.bundleId,
+        ),
+        isTrue,
+      );
+    },
+  );
 
   test('sync records a rejected spend without changing the balance', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -139,7 +145,10 @@ void main() {
         createdAt: now.subtract(const Duration(minutes: 5)),
       ),
     );
-    final bundleRepository = DriftBundleRepository(db, localNodeId: 'node-local-001');
+    final bundleRepository = DriftBundleRepository(
+      db,
+      localNodeId: 'node-local-001',
+    );
     final mapper = WalletEventBundleMapper();
     final signatureService = _PassThroughSignatureService();
     final spendUseCase = InitiateWalletSpendUseCase(
@@ -202,85 +211,91 @@ void main() {
     );
   });
 
-  test('sync applies an inbound signed reward and credits the balance', () async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    addTearDown(db.close);
-    final now = DateTime.now();
+  test(
+    'sync applies an inbound signed reward and credits the balance',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final now = DateTime.now();
 
-    final walletRepository = DriftWalletRepository(db);
-    // Seed opening grant so reward tests start from a baseline.
-    await walletRepository.appendEntry(
-      ledger.WalletLedgerEntry(
-        entryId: 'opening-grant',
-        kind: ledger.WalletLedgerEventKind.openingGrant,
-        title: 'Opening Grant',
-        subtitle: 'Test seed',
-        amountMinorUnits: 5000,
-        balanceImpactMinorUnits: 5000,
-        status: ledger.WalletLedgerStatus.confirmed,
-        createdAt: now.subtract(const Duration(minutes: 5)),
-      ),
-    );
-    final bundleRepository = DriftBundleRepository(db, localNodeId: 'node-local-001');
-    final mapper = WalletEventBundleMapper();
-    // final signatureService = _PassThroughSignatureService();
+      final walletRepository = DriftWalletRepository(db);
+      // Seed opening grant so reward tests start from a baseline.
+      await walletRepository.appendEntry(
+        ledger.WalletLedgerEntry(
+          entryId: 'opening-grant',
+          kind: ledger.WalletLedgerEventKind.openingGrant,
+          title: 'Opening Grant',
+          subtitle: 'Test seed',
+          amountMinorUnits: 5000,
+          balanceImpactMinorUnits: 5000,
+          status: ledger.WalletLedgerStatus.confirmed,
+          createdAt: now.subtract(const Duration(minutes: 5)),
+        ),
+      );
+      final bundleRepository = DriftBundleRepository(
+        db,
+        localNodeId: 'node-local-001',
+      );
+      final mapper = WalletEventBundleMapper();
+      // final signatureService = _PassThroughSignatureService();
 
-    final walletSyncReconciliationService = WalletSyncReconciliationService(
-      walletRepository: walletRepository,
-      mapper: mapper,
-      now: () => DateTime.fromMillisecondsSinceEpoch(1700005000000),
-    );
+      final walletSyncReconciliationService = WalletSyncReconciliationService(
+        walletRepository: walletRepository,
+        mapper: mapper,
+        now: () => DateTime.fromMillisecondsSinceEpoch(1700005000000),
+      );
 
-    final rewardBundle = Bundle(
-      bundleId: 'reward-1',
-      type: Bundle.typeWalletReward,
-      sourceNodeId: 'server-gateway',
-      destinationNodeId: 'node-local-001',
-      payload: jsonEncode(<String, Object?>{
-        'kind': 'reward',
-        'rewardKind': 'relay',
-        'amountMinorUnits': 250,
-        'createdAtMs': now.millisecondsSinceEpoch,
-        'memo': 'Relay reward',
-      }),
-      appId: WalletEventBundleMapper.walletAppId,
-      createdAt: now,
-      ttlSeconds: 3600,
-      signature: 'signed-by-server',
-    );
+      final rewardBundle = Bundle(
+        bundleId: 'reward-1',
+        type: Bundle.typeWalletReward,
+        sourceNodeId: 'server-gateway',
+        destinationNodeId: 'node-local-001',
+        payload: jsonEncode(<String, Object?>{
+          'kind': 'reward',
+          'rewardKind': 'relay',
+          'amountMinorUnits': 250,
+          'createdAtMs': now.millisecondsSinceEpoch,
+          'memo': 'Relay reward',
+        }),
+        appId: WalletEventBundleMapper.walletAppId,
+        createdAt: now,
+        ttlSeconds: 3600,
+        signature: 'signed-by-server',
+      );
 
-    final fakeSyncApi = _FakeSyncApi(
-      uploadResult: SyncUploadResult(
-        acknowledgedBundleIds: const <String>[],
-        rejections: const <SyncRejection>[],
-      ),
-      fetchResult: SyncFetchResult(
-        bundles: <Bundle>[rewardBundle],
-      ),
-    );
+      final fakeSyncApi = _FakeSyncApi(
+        uploadResult: SyncUploadResult(
+          acknowledgedBundleIds: const <String>[],
+          rejections: const <SyncRejection>[],
+        ),
+        fetchResult: SyncFetchResult(bundles: <Bundle>[rewardBundle]),
+      );
 
-    final engine = SyncEngine(
-      localNodeId: 'node-local-001',
-      bundles: bundleRepository,
-      syncApi: fakeSyncApi,
-      syncJobs: _FakeSyncJobRepository(),
-      deviceConditions: _AlwaysOnlineDeviceConditionsService(),
-      walletSyncReconciliationService: walletSyncReconciliationService,
-    );
+      final engine = SyncEngine(
+        localNodeId: 'node-local-001',
+        bundles: bundleRepository,
+        syncApi: fakeSyncApi,
+        syncJobs: _FakeSyncJobRepository(),
+        deviceConditions: _AlwaysOnlineDeviceConditionsService(),
+        walletSyncReconciliationService: walletSyncReconciliationService,
+      );
 
-    final result = await engine.syncNow(gatewayEnabled: true);
-    final dashboard = await walletRepository.watchDashboard().first;
+      final result = await engine.syncNow(gatewayEnabled: true);
+      final dashboard = await walletRepository.watchDashboard().first;
 
-    expect(result.uploadedCount, 0);
-    expect(result.downloadedCount, 1);
-    expect(dashboard.balanceMinorUnits, 5250);
-    expect(
-      dashboard.rewardEntries.any(
-        (entry) => entry.kind == ledger.WalletLedgerEventKind.relayReward && entry.amountMinorUnits == 250,
-      ),
-      isTrue,
-    );
-  });
+      expect(result.uploadedCount, 0);
+      expect(result.downloadedCount, 1);
+      expect(dashboard.balanceMinorUnits, 5250);
+      expect(
+        dashboard.rewardEntries.any(
+          (entry) =>
+              entry.kind == ledger.WalletLedgerEventKind.relayReward &&
+              entry.amountMinorUnits == 250,
+        ),
+        isTrue,
+      );
+    },
+  );
 }
 
 class _FakeSyncApi implements SyncApi {

@@ -8,6 +8,8 @@ import 'package:offlimu/features/chat/presentation/conversation_page.dart';
 import 'package:offlimu/features/chat/presentation/new_chat_page.dart';
 import 'package:offlimu/features/files/presentation/files_page.dart';
 import 'package:offlimu/features/node_status/presentation/node_status_page.dart';
+import 'package:offlimu/features/search/presentation/offline_web_page.dart';
+import 'package:offlimu/features/search/presentation/search_page.dart';
 import 'package:offlimu/features/wallet/presentation/wallet_page.dart';
 import 'package:offlimu/features/settings/presentation/settings_page.dart';
 import 'package:offlimu/features/sync/presentation/sync_page.dart';
@@ -75,6 +77,14 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(path: '/files', builder: (context, state) => const FilesPage()),
+    GoRoute(path: '/search', builder: (context, state) => const SearchPage()),
+    GoRoute(
+      path: '/search/page/:contentHash',
+      builder: (context, state) {
+        final contentHash = state.pathParameters['contentHash'] ?? '';
+        return OfflineWebPage(contentHash: contentHash);
+      },
+    ),
     GoRoute(path: '/sync', builder: (context, state) => const SyncPage()),
     GoRoute(
       path: '/settings',

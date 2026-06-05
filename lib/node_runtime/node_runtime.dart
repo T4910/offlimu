@@ -14,6 +14,7 @@ import 'package:offlimu/domain/services/content_store.dart';
 import 'package:offlimu/domain/services/logger_service.dart';
 import 'package:offlimu/domain/services/transport_adapter.dart';
 import 'package:offlimu/domain/use_cases/wallet_sync_reconciliation_service.dart';
+import 'package:offlimu/domain/use_cases/web_search_result_ingestion_service.dart';
 import 'package:offlimu/node_runtime/node_runtime_state.dart';
 
 class NodeRuntime {
@@ -33,7 +34,8 @@ class NodeRuntime {
     this.duplicatePeerSuppressionWindow = const Duration(seconds: 8),
     this.peerLivenessFailureThreshold = 2,
     LoggerService? logger,
-     WalletSyncReconciliationService? walletSyncReconciliationService,
+    WalletSyncReconciliationService? walletSyncReconciliationService,
+    WebSearchResultIngestionService? webSearchResultIngestionService,
   }) : _localNodeId = localNodeId,
        _discovery = discovery,
        _transport = transport,
@@ -42,7 +44,8 @@ class NodeRuntime {
        _contentStore = contentStore,
        _bundleSignatureService = bundleSignatureService,
        _logger = logger,
-       _walletSyncReconciliationService = walletSyncReconciliationService {
+       _walletSyncReconciliationService = walletSyncReconciliationService,
+       _webSearchResultIngestionService = webSearchResultIngestionService {
     _healthController.add(_health);
     _peerCountController.add(_peerCount);
     _telemetryController.add(_telemetry);
@@ -58,6 +61,7 @@ class NodeRuntime {
   final BundleSignatureService _bundleSignatureService;
   final LoggerService? _logger;
   final WalletSyncReconciliationService? _walletSyncReconciliationService;
+  final WebSearchResultIngestionService? _webSearchResultIngestionService;
   final int maxHopCount;
   final int maxSendAttempts;
   final Duration retryBaseDelay;
@@ -291,10 +295,9 @@ class NodeRuntime {
       final List<DiscoveredPeer> peers = _peers.values.toList(growable: false);
       final pending = await _bundles.getPendingBundles();
 
-
       final outbound = pending;
-          // .where((bundle) => bundle.sourceNodeId == _localNodeId)
-          // .toList(growable: false);
+      // .where((bundle) => bundle.sourceNodeId == _localNodeId)
+      // .toList(growable: false);
 
       if (outbound.isEmpty) {
         return;
@@ -754,6 +757,14 @@ class NodeRuntime {
       return;
     }
 
+    if (bundle.isBroadcast && bundle.isWebBundle) {
+      await _routeInboundBundle(bundle);
+      if (bundle.sourceNodeId != _localNodeId) {
+        await _forwardInboundBundle(bundle);
+      }
+      return;
+    }
+
     await _routeInboundBundle(bundle);
   }
 
@@ -783,7 +794,9 @@ class NodeRuntime {
       bundle,
       _pickRelayPeers(bundle, peers),
     );
-    final int fanout = bundle.isAck ? rankedRelays.length : _relayFanoutFor(bundle.priority);
+    final int fanout = bundle.isAck
+        ? rankedRelays.length
+        : _relayFanoutFor(bundle.priority);
 
     final List<DiscoveredPeer> relayTargets = <DiscoveredPeer>[
       ...directTarget == null
@@ -835,7 +848,16 @@ class NodeRuntime {
     if (bundle.type == Bundle.typeFileShareChunk) {
       return _handleInboundFileShareChunk(bundle);
     }
+    if (bundle.type == Bundle.typeWebIndexUpdate) {
+      return _handleInboundWebIndexUpdate(bundle);
+    }
     return _handleInboundAppBundle(bundle);
+  }
+
+  Future<void> _handleInboundWebIndexUpdate(Bundle bundle) async {
+    await _webSearchResultIngestionService?.ingestIndexUpdateBundle(bundle);
+    await _bundles.markAcknowledged(bundle.bundleId);
+    await _enqueueAckBundleFor(bundle);
   }
 
   Future<void> _handleInboundFileShareMetadata(Bundle bundle) async {
@@ -1006,6 +1028,10 @@ class NodeRuntime {
     }
 
     for (final bundle in expiredBundles) {
+      await _walletSyncReconciliationService?.applyExpiredSpend(
+        bundle: bundle,
+        reason: 'Bundle expired during runtime cleanup (TTL exceeded).',
+      );
       await _bundles.deleteBundle(bundle.bundleId);
       _logger?.info(
         'bundle_pruned_expired',
@@ -1080,10 +1106,7 @@ class NodeRuntime {
     var sentAny = false;
     for (final peer in targets) {
       try {
-        await _transport.sendBundle(
-          peerNodeId: peer.nodeId,
-          bundle: signedAck,
-        );
+        await _transport.sendBundle(peerNodeId: peer.nodeId, bundle: signedAck);
         _recordPeerSendSuccess(peer.nodeId);
         sentAny = true;
       } catch (_) {

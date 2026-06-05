@@ -31,6 +31,8 @@ class Bundle {
   static const String typeChatMessage = 'chat_message';
   static const String typeFileShareMetadata = 'file_share_metadata';
   static const String typeFileShareChunk = 'file_share_chunk';
+  static const String typeWebSearchRequest = 'web_search_request';
+  static const String typeWebIndexUpdate = 'web_index_update';
   static const String typeAck = 'ack';
   static const String typeSyncRejection = 'sync_rejection';
   static const String typeWalletSpend = 'wallet_spend';
@@ -66,6 +68,12 @@ class Bundle {
       type == typeWalletConfirmation ||
       type == typeWalletRejection ||
       type == typeWalletReward;
+  bool get isWebSearchEvent =>
+      type == typeWebSearchRequest || type == typeWebIndexUpdate;
+  bool get isWebBundle =>
+      appId == 'offlimu.web' ||
+      type == typeWebSearchRequest ||
+      type == typeWebIndexUpdate;
 
   String get signaturePayload => jsonEncode(<String, Object?>{
     'bundleId': bundleId,
