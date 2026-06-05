@@ -10,6 +10,7 @@ import 'package:offlimu/core/maintenance/app_data_reset_service.dart';
 import 'package:offlimu/domain/entities/ack_event.dart';
 import 'package:offlimu/domain/entities/bundle.dart';
 import 'package:offlimu/domain/entities/chat_message.dart';
+import 'package:offlimu/domain/entities/chat_thread.dart';
 import 'package:offlimu/domain/entities/content_metadata_record.dart';
 import 'package:offlimu/domain/entities/file_transfer_explorer_item.dart';
 import 'package:offlimu/domain/entities/node_identity.dart';
@@ -81,6 +82,26 @@ const Duration _scheduledSyncFrequency = Duration(minutes: 15);
 const Duration _scheduledCleanupFrequency = Duration(minutes: 30);
 const Duration _scheduledRetryFrequency = Duration(minutes: 1);
 
+class ConversationMessagesRequest {
+  const ConversationMessagesRequest({
+    required this.peerNodeId,
+    required this.limit,
+  });
+
+  final String peerNodeId;
+  final int limit;
+
+  @override
+  bool operator ==(Object other) {
+    return other is ConversationMessagesRequest &&
+        other.peerNodeId == peerNodeId &&
+        other.limit == limit;
+  }
+
+  @override
+  int get hashCode => Object.hash(peerNodeId, limit);
+}
+
 final Provider<NodeIdentity> localNodeIdentityProvider = Provider<NodeIdentity>(
   (ref) => resolveLocalNodeIdentity(
     fallbackNodeId: _appConfig.localNodeId,
@@ -92,13 +113,12 @@ final Provider<AppConfig> appConfigProvider = Provider<AppConfig>(
   (ref) => _appConfig,
 );
 
-final Provider<RuntimeLogStore> runtimeLogStoreProvider = Provider<RuntimeLogStore>(
-  (ref) {
-    final store = RuntimeLogStore();
-    ref.onDispose(store.dispose);
-    return store;
-  },
-);
+final Provider<RuntimeLogStore> runtimeLogStoreProvider =
+    Provider<RuntimeLogStore>((ref) {
+      final store = RuntimeLogStore();
+      ref.onDispose(store.dispose);
+      return store;
+    });
 
 final Provider<LoggerService> loggerServiceProvider = Provider<LoggerService>(
   (ref) => RecordingLogger(
@@ -295,14 +315,15 @@ final Provider<RewardIssuanceUseCase> rewardIssuanceUseCaseProvider =
 
 final Provider<RewardDerivationService> rewardDerivationServiceProvider =
     Provider<RewardDerivationService>((ref) {
- final issuance = ref.watch(rewardIssuanceUseCaseProvider);
-  final localNodeId = ref.watch(localNodeIdentityProvider).nodeId;
-  return RewardDerivationService(
-    outboundSendSuccessesGetter: () => ref.watch(nodeRuntimeProvider).telemetry.outboundSendSuccesses,
-    issuance: issuance,
-    localNodeId: localNodeId,
-  );
-});
+      final issuance = ref.watch(rewardIssuanceUseCaseProvider);
+      final localNodeId = ref.watch(localNodeIdentityProvider).nodeId;
+      return RewardDerivationService(
+        outboundSendSuccessesGetter: () =>
+            ref.watch(nodeRuntimeProvider).telemetry.outboundSendSuccesses,
+        issuance: issuance,
+        localNodeId: localNodeId,
+      );
+    });
 
 final Provider<WalletSyncReconciliationService>
 walletSyncReconciliationServiceProvider =
@@ -351,6 +372,41 @@ final StreamProviderFamily<List<ChatMessage>, int> chatMessagesByLimitProvider =
           .watchRecentMessages(limit: limit),
     );
 
+final StreamProvider<List<ChatThread>> chatThreadsProvider =
+    StreamProvider<List<ChatThread>>((ref) {
+      final localNodeId = ref.watch(localNodeIdentityProvider).nodeId;
+      return ref
+          .watch(chatMessageRepositoryProvider)
+          .watchThreads(localNodeId: localNodeId);
+    });
+
+final StreamProviderFamily<List<ChatMessage>, int>
+broadcastChatMessagesProvider = StreamProvider.family<List<ChatMessage>, int>((
+  ref,
+  limit,
+) {
+  final localNodeId = ref.watch(localNodeIdentityProvider).nodeId;
+  return ref
+      .watch(chatMessageRepositoryProvider)
+      .watchBroadcastConversation(localNodeId: localNodeId, limit: limit);
+});
+
+final StreamProviderFamily<List<ChatMessage>, ConversationMessagesRequest>
+conversationMessagesProvider =
+    StreamProvider.family<List<ChatMessage>, ConversationMessagesRequest>((
+      ref,
+      request,
+    ) {
+      final localNodeId = ref.watch(localNodeIdentityProvider).nodeId;
+      return ref
+          .watch(chatMessageRepositoryProvider)
+          .watchConversation(
+            localNodeId: localNodeId,
+            peerNodeId: request.peerNodeId,
+            limit: request.limit,
+          );
+    });
+
 final StreamProvider<List<PeerContact>> peerContactsProvider =
     StreamProvider<List<PeerContact>>(
       (ref) => ref.watch(peerRepositoryProvider).watchPeers(),
@@ -369,11 +425,9 @@ final StreamProvider<List<AckAuditEvent>> recentAckEventsProvider =
 
 final StreamProvider<WalletLedgerDashboard> walletDashboardProvider =
     StreamProvider<WalletLedgerDashboard>(
-      (ref) => ref.watch(walletRepositoryProvider).watchDashboard(
-            recentLimit: 3,
-            rewardLimit: 4,
-            logLimit: 6,
-          ),
+      (ref) => ref
+          .watch(walletRepositoryProvider)
+          .watchDashboard(recentLimit: 3, rewardLimit: 4, logLimit: 6),
     );
 
 final StreamProvider<List<ContentMetadataRecord>>
@@ -436,18 +490,16 @@ final Provider<DiscoveryAdapter> discoveryAdapterProvider =
     });
 
 final Provider<TransportAdapter> transportAdapterProvider =
-    Provider<TransportAdapter>(
-      (ref) {
-        switch (_appConfig.transportMode) {
-          case TransportMode.http:
-            return HttpTransportAdapter(listenPort: _appConfig.transportPort);
-          case TransportMode.tcp:
-            return TcpSocketTransportAdapter(
-              listenPort: _appConfig.transportPort,
-            );
-        }
-      },
-    );
+    Provider<TransportAdapter>((ref) {
+      switch (_appConfig.transportMode) {
+        case TransportMode.http:
+          return HttpTransportAdapter(listenPort: _appConfig.transportPort);
+        case TransportMode.tcp:
+          return TcpSocketTransportAdapter(
+            listenPort: _appConfig.transportPort,
+          );
+      }
+    });
 
 final Provider<SyncApi> syncApiProvider = Provider<SyncApi>(
   (ref) => DioSyncApi(
@@ -469,8 +521,9 @@ final Provider<SyncEngine> syncEngineProvider = Provider<SyncEngine>(
     syncApi: ref.watch(syncApiProvider),
     syncJobs: ref.watch(syncJobRepositoryProvider),
     deviceConditions: ref.watch(deviceConditionsServiceProvider),
-    walletSyncReconciliationService:
-        ref.watch(walletSyncReconciliationServiceProvider),
+    walletSyncReconciliationService: ref.watch(
+      walletSyncReconciliationServiceProvider,
+    ),
     logger: ref.watch(loggerServiceProvider),
     devicePolicy: SyncDevicePolicy(
       allowMeteredNetwork: _appConfig.syncAllowMeteredNetwork,
@@ -581,7 +634,9 @@ final Provider<NodeRuntime> nodeRuntimeProvider = Provider<NodeRuntime>((ref) {
     contentStore: ref.watch(contentStoreProvider),
     bundleSignatureService: ref.watch(bundleSignatureServiceProvider),
     maxHopCount: _appConfig.maxBundleHopCount,
-    walletSyncReconciliationService: ref.watch(walletSyncReconciliationServiceProvider),
+    walletSyncReconciliationService: ref.watch(
+      walletSyncReconciliationServiceProvider,
+    ),
     logger: ref.watch(loggerServiceProvider),
   );
   ref.onDispose(() {
@@ -682,7 +737,9 @@ Future<void> _runScheduledTask(Ref ref, String taskId) async {
     }
     // After a scheduled sync run, attempt reward derivation and issuance.
     try {
-      await ref.read(rewardDerivationServiceProvider).deriveAndIssueIfEligible();
+      await ref
+          .read(rewardDerivationServiceProvider)
+          .deriveAndIssueIfEligible();
     } catch (_) {
       // Non-fatal: reward derivation should not break scheduled tasks.
     }

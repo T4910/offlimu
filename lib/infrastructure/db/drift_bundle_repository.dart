@@ -95,15 +95,15 @@ class DriftBundleRepository implements BundleRepository {
   @override
   Future<void> deleteBundle(String bundleId) async {
     await _db.transaction(() async {
-      await (_db.delete(_db.bundleRecords)
-            ..where((tbl) => tbl.bundleId.equals(bundleId)))
-          .go();
-      await (_db.delete(_db.messageProjections)
-            ..where((tbl) => tbl.bundleId.equals(bundleId)))
-          .go();
-      await (_db.delete(_db.ackEvents)
-            ..where((tbl) => tbl.ackBundleId.equals(bundleId)))
-          .go();
+      await (_db.delete(
+        _db.bundleRecords,
+      )..where((tbl) => tbl.bundleId.equals(bundleId))).go();
+      await (_db.delete(
+        _db.messageProjections,
+      )..where((tbl) => tbl.bundleId.equals(bundleId))).go();
+      await (_db.delete(
+        _db.ackEvents,
+      )..where((tbl) => tbl.ackBundleId.equals(bundleId))).go();
     });
   }
 
@@ -408,6 +408,15 @@ class DriftBundleRepository implements BundleRepository {
     }
 
     final bool isOutgoing = bundle.sourceNodeId == _localNodeId;
+    final bool isDirectInbound = bundle.destinationNodeId == _localNodeId;
+    final bool isBroadcast =
+        bundle.destinationScope == BundleDestinationScope.broadcast ||
+        bundle.destinationNodeId == null;
+
+    if (!isOutgoing && !isDirectInbound && !isBroadcast) {
+      return Future<void>.value();
+    }
+
     final String status = isOutgoing
         ? _deriveOutgoingStatus(bundle)
         : MessageDeliveryStatus.received.name;

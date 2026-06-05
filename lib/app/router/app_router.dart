@@ -5,6 +5,7 @@ import 'package:offlimu/features/debug/presentation/bundle_explorer_page.dart';
 import 'package:offlimu/features/debug/presentation/file_transfer_explorer_page.dart';
 import 'package:offlimu/features/chat/presentation/chat_page.dart';
 import 'package:offlimu/features/chat/presentation/conversation_page.dart';
+import 'package:offlimu/features/chat/presentation/new_chat_page.dart';
 import 'package:offlimu/features/files/presentation/files_page.dart';
 import 'package:offlimu/features/node_status/presentation/node_status_page.dart';
 import 'package:offlimu/features/wallet/presentation/wallet_page.dart';
@@ -33,24 +34,36 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(path: '/chat', builder: (context, state) => const ChatPage()),
     GoRoute(
+      path: '/chat/new',
+      builder: (context, state) => const NewChatPage(),
+    ),
+    GoRoute(
+      path: '/chat/broadcast',
+      builder: (context, state) => const ConversationPage.broadcast(),
+    ),
+    GoRoute(
       path: '/wallet',
       builder: (context, state) => const WalletPage(),
       routes: <RouteBase>[
         GoRoute(
           path: 'pay',
-          builder: (context, state) => const WalletPage(section: WalletSection.pay),
+          builder: (context, state) =>
+              const WalletPage(section: WalletSection.pay),
         ),
         GoRoute(
           path: 'logs',
-          builder: (context, state) => const WalletPage(section: WalletSection.logs),
+          builder: (context, state) =>
+              const WalletPage(section: WalletSection.logs),
         ),
         GoRoute(
           path: 'rewards',
-          builder: (context, state) => const WalletPage(section: WalletSection.rewards),
+          builder: (context, state) =>
+              const WalletPage(section: WalletSection.rewards),
         ),
         GoRoute(
           path: 'id',
-          builder: (context, state) => const WalletPage(section: WalletSection.identity),
+          builder: (context, state) =>
+              const WalletPage(section: WalletSection.identity),
         ),
       ],
     ),
