@@ -16,7 +16,7 @@ class FlutterSecureStorageNodeIdentityVault implements NodeIdentityVault {
   }) : _storage = storage ?? const FlutterSecureStorage(),
        _sharedPreferences = sharedPreferences;
 
-    static const String _nodeIdKey = 'offlimu.node.identity.id';
+  static const String _nodeIdKey = 'offlimu.node.identity.id';
   static const String _seedKey = 'offlimu.node.identity.seed';
 
   final FlutterSecureStorage _storage;

@@ -3,11 +3,9 @@ import 'package:offlimu/domain/services/logger_service.dart';
 import 'package:offlimu/infrastructure/logging/structured_logger.dart';
 
 class RecordingLogger implements LoggerService {
-  RecordingLogger({
-    required RuntimeLogStore store,
-    LoggerService? delegate,
-  }) : _store = store,
-       _delegate = delegate ?? const StructuredLogger();
+  RecordingLogger({required RuntimeLogStore store, LoggerService? delegate})
+    : _store = store,
+      _delegate = delegate ?? const StructuredLogger();
 
   static const Set<String> _redactedFieldNames = <String>{
     'payload',

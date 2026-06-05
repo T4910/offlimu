@@ -44,11 +44,26 @@ class _BundleExplorerPageState extends ConsumerState<BundleExplorerPage> {
                         spacing: 8,
                         runSpacing: 8,
                         children: <Widget>[
-                          _MetricChip(label: 'Total', value: counts.total.toString()),
-                          _MetricChip(label: 'Pending', value: counts.pending.toString()),
-                          _MetricChip(label: 'Sent', value: counts.sent.toString()),
-                          _MetricChip(label: 'Acked', value: counts.acked.toString()),
-                          _MetricChip(label: 'Failed', value: counts.failed.toString()),
+                          _MetricChip(
+                            label: 'Total',
+                            value: counts.total.toString(),
+                          ),
+                          _MetricChip(
+                            label: 'Pending',
+                            value: counts.pending.toString(),
+                          ),
+                          _MetricChip(
+                            label: 'Sent',
+                            value: counts.sent.toString(),
+                          ),
+                          _MetricChip(
+                            label: 'Acked',
+                            value: counts.acked.toString(),
+                          ),
+                          _MetricChip(
+                            label: 'Failed',
+                            value: counts.failed.toString(),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -56,7 +71,8 @@ class _BundleExplorerPageState extends ConsumerState<BundleExplorerPage> {
                         decoration: const InputDecoration(
                           isDense: true,
                           prefixIcon: Icon(Icons.search),
-                          hintText: 'Filter by id, type, node, status, or payload ref',
+                          hintText:
+                              'Filter by id, type, node, status, or payload ref',
                           border: OutlineInputBorder(),
                         ),
                         onChanged: (value) {
@@ -116,12 +132,17 @@ class _BundleExplorerPageState extends ConsumerState<BundleExplorerPage> {
                                 'from ${bundle.sourceNodeId} to ${bundle.destinationNodeId ?? '(broadcast)'}',
                                 'status ${_bundleStatus(bundle)} • priority ${bundle.priority.name} • hop ${bundle.hopCount}',
                                 'failedAttempts ${bundle.failedAttempts} • created ${bundle.createdAt.toIso8601String()}',
-                                if (bundle.ackForBundleId != null) 'ackFor ${bundle.ackForBundleId}',
-                                if (bundle.payloadReference != null) 'payloadRef ${bundle.payloadReference}',
-                                if (bundle.lastError != null) 'lastError ${bundle.lastError}',
+                                if (bundle.ackForBundleId != null)
+                                  'ackFor ${bundle.ackForBundleId}',
+                                if (bundle.payloadReference != null)
+                                  'payloadRef ${bundle.payloadReference}',
+                                if (bundle.lastError != null)
+                                  'lastError ${bundle.lastError}',
                               ].join('\n'),
                             ),
-                            trailing: bundle.failedAttempts > 0 || bundle.lastError != null
+                            trailing:
+                                bundle.failedAttempts > 0 ||
+                                    bundle.lastError != null
                                 ? const Icon(Icons.error_outline)
                                 : const Icon(Icons.chevron_right),
                           ),
@@ -137,20 +158,22 @@ class _BundleExplorerPageState extends ConsumerState<BundleExplorerPage> {
   }
 
   List<Bundle> _filterBundles(List<Bundle> bundles) {
-    final visible = bundles.where((bundle) {
-      if (_statusFilter != _BundleStatusFilter.all &&
-          _bundleStatus(bundle) != _statusFilter.bundleStatus) {
-        return false;
-      }
-      if (_filter.isEmpty) {
-        return true;
-      }
+    final visible = bundles
+        .where((bundle) {
+          if (_statusFilter != _BundleStatusFilter.all &&
+              _bundleStatus(bundle) != _statusFilter.bundleStatus) {
+            return false;
+          }
+          if (_filter.isEmpty) {
+            return true;
+          }
 
-      final haystack =
-          '${bundle.bundleId} ${bundle.type} ${bundle.sourceNodeId} ${bundle.destinationNodeId ?? ''} ${bundle.ackForBundleId ?? ''} ${bundle.payload ?? ''} ${bundle.payloadReference ?? ''} ${bundle.signature ?? ''} ${bundle.lastError ?? ''} ${bundle.createdAt.toIso8601String()}'
-              .toLowerCase();
-      return haystack.contains(_filter);
-    }).toList(growable: false);
+          final haystack =
+              '${bundle.bundleId} ${bundle.type} ${bundle.sourceNodeId} ${bundle.destinationNodeId ?? ''} ${bundle.ackForBundleId ?? ''} ${bundle.payload ?? ''} ${bundle.payloadReference ?? ''} ${bundle.signature ?? ''} ${bundle.lastError ?? ''} ${bundle.createdAt.toIso8601String()}'
+                  .toLowerCase();
+          return haystack.contains(_filter);
+        })
+        .toList(growable: false);
 
     final sorted = visible.toList(growable: false)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));

@@ -44,6 +44,7 @@ class WalletLedgerEntry {
 class WalletLedgerDashboard {
   const WalletLedgerDashboard({
     required this.balanceMinorUnits,
+    required this.availableBalanceMinorUnits,
     required this.relayRewardsMinorUnits,
     required this.gatewayRewardsMinorUnits,
     required this.rewardTotalMinorUnits,
@@ -64,6 +65,7 @@ class WalletLedgerDashboard {
     return WalletLedgerDashboard(
       // Neutral/empty dashboard state — real values come from the persisted DB.
       balanceMinorUnits: 0,
+      availableBalanceMinorUnits: 0,
       relayRewardsMinorUnits: 0,
       gatewayRewardsMinorUnits: 0,
       rewardTotalMinorUnits: 0,
@@ -82,6 +84,7 @@ class WalletLedgerDashboard {
   }
 
   final int balanceMinorUnits;
+  final int availableBalanceMinorUnits;
   final int relayRewardsMinorUnits;
   final int gatewayRewardsMinorUnits;
   final int rewardTotalMinorUnits;

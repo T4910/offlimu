@@ -18,7 +18,8 @@ import 'package:offlimu/domain/services/content_store.dart';
 import 'package:offlimu/domain/services/bundle_signature_service.dart';
 
 class _FakeTransport implements TransportAdapter {
-  final StreamController<Bundle> _controller = StreamController<Bundle>.broadcast();
+  final StreamController<Bundle> _controller =
+      StreamController<Bundle>.broadcast();
 
   @override
   Stream<Bundle> incomingBundles() => _controller.stream;
@@ -30,7 +31,10 @@ class _FakeTransport implements TransportAdapter {
   Future<bool> isPeerAlive({required String peerNodeId}) async => true;
 
   @override
-  Future<void> sendBundle({required String peerNodeId, required Bundle bundle}) async {}
+  Future<void> sendBundle({
+    required String peerNodeId,
+    required Bundle bundle,
+  }) async {}
 
   @override
   Future<void> start() async {}
@@ -55,7 +59,8 @@ class _FakeDiscovery implements DiscoveryAdapter {
 }
 
 class _FakePeerRepository implements PeerRepository {
-  final StreamController<List<domain.PeerContact>> _controller = StreamController<List<domain.PeerContact>>.broadcast();
+  final StreamController<List<domain.PeerContact>> _controller =
+      StreamController<List<domain.PeerContact>>.broadcast();
 
   @override
   Future<void> upsertPeer(domain.PeerContact peer) async {}
@@ -66,7 +71,10 @@ class _FakePeerRepository implements PeerRepository {
 
 class _FakeContentStore implements ContentStore {
   @override
-  Future<String?> put({required String contentHash, required Uint8List bytes}) async => null;
+  Future<String?> put({
+    required String contentHash,
+    required Uint8List bytes,
+  }) async => null;
 
   @override
   Future<Uint8List?> read({required String contentHash}) async => null;
@@ -77,7 +85,8 @@ class _FakeContentStore implements ContentStore {
 
 class _PassThroughSignatureService implements BundleSignatureService {
   @override
-  Future<Bundle> sign({required Bundle bundle, required String nodeId}) async => bundle.copyWith(signature: 'signed-by-$nodeId');
+  Future<Bundle> sign({required Bundle bundle, required String nodeId}) async =>
+      bundle.copyWith(signature: 'signed-by-$nodeId');
 
   @override
   Future<bool> verify(Bundle bundle) async => true;
@@ -86,8 +95,10 @@ class _PassThroughSignatureService implements BundleSignatureService {
 class _SpyWalletSyncService extends WalletSyncReconciliationService {
   final List<Bundle> calls = [];
 
-  _SpyWalletSyncService({required DriftWalletRepository walletRepository, required WalletEventBundleMapper mapper})
-      : super(walletRepository: walletRepository, mapper: mapper);
+  _SpyWalletSyncService({
+    required DriftWalletRepository walletRepository,
+    required WalletEventBundleMapper mapper,
+  }) : super(walletRepository: walletRepository, mapper: mapper);
 
   @override
   Future<void> applyInboundWalletBundle(Bundle bundle) async {
@@ -97,54 +108,60 @@ class _SpyWalletSyncService extends WalletSyncReconciliationService {
 }
 
 void main() {
-  test('NodeRuntime calls WalletSyncReconciliationService on transport-delivered wallet_spend', () async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    addTearDown(db.close);
+  test(
+    'NodeRuntime calls WalletSyncReconciliationService on transport-delivered wallet_spend',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
 
-    final localNodeId = 'node-local-001';
-    final bundleRepo = DriftBundleRepository(db, localNodeId: localNodeId);
-    final walletRepo = DriftWalletRepository(db);
-    final transport = _FakeTransport();
-    final discovery = _FakeDiscovery();
-    final peerRepo = _FakePeerRepository();
-    final contentStore = _FakeContentStore();
-    final signatureService = _PassThroughSignatureService();
-    final mapper = WalletEventBundleMapper();
+      final localNodeId = 'node-local-001';
+      final bundleRepo = DriftBundleRepository(db, localNodeId: localNodeId);
+      final walletRepo = DriftWalletRepository(db);
+      final transport = _FakeTransport();
+      final discovery = _FakeDiscovery();
+      final peerRepo = _FakePeerRepository();
+      final contentStore = _FakeContentStore();
+      final signatureService = _PassThroughSignatureService();
+      final mapper = WalletEventBundleMapper();
 
-    final spyService = _SpyWalletSyncService(walletRepository: walletRepo, mapper: mapper);
+      final spyService = _SpyWalletSyncService(
+        walletRepository: walletRepo,
+        mapper: mapper,
+      );
 
-    final runtime = NodeRuntime(
-      localNodeId: localNodeId,
-      discovery: discovery,
-      transport: transport,
-      bundles: bundleRepo,
-      peers: peerRepo,
-      contentStore: contentStore,
-      bundleSignatureService: signatureService,
-      walletSyncReconciliationService: spyService,
-    );
+      final runtime = NodeRuntime(
+        localNodeId: localNodeId,
+        discovery: discovery,
+        transport: transport,
+        bundles: bundleRepo,
+        peers: peerRepo,
+        contentStore: contentStore,
+        bundleSignatureService: signatureService,
+        walletSyncReconciliationService: spyService,
+      );
 
-    await runtime.start();
+      await runtime.start();
 
-    final spend = mapper.toSpendBundle(
-      bundleId: 'spend-rt-1',
-      localNodeId: 'node-remote-123',
-      recipientNodeId: localNodeId,
-      amountMinorUnits: 300,
-      createdAt: DateTime.now(),
-    );
+      final spend = mapper.toSpendBundle(
+        bundleId: 'spend-rt-1',
+        localNodeId: 'node-remote-123',
+        recipientNodeId: localNodeId,
+        amountMinorUnits: 300,
+        createdAt: DateTime.now(),
+      );
 
-    transport.emit(spend);
+      transport.emit(spend);
 
-    // Give runtime a moment to process the incoming bundle.
-    await Future<void>.delayed(const Duration(milliseconds: 200));
+      // Give runtime a moment to process the incoming bundle.
+      await Future<void>.delayed(const Duration(milliseconds: 200));
 
-    expect(spyService.calls, isNotEmpty);
-    expect(spyService.calls.single.bundleId, spend.bundleId);
+      expect(spyService.calls, isNotEmpty);
+      expect(spyService.calls.single.bundleId, spend.bundleId);
 
-    final saved = await bundleRepo.getById(spend.bundleId);
-    expect(saved, isNotNull);
+      final saved = await bundleRepo.getById(spend.bundleId);
+      expect(saved, isNotNull);
 
-    await runtime.stop();
-  });
+      await runtime.stop();
+    },
+  );
 }

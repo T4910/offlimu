@@ -50,10 +50,11 @@ class InitiateWalletSpendUseCase {
 
     final String trimmedRecipient = recipientNodeId.trim();
     final String? trimmedMemo = memo?.trim();
-    final String? normalizedMemo =
-        trimmedMemo == null || trimmedMemo.isEmpty ? null : trimmedMemo;
+    final String? normalizedMemo = trimmedMemo == null || trimmedMemo.isEmpty
+        ? null
+        : trimmedMemo;
     final dashboard = await _walletRepository.watchDashboard().first;
-    if (dashboard.balanceMinorUnits < amountMinorUnits) {
+    if (dashboard.availableBalanceMinorUnits < amountMinorUnits) {
       throw StateError('Insufficient balance for this spend.');
     }
 

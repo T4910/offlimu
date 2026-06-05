@@ -22,17 +22,13 @@ class SecureNodeIdentityStore implements NodeIdentityStore {
   final Random _random;
 
   @override
-  Future<NodePublicIdentity> loadOrCreate({
-    required String displayName,
-  }) async {
+  Future<NodePublicIdentity> loadOrCreate({required String displayName}) async {
     final nodeId = await _loadOrCreateNodeId();
     return _loadIdentity(nodeId: nodeId, displayName: displayName);
   }
 
   @override
-  Future<NodePublicIdentity> rotate({
-    required String displayName,
-  }) async {
+  Future<NodePublicIdentity> rotate({required String displayName}) async {
     final nodeId = await _loadOrCreateNodeId();
     final seed = _generateSeed();
     await _vault.writeSeed(base64Encode(seed));

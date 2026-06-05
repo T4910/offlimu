@@ -8,7 +8,10 @@ import 'package:offlimu/domain/services/bundle_signature_service.dart';
 import 'package:offlimu/domain/use_cases/wallet_event_bundle_mapper.dart';
 
 class RewardIssuanceResult {
-  const RewardIssuanceResult({required this.bundle, required this.pendingEntry});
+  const RewardIssuanceResult({
+    required this.bundle,
+    required this.pendingEntry,
+  });
 
   final Bundle bundle;
   final ledger.WalletLedgerEntry pendingEntry;
@@ -57,7 +60,9 @@ class RewardIssuanceUseCase {
 
     final ledger.WalletLedgerEntry pendingEntry = ledger.WalletLedgerEntry(
       entryId: signed.bundleId,
-      kind: rewardKind == 'relay' ? ledger.WalletLedgerEventKind.relayReward : ledger.WalletLedgerEventKind.gatewayReward,
+      kind: rewardKind == 'relay'
+          ? ledger.WalletLedgerEventKind.relayReward
+          : ledger.WalletLedgerEventKind.gatewayReward,
       title: 'Pending Reward',
       subtitle: rewardKind == 'relay' ? 'Relay Reward' : 'Gateway Reward',
       amountMinorUnits: amountMinorUnits,
@@ -79,7 +84,10 @@ class RewardIssuanceUseCase {
     return _bundleSignatureOrSignImpl(unsigned, nodeId);
   }
 
-  Future<Bundle> _bundleSignatureOrSignImpl(Bundle unsigned, String nodeId) async {
+  Future<Bundle> _bundleSignatureOrSignImpl(
+    Bundle unsigned,
+    String nodeId,
+  ) async {
     return _bundleSignatureService.sign(bundle: unsigned, nodeId: nodeId);
   }
 }

@@ -36,8 +36,8 @@ class WalletSyncReconciliationService {
         continue;
       }
 
-      final String reason = rejectedReasonsByBundleId[bundleId] ??
-          'Rejected by sync server';
+      final String reason =
+          rejectedReasonsByBundleId[bundleId] ?? 'Rejected by sync server';
       await _walletRepository.appendEntry(
         ledger.WalletLedgerEntry(
           entryId: 'wallet-spend-rejected-$bundleId',
@@ -54,6 +54,36 @@ class WalletSyncReconciliationService {
         ),
       );
     }
+  }
+
+  Future<void> applyExpiredSpend({
+    required Bundle bundle,
+    required String reason,
+  }) async {
+    if (bundle.type != Bundle.typeWalletSpend) {
+      return;
+    }
+
+    final WalletSpendPayload? payload = _mapper.decodeSpendPayload(bundle);
+    if (payload == null) {
+      return;
+    }
+
+    await _walletRepository.appendEntry(
+      ledger.WalletLedgerEntry(
+        entryId: 'wallet-spend-expired-${bundle.bundleId}',
+        kind: ledger.WalletLedgerEventKind.rejection,
+        title: 'Spend Timeframe Exceeded',
+        subtitle: reason,
+        amountMinorUnits: payload.amountMinorUnits,
+        balanceImpactMinorUnits: 0,
+        status: ledger.WalletLedgerStatus.rejected,
+        createdAt: _now(),
+        memo: payload.memo ?? reason,
+        counterpartyNodeId: payload.recipientNodeId,
+        sourceBundleId: bundle.bundleId,
+      ),
+    );
   }
 
   Future<void> applyInboundWalletBundle(Bundle bundle) async {
@@ -93,7 +123,9 @@ class WalletSyncReconciliationService {
         entryId: 'wallet-reward-${bundle.bundleId}',
         kind: kind,
         title: 'Reward',
-        subtitle: payload.rewardKind == 'relay' ? 'Relay reward' : 'Gateway reward',
+        subtitle: payload.rewardKind == 'relay'
+            ? 'Relay reward'
+            : 'Gateway reward',
         amountMinorUnits: payload.amountMinorUnits,
         balanceImpactMinorUnits: payload.amountMinorUnits,
         status: ledger.WalletLedgerStatus.confirmed,
@@ -105,8 +137,8 @@ class WalletSyncReconciliationService {
   }
 
   Future<void> _applyConfirmation(Bundle bundle) async {
-    final WalletReconciliationPayload? payload =
-        _mapper.decodeReconciliationPayload(bundle);
+    final WalletReconciliationPayload? payload = _mapper
+        .decodeReconciliationPayload(bundle);
     if (payload == null) {
       return;
     }
@@ -129,8 +161,8 @@ class WalletSyncReconciliationService {
   }
 
   Future<void> _applyRejection(Bundle bundle) async {
-    final WalletReconciliationPayload? payload =
-        _mapper.decodeReconciliationPayload(bundle);
+    final WalletReconciliationPayload? payload = _mapper
+        .decodeReconciliationPayload(bundle);
     if (payload == null) {
       return;
     }

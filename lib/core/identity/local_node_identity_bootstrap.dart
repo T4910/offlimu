@@ -8,7 +8,9 @@ Future<NodeIdentity> bootstrapLocalNodeIdentity({
   SecureNodeIdentityStore? store,
 }) async {
   final resolvedStore = store ?? SecureNodeIdentityStore();
-  final publicIdentity = await resolvedStore.loadOrCreate(displayName: displayName);
+  final publicIdentity = await resolvedStore.loadOrCreate(
+    displayName: displayName,
+  );
   final localIdentity = NodeIdentity(
     nodeId: publicIdentity.nodeId,
     displayName: publicIdentity.displayName,
@@ -21,8 +23,6 @@ NodeIdentity resolveLocalNodeIdentity({
   required String fallbackNodeId,
   String displayName = 'OffLiMU Node',
 }) {
-  return _bootstrappedLocalNodeIdentity ?? NodeIdentity(
-    nodeId: fallbackNodeId,
-    displayName: displayName,
-  );
+  return _bootstrappedLocalNodeIdentity ??
+      NodeIdentity(nodeId: fallbackNodeId, displayName: displayName);
 }

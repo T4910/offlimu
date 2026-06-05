@@ -9,9 +9,9 @@ class LanBroadcastDiscoveryAdapter implements DiscoveryAdapter {
     required String localNodeId,
     required int transportPort,
     int discoveryPort = 46666,
-  })  : _localNodeId = localNodeId,
-        _transportPort = transportPort,
-        _discoveryPort = discoveryPort;
+  }) : _localNodeId = localNodeId,
+       _transportPort = transportPort,
+       _discoveryPort = discoveryPort;
 
   final String _localNodeId;
   final int _transportPort;
@@ -132,7 +132,9 @@ class LanBroadcastDiscoveryAdapter implements DiscoveryAdapter {
     final DiscoveredPeer? previous = _knownPeers[nodeId];
     _knownPeers[nodeId] = peer;
 
-    if (previous == null || previous.host != peer.host || previous.port != peer.port) {
+    if (previous == null ||
+        previous.host != peer.host ||
+        previous.port != peer.port) {
       _peerController.add(peer);
       return;
     }

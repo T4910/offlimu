@@ -1,21 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:offlimu/core/di/providers.dart';
 import 'package:offlimu/domain/entities/wallet_ledger_entry.dart';
 
 enum WalletSection { overview, pay, logs, rewards, identity }
 
-class WalletPage extends ConsumerWidget {
+class WalletPage extends ConsumerStatefulWidget {
   const WalletPage({super.key, this.section = WalletSection.overview});
 
   final WalletSection section;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WalletPage> createState() => _WalletPageState();
+}
+
+class _WalletPageState extends ConsumerState<WalletPage> {
+  late WalletSection _activeSection = widget.section;
+
+  @override
+  void didUpdateWidget(covariant WalletPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.section != widget.section) {
+      _activeSection = widget.section;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final nodeId = ref.watch(localNodeIdentityProvider).nodeId;
-    final dashboard = ref.watch(walletDashboardProvider).valueOrNull ??
+    final dashboard =
+        ref.watch(walletDashboardProvider).valueOrNull ??
         WalletLedgerDashboard.empty();
 
     return Scaffold(
@@ -30,34 +45,56 @@ class WalletPage extends ConsumerWidget {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                    child: _WalletHeader(section: section, nodeId: nodeId),
+                    child: _WalletHeader(
+                      section: _activeSection,
+                      nodeId: nodeId,
+                    ),
                   ),
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: _WalletNavPills(active: section),
+                    child: _WalletNavPills(
+                      active: _activeSection,
+                      onChanged: (section) {
+                        setState(() {
+                          _activeSection = section;
+                        });
+                      },
+                    ),
                   ),
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
                   sliver: SliverToBoxAdapter(
-                    child: switch (section) {
-                      WalletSection.overview => _WalletOverviewSection(
-                        nodeId: nodeId,
-                        dashboard: dashboard,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      child: KeyedSubtree(
+                        key: ValueKey<WalletSection>(_activeSection),
+                        child: switch (_activeSection) {
+                          WalletSection.overview => _WalletOverviewSection(
+                            nodeId: nodeId,
+                            dashboard: dashboard,
+                            onSectionSelected: _setSection,
+                          ),
+                          WalletSection.pay => _WalletPaymentSection(
+                            nodeId: nodeId,
+                            dashboard: dashboard,
+                          ),
+                          WalletSection.logs => _WalletLogsSection(
+                            dashboard: dashboard,
+                          ),
+                          WalletSection.rewards => _WalletRewardsSection(
+                            dashboard: dashboard,
+                          ),
+                          WalletSection.identity => _WalletIdentitySection(
+                            nodeId: nodeId,
+                          ),
+                        },
                       ),
-                      WalletSection.pay => _WalletPaymentSection(
-                        nodeId: nodeId,
-                        dashboard: dashboard,
-                      ),
-                      WalletSection.logs =>
-                        _WalletLogsSection(dashboard: dashboard),
-                      WalletSection.rewards =>
-                        _WalletRewardsSection(dashboard: dashboard),
-                      WalletSection.identity =>
-                        _WalletIdentitySection(nodeId: nodeId),
-                    },
+                    ),
                   ),
                 ),
               ],
@@ -66,6 +103,12 @@ class WalletPage extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _setSection(WalletSection section) {
+    setState(() {
+      _activeSection = section;
+    });
   }
 }
 
@@ -91,12 +134,16 @@ class _WalletBackground extends StatelessWidget {
           Positioned(
             top: -110,
             right: -90,
-            child: _GlowBlob(color: const Color(0xFF4CAF50).withValues(alpha: 0.14)),
+            child: _GlowBlob(
+              color: const Color(0xFF4CAF50).withValues(alpha: 0.14),
+            ),
           ),
           Positioned(
             top: 110,
             left: -95,
-            child: _GlowBlob(color: const Color(0xFF2E7D32).withValues(alpha: 0.10)),
+            child: _GlowBlob(
+              color: const Color(0xFF2E7D32).withValues(alpha: 0.10),
+            ),
           ),
           Positioned.fill(
             child: Opacity(
@@ -142,30 +189,27 @@ class _WalletHeader extends StatelessWidget {
   final String nodeId;
 
   String get _title => switch (section) {
-        WalletSection.overview => 'Local Balance',
-        WalletSection.pay => 'Offline Transfer',
-        WalletSection.logs => 'Transaction Logs',
-        WalletSection.rewards => 'Reward Earnings',
-        WalletSection.identity => 'My Node Identity',
-      };
+    WalletSection.overview => 'Local Balance',
+    WalletSection.pay => 'Offline Transfer',
+    WalletSection.logs => 'Transaction Logs',
+    WalletSection.rewards => 'Reward Earnings',
+    WalletSection.identity => 'My Node Identity',
+  };
 
   String get _subtitle => switch (section) {
-          WalletSection.overview =>
-            'The ledger stays append-only and updates live.',
-        WalletSection.pay =>
-          'Prepare a signed spend event and persist it as a pending ledger entry.',
-        WalletSection.logs =>
-          'Complete audit trail for payments, confirmations, and rejections.',
-        WalletSection.rewards =>
-          'Relay and gateway participation rewards derived from the ledger.',
-        WalletSection.identity =>
-          'Share the local node identity without exposing private material.',
-      };
+    WalletSection.overview => 'The ledger stays append-only and updates live.',
+    WalletSection.pay =>
+      'Prepare a signed spend event and persist it as a pending ledger entry.',
+    WalletSection.logs =>
+      'Complete audit trail for payments, confirmations, and rejections.',
+    WalletSection.rewards =>
+      'Relay and gateway participation rewards derived from the ledger.',
+    WalletSection.identity =>
+      'Share the local node identity without exposing private material.',
+  };
 
   @override
   Widget build(BuildContext context) {
-    final bool showBackHome = section != WalletSection.overview;
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -176,17 +220,17 @@ class _WalletHeader extends StatelessWidget {
               Text(
                 _title.toUpperCase(),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      letterSpacing: 2.0,
-                      color: const Color(0xFF3A643B),
-                      fontWeight: FontWeight.w700,
-                    ),
+                  letterSpacing: 2.0,
+                  color: const Color(0xFF3A643B),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
                 _subtitle,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF556B55),
-                    ),
+                  color: const Color(0xFF556B55),
+                ),
               ),
             ],
           ),
@@ -196,10 +240,6 @@ class _WalletHeader extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: <Widget>[
-            if (showBackHome) ...<Widget>[
-              _HomeButton(onTap: () => context.go('/')),
-              const SizedBox(height: 8),
-            ],
             _StatusBadge(label: 'NODE', value: _shortId(nodeId)),
           ],
         ),
@@ -209,9 +249,10 @@ class _WalletHeader extends StatelessWidget {
 }
 
 class _WalletNavPills extends StatelessWidget {
-  const _WalletNavPills({required this.active});
+  const _WalletNavPills({required this.active, required this.onChanged});
 
   final WalletSection active;
+  final ValueChanged<WalletSection> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -222,27 +263,27 @@ class _WalletNavPills extends StatelessWidget {
         _NavPill(
           label: 'Overview',
           active: active == WalletSection.overview,
-          onTap: () => context.go('/wallet'),
+          onTap: () => onChanged(WalletSection.overview),
         ),
         _NavPill(
           label: 'Pay',
           active: active == WalletSection.pay,
-          onTap: () => context.go('/wallet/pay'),
+          onTap: () => onChanged(WalletSection.pay),
         ),
         _NavPill(
           label: 'Logs',
           active: active == WalletSection.logs,
-          onTap: () => context.go('/wallet/logs'),
+          onTap: () => onChanged(WalletSection.logs),
         ),
         _NavPill(
           label: 'Rewards',
           active: active == WalletSection.rewards,
-          onTap: () => context.go('/wallet/rewards'),
+          onTap: () => onChanged(WalletSection.rewards),
         ),
         _NavPill(
           label: 'My ID',
           active: active == WalletSection.identity,
-          onTap: () => context.go('/wallet/id'),
+          onTap: () => onChanged(WalletSection.identity),
         ),
       ],
     );
@@ -250,7 +291,11 @@ class _WalletNavPills extends StatelessWidget {
 }
 
 class _NavPill extends StatelessWidget {
-  const _NavPill({required this.label, required this.active, required this.onTap});
+  const _NavPill({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
 
   final String label;
   final bool active;
@@ -258,8 +303,12 @@ class _NavPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color borderColor = active ? const Color(0xFF4EA058) : const Color(0xFFD5E4D0);
-    final Color backgroundColor = active ? const Color(0xFFE7F4E2) : const Color(0xFFF8FBF5);
+    final Color borderColor = active
+        ? const Color(0xFF4EA058)
+        : const Color(0xFFD5E4D0);
+    final Color backgroundColor = active
+        ? const Color(0xFFE7F4E2)
+        : const Color(0xFFF8FBF5);
 
     return InkWell(
       onTap: onTap,
@@ -274,10 +323,10 @@ class _NavPill extends StatelessWidget {
         child: Text(
           label.toUpperCase(),
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                letterSpacing: 1.4,
-                color: active ? const Color(0xFF245A2A) : const Color(0xFF4F6450),
-                fontWeight: FontWeight.w700,
-              ),
+            letterSpacing: 1.4,
+            color: active ? const Color(0xFF245A2A) : const Color(0xFF4F6450),
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
@@ -285,17 +334,22 @@ class _NavPill extends StatelessWidget {
 }
 
 class _WalletOverviewSection extends StatelessWidget {
-  const _WalletOverviewSection({required this.nodeId, required this.dashboard});
+  const _WalletOverviewSection({
+    required this.nodeId,
+    required this.dashboard,
+    required this.onSectionSelected,
+  });
 
   final String nodeId;
   final WalletLedgerDashboard dashboard;
+  final ValueChanged<WalletSection> onSectionSelected;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _BalanceCard(nodeId: nodeId, dashboard: dashboard),
+        _BalanceCards(nodeId: nodeId, dashboard: dashboard),
         const SizedBox(height: 14),
         Row(
           children: <Widget>[
@@ -303,7 +357,7 @@ class _WalletOverviewSection extends StatelessWidget {
               child: _ActionTile(
                 icon: Icons.send_rounded,
                 label: 'Pay',
-                onTap: () => context.go('/wallet/pay'),
+                onTap: () => onSectionSelected(WalletSection.pay),
               ),
             ),
             const SizedBox(width: 12),
@@ -311,7 +365,7 @@ class _WalletOverviewSection extends StatelessWidget {
               child: _ActionTile(
                 icon: Icons.qr_code_2_rounded,
                 label: 'My ID',
-                onTap: () => context.go('/wallet/id'),
+                onTap: () => onSectionSelected(WalletSection.identity),
               ),
             ),
           ],
@@ -326,8 +380,8 @@ class _WalletOverviewSection extends StatelessWidget {
                     child: Text(
                       'No recent ledger entries',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: const Color(0xFF577057),
-                          ),
+                        color: const Color(0xFF577057),
+                      ),
                     ),
                   ),
                 )
@@ -348,7 +402,10 @@ class _WalletOverviewSection extends StatelessWidget {
                   Expanded(
                     child: _MetricCard(
                       title: 'Relay Rewards',
-                      value: _formatDtn(dashboard.relayRewardsMinorUnits, includeSign: false),
+                      value: _formatDtn(
+                        dashboard.relayRewardsMinorUnits,
+                        includeSign: false,
+                      ),
                       accent: const Color(0xFF2E7D32),
                     ),
                   ),
@@ -356,7 +413,10 @@ class _WalletOverviewSection extends StatelessWidget {
                   Expanded(
                     child: _MetricCard(
                       title: 'Gateway Rewards',
-                      value: _formatDtn(dashboard.gatewayRewardsMinorUnits, includeSign: false),
+                      value: _formatDtn(
+                        dashboard.gatewayRewardsMinorUnits,
+                        includeSign: false,
+                      ),
                       accent: const Color(0xFF66A65D),
                     ),
                   ),
@@ -373,7 +433,8 @@ class _WalletOverviewSection extends StatelessWidget {
               _ProgressLine(
                 label: 'Participation Grade',
                 valueLabel: dashboard.participationGrade.isEmpty
-                    ? '-' : dashboard.participationGrade,
+                    ? '-'
+                    : dashboard.participationGrade,
                 progress: dashboard.trustScore,
                 accent: const Color(0xFF66A65D),
               ),
@@ -392,7 +453,8 @@ class _WalletPaymentSection extends ConsumerStatefulWidget {
   final WalletLedgerDashboard dashboard;
 
   @override
-  ConsumerState<_WalletPaymentSection> createState() => _WalletPaymentSectionState();
+  ConsumerState<_WalletPaymentSection> createState() =>
+      _WalletPaymentSectionState();
 }
 
 class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
@@ -423,7 +485,9 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
     final amountMinorUnits = (amount * 100).round();
     String? errorMessage;
     try {
-      await ref.read(initiateWalletSpendUseCaseProvider).initiate(
+      await ref
+          .read(initiateWalletSpendUseCaseProvider)
+          .initiate(
             localNodeId: widget.nodeId,
             recipientNodeId: recipient,
             amountMinorUnits: amountMinorUnits,
@@ -437,7 +501,9 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
 
     if (errorMessage != null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage)));
       return;
     }
 
@@ -454,7 +520,8 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
   }
 
   void _fillMaxAmount() {
-    _amountController.text = (widget.dashboard.balanceMinorUnits / 100).toStringAsFixed(2);
+    _amountController.text = (widget.dashboard.availableBalanceMinorUnits / 100)
+        .toStringAsFixed(2);
   }
 
   @override
@@ -468,9 +535,9 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
               child: Text(
                 'Offline Transfer',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: const Color(0xFF214A2B),
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: const Color(0xFF214A2B),
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],
@@ -493,9 +560,9 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
               const SizedBox(height: 8),
               Text(
                 'Requires a valid OffLiMU node identifier.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF577057),
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: const Color(0xFF577057)),
               ),
             ],
           ),
@@ -504,12 +571,12 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
         _SectionCard(
           title: 'Step 2: Token Payload',
           trailing: Text(
-            'Local Balance  ${_formatDtn(widget.dashboard.balanceMinorUnits, includeSign: false)}',
+            'Available  ${_formatDtn(widget.dashboard.availableBalanceMinorUnits, includeSign: false)}',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: const Color(0xFF2E7D32),
-                  letterSpacing: 0.4,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: const Color(0xFF2E7D32),
+              letterSpacing: 0.4,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -527,11 +594,17 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
               const SizedBox(height: 12),
               Row(
                 children: const <Widget>[
-                  Expanded(child: _StatusBadge(label: 'TOKEN', value: 'SpendEvent')),
+                  Expanded(
+                    child: _StatusBadge(label: 'TOKEN', value: 'SpendEvent'),
+                  ),
                   SizedBox(width: 10),
-                  Expanded(child: _StatusBadge(label: 'TTL', value: '72 Hours')),
+                  Expanded(
+                    child: _StatusBadge(label: 'TTL', value: '72 Hours'),
+                  ),
                   SizedBox(width: 10),
-                  Expanded(child: _StatusBadge(label: 'ENCAP', value: 'Bundle v6')),
+                  Expanded(
+                    child: _StatusBadge(label: 'ENCAP', value: 'Bundle v6'),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -549,12 +622,29 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
           child: Column(
             children: <Widget>[
               _AuditRow(
+                label: 'Local balance',
+                value: _formatDtn(
+                  widget.dashboard.balanceMinorUnits,
+                  includeSign: false,
+                ),
+              ),
+              _AuditRow(
+                label: 'Available balance',
+                value: _formatDtn(
+                  widget.dashboard.availableBalanceMinorUnits,
+                  includeSign: false,
+                ),
+              ),
+              _AuditRow(
                 label: 'Pending spends',
                 value: widget.dashboard.pendingSpendCount.toString(),
               ),
               _AuditRow(
-                label: 'Pending value',
-                value: _formatDtn(widget.dashboard.pendingSpendMinorUnits, includeSign: false),
+                label: 'Reserved value',
+                value: _formatDtn(
+                  widget.dashboard.pendingSpendMinorUnits,
+                  includeSign: false,
+                ),
               ),
               _AuditRow(
                 label: 'Ledger updated',
@@ -613,8 +703,8 @@ class _WalletLogsSection extends StatelessWidget {
               child: Text(
                 'No logs yet',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF6A8067),
-                    ),
+                  color: const Color(0xFF6A8067),
+                ),
               ),
             ),
           )
@@ -653,7 +743,10 @@ class _WalletRewardsSection extends StatelessWidget {
             Expanded(
               child: _MetricCard(
                 title: 'Pending Rewards',
-                value: _formatDtn(dashboard.pendingRewardMinorUnits, includeSign: false),
+                value: _formatDtn(
+                  dashboard.pendingRewardMinorUnits,
+                  includeSign: false,
+                ),
                 accent: const Color(0xFF66A65D),
               ),
             ),
@@ -686,10 +779,12 @@ class _WalletRewardsSection extends StatelessWidget {
           title: 'Reward Ledger',
           child: Column(
             children: dashboard.rewardEntries
-                .map((entry) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _RewardEntryTile(entry: entry),
-                    ))
+                .map(
+                  (entry) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _RewardEntryTile(entry: entry),
+                  ),
+                )
                 .toList(growable: false),
           ),
         ),
@@ -730,9 +825,9 @@ class _WalletIdentitySection extends StatelessWidget {
           SelectableText(
             nodeId,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  letterSpacing: 0.6,
-                  color: const Color(0xFF214A2B),
-                ),
+              letterSpacing: 0.6,
+              color: const Color(0xFF214A2B),
+            ),
           ),
           const SizedBox(height: 10),
           Row(
@@ -760,11 +855,65 @@ class _WalletIdentitySection extends StatelessWidget {
   }
 }
 
-class _BalanceCard extends StatelessWidget {
-  const _BalanceCard({required this.nodeId, required this.dashboard});
+class _BalanceCards extends StatelessWidget {
+  const _BalanceCards({required this.nodeId, required this.dashboard});
 
   final String nodeId;
   final WalletLedgerDashboard dashboard;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final localCard = _BalanceCard(
+          title: 'Local Balance',
+          amountMinorUnits: dashboard.balanceMinorUnits,
+          nodeId: nodeId,
+          subtitle: 'Current append-only ledger balance',
+        );
+        final availableCard = _BalanceCard(
+          title: 'Available Balance',
+          amountMinorUnits: dashboard.availableBalanceMinorUnits,
+          nodeId: nodeId,
+          subtitle: dashboard.pendingSpendMinorUnits > 0
+              ? '${_formatDtn(dashboard.pendingSpendMinorUnits, includeSign: false)} reserved in pending spends'
+              : 'Ready for new offline transactions',
+        );
+
+        if (constraints.maxWidth < 680) {
+          return Column(
+            children: <Widget>[
+              localCard,
+              const SizedBox(height: 12),
+              availableCard,
+            ],
+          );
+        }
+
+        return Row(
+          children: <Widget>[
+            Expanded(child: localCard),
+            const SizedBox(width: 12),
+            Expanded(child: availableCard),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _BalanceCard extends StatelessWidget {
+  const _BalanceCard({
+    required this.title,
+    required this.amountMinorUnits,
+    required this.nodeId,
+    required this.subtitle,
+  });
+
+  final String title;
+  final int amountMinorUnits;
+  final String nodeId;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -774,11 +923,19 @@ class _BalanceCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <Color>[Color(0xFFFFFFFF), Color(0xFFF4FAF0), Color(0xFFEAF5E4)],
+          colors: <Color>[
+            Color(0xFFFFFFFF),
+            Color(0xFFF4FAF0),
+            Color(0xFFEAF5E4),
+          ],
         ),
         border: Border.all(color: const Color(0xFFC9DCC2), width: 1.1),
         boxShadow: const <BoxShadow>[
-          BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, 8)),
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 16,
+            offset: Offset(0, 8),
+          ),
         ],
       ),
       child: Padding(
@@ -787,31 +944,39 @@ class _BalanceCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Text(
-              'LOCAL BALANCE',
+              title.toUpperCase(),
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    letterSpacing: 2.4,
-                    color: const Color(0xFF4A6C4A),
-                    fontWeight: FontWeight.w700,
-                  ),
+                letterSpacing: 2.4,
+                color: const Color(0xFF4A6C4A),
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 10),
             Text(
-              _formatDtn(dashboard.balanceMinorUnits, includeSign: false),
+              _formatDtn(amountMinorUnits, includeSign: false),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    color: const Color(0xFF214A2B),
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -1.1,
-                  ),
+                color: const Color(0xFF214A2B),
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1.1,
+              ),
             ),
             const SizedBox(height: 10),
-            _MiniBadge(label: _formatUsdApprox(dashboard.balanceMinorUnits), onTap: () {}),
+            _MiniBadge(label: _formatUsdApprox(amountMinorUnits), onTap: () {}),
             const SizedBox(height: 10),
             Text(
-              'Node $nodeId',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF5D725B),
-                  ),
+              subtitle,
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: const Color(0xFF5D725B)),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Node ${_shortId(nodeId)}',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: const Color(0xFF5D725B)),
             ),
           ],
         ),
@@ -821,7 +986,11 @@ class _BalanceCard extends StatelessWidget {
 }
 
 class _ActionTile extends StatelessWidget {
-  const _ActionTile({required this.icon, required this.label, required this.onTap});
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String label;
@@ -840,7 +1009,11 @@ class _ActionTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFC9DCC2), width: 1.2),
             boxShadow: const <BoxShadow>[
-              BoxShadow(color: Color(0x10000000), blurRadius: 12, offset: Offset(0, 6)),
+              BoxShadow(
+                color: Color(0x10000000),
+                blurRadius: 12,
+                offset: Offset(0, 6),
+              ),
             ],
           ),
           child: Center(
@@ -852,10 +1025,10 @@ class _ActionTile extends StatelessWidget {
                 Text(
                   label.toUpperCase(),
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        letterSpacing: 1.4,
-                        color: const Color(0xFF24552A),
-                        fontWeight: FontWeight.w800,
-                      ),
+                    letterSpacing: 1.4,
+                    color: const Color(0xFF24552A),
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ],
             ),
@@ -881,7 +1054,11 @@ class _SectionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFD9E7D4)),
         boxShadow: const <BoxShadow>[
-          BoxShadow(color: Color(0x10000000), blurRadius: 12, offset: Offset(0, 6)),
+          BoxShadow(
+            color: Color(0x10000000),
+            blurRadius: 12,
+            offset: Offset(0, 6),
+          ),
         ],
       ),
       child: Padding(
@@ -895,10 +1072,10 @@ class _SectionCard extends StatelessWidget {
                   child: Text(
                     title.toUpperCase(),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          letterSpacing: 1.4,
-                          color: const Color(0xFF28502E),
-                          fontWeight: FontWeight.w700,
-                        ),
+                      letterSpacing: 1.4,
+                      color: const Color(0xFF28502E),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 ?trailing,
@@ -914,7 +1091,11 @@ class _SectionCard extends StatelessWidget {
 }
 
 class _MetricCard extends StatelessWidget {
-  const _MetricCard({required this.title, required this.value, required this.accent});
+  const _MetricCard({
+    required this.title,
+    required this.value,
+    required this.accent,
+  });
 
   final String title;
   final String value;
@@ -935,17 +1116,17 @@ class _MetricCard extends StatelessWidget {
           Text(
             title.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  letterSpacing: 1.3,
-                  color: const Color(0xFF5A7358),
-                ),
+              letterSpacing: 1.3,
+              color: const Color(0xFF5A7358),
+            ),
           ),
           const SizedBox(height: 14),
           Text(
             value,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: const Color(0xFF214A2B),
-                  fontWeight: FontWeight.w800,
-                ),
+              color: const Color(0xFF214A2B),
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -973,13 +1154,15 @@ class _ProgressLine extends StatelessWidget {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Expanded(child: Text(label, style: Theme.of(context).textTheme.bodyMedium)),
+            Expanded(
+              child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
+            ),
             Text(
               valueLabel,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: accent,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: accent,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
@@ -1013,7 +1196,11 @@ class _TransactionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFD9E7D4)),
         boxShadow: const <BoxShadow>[
-          BoxShadow(color: Color(0x10000000), blurRadius: 12, offset: Offset(0, 6)),
+          BoxShadow(
+            color: Color(0x10000000),
+            blurRadius: 12,
+            offset: Offset(0, 6),
+          ),
         ],
       ),
       child: Column(
@@ -1028,16 +1215,26 @@ class _TransactionCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: _entryAccent(entry)),
                 ),
-                child: Icon(_entryIcon(entry), color: _entryAccent(entry), size: 20),
+                child: Icon(
+                  _entryIcon(entry),
+                  color: _entryAccent(entry),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(entry.title, style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      entry.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 2),
-                    Text(_formatTimestamp(entry.createdAt), style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      _formatTimestamp(entry.createdAt),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ),
@@ -1047,17 +1244,19 @@ class _TransactionCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             entry.memo ?? entry.subtitle,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF4F6450),
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF4F6450)),
           ),
           const SizedBox(height: 10),
           Text(
             _formatDtn(entry.amountMinorUnits),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: entry.isDebit ? const Color(0xFF214A2B) : const Color(0xFF2E7D32),
-                  fontWeight: FontWeight.w800,
-                ),
+              color: entry.isDebit
+                  ? const Color(0xFF214A2B)
+                  : const Color(0xFF2E7D32),
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -1088,7 +1287,11 @@ class _RewardEntryTile extends StatelessWidget {
               color: const Color(0xFFF0F7EC),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(_entryIcon(entry), color: _entryAccent(entry), size: 20),
+            child: Icon(
+              _entryIcon(entry),
+              color: _entryAccent(entry),
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1097,7 +1300,10 @@ class _RewardEntryTile extends StatelessWidget {
               children: <Widget>[
                 Text(entry.title, style: Theme.of(context).textTheme.bodyLarge),
                 const SizedBox(height: 4),
-                Text(entry.subtitle, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  entry.subtitle,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),
@@ -1105,9 +1311,11 @@ class _RewardEntryTile extends StatelessWidget {
           Text(
             _formatDtn(entry.amountMinorUnits),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: entry.isCredit ? const Color(0xFF2E7D32) : const Color(0xFF214A2B),
-                  fontWeight: FontWeight.w800,
-                ),
+              color: entry.isCredit
+                  ? const Color(0xFF2E7D32)
+                  : const Color(0xFF214A2B),
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -1138,9 +1346,15 @@ class _LedgerTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(entry.title, style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  entry.title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 4),
-                Text(entry.subtitle, style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  entry.subtitle,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ],
             ),
           ),
@@ -1148,9 +1362,11 @@ class _LedgerTile extends StatelessWidget {
           Text(
             _formatDtn(entry.amountMinorUnits),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: entry.isDebit ? const Color(0xFF214A2B) : const Color(0xFF2E7D32),
-                  fontWeight: FontWeight.w800,
-                ),
+              color: entry.isDebit
+                  ? const Color(0xFF214A2B)
+                  : const Color(0xFF2E7D32),
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -1179,9 +1395,9 @@ class _MiniBadge extends StatelessWidget {
         child: Text(
           label,
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: const Color(0xFF4F6450),
-                fontWeight: FontWeight.w700,
-              ),
+            color: const Color(0xFF4F6450),
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
@@ -1189,7 +1405,11 @@ class _MiniBadge extends StatelessWidget {
 }
 
 class _MiniActionButton extends StatelessWidget {
-  const _MiniActionButton({required this.label, required this.icon, required this.onTap});
+  const _MiniActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
 
   final String label;
   final IconData icon;
@@ -1205,27 +1425,6 @@ class _MiniActionButton extends StatelessWidget {
         foregroundColor: const Color(0xFF214A2B),
         side: const BorderSide(color: Color(0xFF4EA058)),
         padding: const EdgeInsets.symmetric(vertical: 14),
-      ),
-    );
-  }
-}
-
-class _HomeButton extends StatelessWidget {
-  const _HomeButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: const Icon(Icons.home_rounded, size: 18),
-      label: const Text('Back to Home'),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFF214A2B),
-        side: const BorderSide(color: Color(0xFF4EA058)),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        visualDensity: VisualDensity.compact,
       ),
     );
   }
@@ -1258,9 +1457,9 @@ class _InputField extends StatelessWidget {
         decoration: InputDecoration(
           isDense: true,
           hintText: hintText,
-          hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF6A8067),
-              ),
+          hintStyle: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: const Color(0xFF6A8067)),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.fromLTRB(14, 16, 12, 16),
           suffixIcon: trailing,
@@ -1302,21 +1501,23 @@ class _AmountField extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: InputDecoration(
                 isDense: true,
                 hintText: '0.00',
                 hintStyle: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: const Color(0xFF6A8067),
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: const Color(0xFF6A8067),
+                  fontWeight: FontWeight.w800,
+                ),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
               ),
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: const Color(0xFF214A2B),
-                    fontWeight: FontWeight.w800,
-                  ),
+                color: const Color(0xFF214A2B),
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
           Padding(
@@ -1341,13 +1542,15 @@ class _AuditRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: <Widget>[
-          Expanded(child: Text(label, style: Theme.of(context).textTheme.bodyMedium)),
+          Expanded(
+            child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          ),
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF214A2B),
-                ),
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF214A2B),
+            ),
           ),
         ],
       ),
@@ -1364,8 +1567,10 @@ class _FilterPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color borderColor = accent ?? (active ? const Color(0xFF4EA058) : const Color(0xFFD9E7D4));
-    final Color textColor = accent ?? (active ? const Color(0xFF245A2A) : const Color(0xFF4F6450));
+    final Color borderColor =
+        accent ?? (active ? const Color(0xFF4EA058) : const Color(0xFFD9E7D4));
+    final Color textColor =
+        accent ?? (active ? const Color(0xFF245A2A) : const Color(0xFF4F6450));
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -1377,10 +1582,10 @@ class _FilterPill extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.6,
-            ),
+          color: textColor,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
+        ),
       ),
     );
   }
@@ -1405,10 +1610,10 @@ class _StatusBadge extends StatelessWidget {
         '$label $value',
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: const Color(0xFF4F6450),
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.4,
-            ),
+          color: const Color(0xFF4F6450),
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }

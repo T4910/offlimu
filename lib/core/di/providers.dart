@@ -769,10 +769,11 @@ Future<void> _cleanupExpiredBundles(Ref ref) async {
   final pending = await bundles.getPendingBundles();
 
   for (final bundle in pending.where((bundle) => bundle.isExpired)) {
-    await bundles.markRejected(
-      bundle.bundleId,
-      reason: 'Bundle expired during scheduled cleanup (TTL exceeded).',
-    );
+    const reason = 'Bundle expired during scheduled cleanup (TTL exceeded).';
+    await ref
+        .read(walletSyncReconciliationServiceProvider)
+        .applyExpiredSpend(bundle: bundle, reason: reason);
+    await bundles.markRejected(bundle.bundleId, reason: reason);
   }
 
   final remainingPending = await bundles.getPendingBundles();

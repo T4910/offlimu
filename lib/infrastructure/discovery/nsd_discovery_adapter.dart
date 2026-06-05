@@ -12,11 +12,11 @@ class NsdDiscoveryAdapter implements DiscoveryAdapter {
     required DiscoveryAdapter fallback,
     String serviceType = '_offlimu._tcp',
     String serviceNamePrefix = 'offlimu',
-  })  : _localNodeId = localNodeId,
-        _transportPort = transportPort,
-        _fallback = fallback,
-        _serviceType = serviceType,
-        _serviceName = '$serviceNamePrefix-$localNodeId';
+  }) : _localNodeId = localNodeId,
+       _transportPort = transportPort,
+       _fallback = fallback,
+       _serviceType = serviceType,
+       _serviceName = '$serviceNamePrefix-$localNodeId';
 
   final String _localNodeId;
   final int _transportPort;
@@ -126,7 +126,9 @@ class NsdDiscoveryAdapter implements DiscoveryAdapter {
       final previous = _knownPeers[nodeId];
       _knownPeers[nodeId] = peer;
 
-      if (previous == null || previous.host != peer.host || previous.port != peer.port) {
+      if (previous == null ||
+          previous.host != peer.host ||
+          previous.port != peer.port) {
         _peerController.add(peer);
       }
     };

@@ -41,35 +41,38 @@ void main() {
     expect(matches.single.isCredit, isTrue);
   });
 
-  test('applyInboundWalletBundle is idempotent for the same spend bundle', () async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    addTearDown(db.close);
+  test(
+    'applyInboundWalletBundle is idempotent for the same spend bundle',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
 
-    final walletRepository = DriftWalletRepository(db);
-    final mapper = WalletEventBundleMapper();
-    final service = WalletSyncReconciliationService(
-      walletRepository: walletRepository,
-      mapper: mapper,
-      now: () => DateTime.now(),
-    );
+      final walletRepository = DriftWalletRepository(db);
+      final mapper = WalletEventBundleMapper();
+      final service = WalletSyncReconciliationService(
+        walletRepository: walletRepository,
+        mapper: mapper,
+        now: () => DateTime.now(),
+      );
 
-    final now = DateTime.now();
-    final spendBundle = mapper.toSpendBundle(
-      bundleId: 'spend-2',
-      localNodeId: 'node-remote-123',
-      recipientNodeId: 'node-local-001',
-      amountMinorUnits: 1200,
-      createdAt: now,
-    );
+      final now = DateTime.now();
+      final spendBundle = mapper.toSpendBundle(
+        bundleId: 'spend-2',
+        localNodeId: 'node-remote-123',
+        recipientNodeId: 'node-local-001',
+        amountMinorUnits: 1200,
+        createdAt: now,
+      );
 
-    await service.applyInboundWalletBundle(spendBundle);
-    await service.applyInboundWalletBundle(spendBundle);
+      await service.applyInboundWalletBundle(spendBundle);
+      await service.applyInboundWalletBundle(spendBundle);
 
-    final dashboard = await walletRepository.watchDashboard().first;
-    final matches = dashboard.recentEntries
-        .where((e) => e.sourceBundleId == spendBundle.bundleId)
-        .toList(growable: false);
+      final dashboard = await walletRepository.watchDashboard().first;
+      final matches = dashboard.recentEntries
+          .where((e) => e.sourceBundleId == spendBundle.bundleId)
+          .toList(growable: false);
 
-    expect(matches, hasLength(1));
-  });
+      expect(matches, hasLength(1));
+    },
+  );
 }

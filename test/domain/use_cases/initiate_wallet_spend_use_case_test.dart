@@ -9,36 +9,41 @@ import 'package:offlimu/domain/services/bundle_signature_service.dart';
 import 'package:offlimu/domain/use_cases/initiate_wallet_spend_use_case.dart';
 
 void main() {
-  test('initiates an offline wallet spend bundle and pending ledger entry', () async {
-    final walletRepository = _FakeWalletRepository(_dashboard(5000));
-    final bundleRepository = _FakeBundleRepository();
-    final signatureService = _PassThroughSignatureService();
-    final useCase = InitiateWalletSpendUseCase(
-      walletRepository: walletRepository,
-      bundleRepository: bundleRepository,
-      bundleSignatureService: signatureService,
-      now: () => DateTime.fromMillisecondsSinceEpoch(1700000000000),
+  test(
+    'initiates an offline wallet spend bundle and pending ledger entry',
+    () async {
+      final walletRepository = _FakeWalletRepository(_dashboard(5000));
+      final bundleRepository = _FakeBundleRepository();
+      final signatureService = _PassThroughSignatureService();
+      final useCase = InitiateWalletSpendUseCase(
+        walletRepository: walletRepository,
+        bundleRepository: bundleRepository,
+        bundleSignatureService: signatureService,
+        now: () => DateTime.fromMillisecondsSinceEpoch(1700000000000),
+      );
+
+      final result = await useCase.initiate(
+        localNodeId: 'node-local-001',
+        recipientNodeId: 'node-remote-123',
+        amountMinorUnits: 1250,
+        memo: 'Test spend',
+      );
+
+      expect(result.bundle.type, Bundle.typeWalletSpend);
+      expect(result.bundle.sourceNodeId, 'node-local-001');
+      expect(result.bundle.destinationNodeId, 'node-remote-123');
+      expect(result.pendingEntry.status, WalletLedgerStatus.pending);
+      expect(result.pendingEntry.amountMinorUnits, -1250);
+      expect(result.pendingEntry.sourceBundleId, result.bundle.bundleId);
+      expect(bundleRepository.savedBundles, hasLength(1));
+      expect(walletRepository.appendedEntries, hasLength(1));
+    },
+  );
+
+  test('rejects spends that exceed available balance', () async {
+    final walletRepository = _FakeWalletRepository(
+      _dashboard(5000, availableBalanceMinorUnits: 1000),
     );
-
-    final result = await useCase.initiate(
-      localNodeId: 'node-local-001',
-      recipientNodeId: 'node-remote-123',
-      amountMinorUnits: 1250,
-      memo: 'Test spend',
-    );
-
-    expect(result.bundle.type, Bundle.typeWalletSpend);
-    expect(result.bundle.sourceNodeId, 'node-local-001');
-    expect(result.bundle.destinationNodeId, 'node-remote-123');
-    expect(result.pendingEntry.status, WalletLedgerStatus.pending);
-    expect(result.pendingEntry.amountMinorUnits, -1250);
-    expect(result.pendingEntry.sourceBundleId, result.bundle.bundleId);
-    expect(bundleRepository.savedBundles, hasLength(1));
-    expect(walletRepository.appendedEntries, hasLength(1));
-  });
-
-  test('rejects spends that exceed balance', () async {
-    final walletRepository = _FakeWalletRepository(_dashboard(1000));
     final bundleRepository = _FakeBundleRepository();
     final signatureService = _PassThroughSignatureService();
     final useCase = InitiateWalletSpendUseCase(
@@ -92,7 +97,8 @@ class _FakeBundleRepository implements BundleRepository {
   Future<List<Bundle>> getAllBundles() => throw UnimplementedError();
 
   @override
-  Future<ContentMetadataRecord?> getContentMetadata(String contentHash) => throw UnimplementedError();
+  Future<ContentMetadataRecord?> getContentMetadata(String contentHash) =>
+      throw UnimplementedError();
 
   @override
   Future<List<Bundle>> getPendingBundles() => throw UnimplementedError();
@@ -101,10 +107,14 @@ class _FakeBundleRepository implements BundleRepository {
   Future<void> markAcknowledged(String bundleId) => throw UnimplementedError();
 
   @override
-  Future<void> markRejected(String bundleId, {required String reason}) => throw UnimplementedError();
+  Future<void> markRejected(String bundleId, {required String reason}) =>
+      throw UnimplementedError();
 
   @override
-  Future<void> markSendFailed(String bundleId, {required String errorMessage}) => throw UnimplementedError();
+  Future<void> markSendFailed(
+    String bundleId, {
+    required String errorMessage,
+  }) => throw UnimplementedError();
 
   @override
   Future<void> markSent(String bundleId) => throw UnimplementedError();
@@ -118,19 +128,24 @@ class _FakeBundleRepository implements BundleRepository {
   }
 
   @override
-  Future<void> saveContentMetadata(ContentMetadataRecord metadata) => throw UnimplementedError();
+  Future<void> saveContentMetadata(ContentMetadataRecord metadata) =>
+      throw UnimplementedError();
 
   @override
-  Stream<List<AckAuditEvent>> watchRecentAckEvents({int limit = 20}) => throw UnimplementedError();
+  Stream<List<AckAuditEvent>> watchRecentAckEvents({int limit = 20}) =>
+      throw UnimplementedError();
 
   @override
   Stream<List<Bundle>> watchAllBundles() => throw UnimplementedError();
 
   @override
-  Stream<List<ContentMetadataRecord>> watchRecentContentMetadata({int limit = 50}) => throw UnimplementedError();
+  Stream<List<ContentMetadataRecord>> watchRecentContentMetadata({
+    int limit = 50,
+  }) => throw UnimplementedError();
 
   @override
-  Stream<List<Bundle>> watchBundlesByType(String type) => throw UnimplementedError();
+  Stream<List<Bundle>> watchBundlesByType(String type) =>
+      throw UnimplementedError();
 
   @override
   Stream<List<Bundle>> watchPendingBundles() => throw UnimplementedError();
@@ -146,9 +161,13 @@ class _PassThroughSignatureService implements BundleSignatureService {
   Future<bool> verify(Bundle bundle) async => true;
 }
 
-WalletLedgerDashboard _dashboard(int balanceMinorUnits) {
+WalletLedgerDashboard _dashboard(
+  int balanceMinorUnits, {
+  int? availableBalanceMinorUnits,
+}) {
   return WalletLedgerDashboard(
     balanceMinorUnits: balanceMinorUnits,
+    availableBalanceMinorUnits: availableBalanceMinorUnits ?? balanceMinorUnits,
     relayRewardsMinorUnits: 0,
     gatewayRewardsMinorUnits: 0,
     rewardTotalMinorUnits: 0,

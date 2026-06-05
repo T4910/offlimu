@@ -19,32 +19,45 @@ class _PassThroughSignatureService implements BundleSignatureService {
 }
 
 void main() {
-  test('reward issuance persists pending bundle and pending ledger entry', () async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    addTearDown(db.close);
+  test(
+    'reward issuance persists pending bundle and pending ledger entry',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
 
-    final walletRepository = DriftWalletRepository(db);
-    final bundleRepository = DriftBundleRepository(db, localNodeId: 'node-local-001');
-    final signatureService = _PassThroughSignatureService();
+      final walletRepository = DriftWalletRepository(db);
+      final bundleRepository = DriftBundleRepository(
+        db,
+        localNodeId: 'node-local-001',
+      );
+      final signatureService = _PassThroughSignatureService();
 
-    final issuance = RewardIssuanceUseCase(
-      bundleRepository: bundleRepository,
-      walletRepository: walletRepository,
-      bundleSignatureService: signatureService,
-    );
+      final issuance = RewardIssuanceUseCase(
+        bundleRepository: bundleRepository,
+        walletRepository: walletRepository,
+        bundleSignatureService: signatureService,
+      );
 
-    await issuance.createPendingReward(
-      localNodeId: 'node-local-001',
-      amountMinorUnits: 250,
-      rewardKind: 'relay',
-      memo: 'test issuance',
-    );
+      await issuance.createPendingReward(
+        localNodeId: 'node-local-001',
+        amountMinorUnits: 250,
+        rewardKind: 'relay',
+        memo: 'test issuance',
+      );
 
-    final pending = await bundleRepository.getPendingBundles();
-    expect(pending.any((b) => b.type == Bundle.typeWalletReward), isTrue);
+      final pending = await bundleRepository.getPendingBundles();
+      expect(pending.any((b) => b.type == Bundle.typeWalletReward), isTrue);
 
-    final dashboard = await walletRepository.watchDashboard().first;
-    expect(dashboard.pendingRewardMinorUnits >= 250, isTrue);
-    expect(dashboard.rewardEntries.any((e) => e.status == WalletLedgerStatus.pending || e.amountMinorUnits == 250), isTrue);
-  });
+      final dashboard = await walletRepository.watchDashboard().first;
+      expect(dashboard.pendingRewardMinorUnits >= 250, isTrue);
+      expect(
+        dashboard.rewardEntries.any(
+          (e) =>
+              e.status == WalletLedgerStatus.pending ||
+              e.amountMinorUnits == 250,
+        ),
+        isTrue,
+      );
+    },
+  );
 }

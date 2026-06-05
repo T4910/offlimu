@@ -110,7 +110,9 @@ class WalletEventBundleMapper {
     final amountMinorUnits = (payload['amountMinorUnits'] as num?)?.toInt();
     final recipientNodeId = payload['recipientNodeId'] as String?;
     final createdAtMs = (payload['createdAtMs'] as num?)?.toInt();
-    if (amountMinorUnits == null || recipientNodeId == null || createdAtMs == null) {
+    if (amountMinorUnits == null ||
+        recipientNodeId == null ||
+        createdAtMs == null) {
       return null;
     }
 
@@ -128,9 +130,11 @@ class WalletEventBundleMapper {
       return null;
     }
 
-    final String? sourceSpendBundleId = payload['sourceSpendBundleId'] as String?;
+    final String? sourceSpendBundleId =
+        payload['sourceSpendBundleId'] as String?;
     final String? recipientNodeId = payload['recipientNodeId'] as String?;
-    final int? amountMinorUnits = (payload['amountMinorUnits'] as num?)?.toInt();
+    final int? amountMinorUnits = (payload['amountMinorUnits'] as num?)
+        ?.toInt();
     final int? createdAtMs = (payload['createdAtMs'] as num?)?.toInt();
     if (sourceSpendBundleId == null ||
         recipientNodeId == null ||
@@ -155,7 +159,8 @@ class WalletEventBundleMapper {
       return null;
     }
 
-    final int? amountMinorUnits = (payload['amountMinorUnits'] as num?)?.toInt();
+    final int? amountMinorUnits = (payload['amountMinorUnits'] as num?)
+        ?.toInt();
     final String? rewardKind = payload['rewardKind'] as String?;
     final int? createdAtMs = (payload['createdAtMs'] as num?)?.toInt();
     final String? sourceBundleId = payload['sourceBundleId'] as String?;

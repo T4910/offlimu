@@ -12,6 +12,7 @@ class _FakeWalletRepository implements WalletRepository {
 
   final ledger.WalletLedgerDashboard dashboard = ledger.WalletLedgerDashboard(
     balanceMinorUnits: 0,
+    availableBalanceMinorUnits: 0,
     relayRewardsMinorUnits: 0,
     gatewayRewardsMinorUnits: 0,
     rewardTotalMinorUnits: 0,
@@ -53,19 +54,21 @@ void main() {
         ),
         walletRepositoryProvider.overrideWithValue(repo),
       ],
-      child: MaterialApp(
-        home: WalletPage(section: section),
-      ),
+      child: MaterialApp(home: WalletPage(section: section)),
     );
   }
 
   testWidgets('wallet overview renders hero and action tiles', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(buildWalletPage(WalletSection.overview, _FakeWalletRepository()));
+    await tester.pumpWidget(
+      buildWalletPage(WalletSection.overview, _FakeWalletRepository()),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('0.00 DTN'), findsWidgets);
+    expect(find.text('LOCAL BALANCE'), findsAtLeastNWidgets(1));
+    expect(find.text('AVAILABLE BALANCE'), findsOneWidget);
     expect(find.text('PAY'), findsAtLeastNWidgets(2));
     expect(find.text('MY ID'), findsAtLeastNWidgets(2));
     expect(find.text('RECENT LEDGER'), findsOneWidget);
@@ -76,19 +79,23 @@ void main() {
   testWidgets('wallet payment page renders transfer flow', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(buildWalletPage(WalletSection.pay, _FakeWalletRepository()));
+    await tester.pumpWidget(
+      buildWalletPage(WalletSection.pay, _FakeWalletRepository()),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('OFFLINE TRANSFER'), findsOneWidget);
     expect(find.text('SIGN & PROPAGATE'), findsOneWidget);
     expect(find.text('PRE-FLIGHT AUDIT'), findsOneWidget);
-    expect(find.text('Back to Home'), findsOneWidget);
+    expect(find.text('Back to Home'), findsNothing);
   });
 
   testWidgets('wallet rewards page renders incentive metrics', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(buildWalletPage(WalletSection.rewards, _FakeWalletRepository()));
+    await tester.pumpWidget(
+      buildWalletPage(WalletSection.rewards, _FakeWalletRepository()),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('REWARD EARNINGS'), findsOneWidget);
@@ -100,7 +107,9 @@ void main() {
   testWidgets('wallet identity page renders node id card', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(buildWalletPage(WalletSection.identity, _FakeWalletRepository()));
+    await tester.pumpWidget(
+      buildWalletPage(WalletSection.identity, _FakeWalletRepository()),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('MY NODE IDENTITY'), findsOneWidget);

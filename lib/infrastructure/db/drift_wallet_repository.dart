@@ -10,21 +10,23 @@ class DriftWalletRepository implements WalletRepository {
 
   @override
   Future<void> appendEntry(ledger.WalletLedgerEntry entry) async {
-    await _db.into(_db.walletLedgerEntries).insertOnConflictUpdate(
-      WalletLedgerEntriesCompanion(
-        entryId: Value<String>(entry.entryId),
-        kind: Value<String>(entry.kind.name),
-        title: Value<String>(entry.title),
-        subtitle: Value<String>(entry.subtitle),
-        amountMinorUnits: Value<int>(entry.amountMinorUnits),
-        balanceImpactMinorUnits: Value<int>(entry.balanceImpactMinorUnits),
-        status: Value<String>(entry.status.name),
-        createdAtMs: Value<int>(entry.createdAt.millisecondsSinceEpoch),
-        memo: Value<String?>(entry.memo),
-        counterpartyNodeId: Value<String?>(entry.counterpartyNodeId),
-        sourceBundleId: Value<String?>(entry.sourceBundleId),
-      ),
-    );
+    await _db
+        .into(_db.walletLedgerEntries)
+        .insertOnConflictUpdate(
+          WalletLedgerEntriesCompanion(
+            entryId: Value<String>(entry.entryId),
+            kind: Value<String>(entry.kind.name),
+            title: Value<String>(entry.title),
+            subtitle: Value<String>(entry.subtitle),
+            amountMinorUnits: Value<int>(entry.amountMinorUnits),
+            balanceImpactMinorUnits: Value<int>(entry.balanceImpactMinorUnits),
+            status: Value<String>(entry.status.name),
+            createdAtMs: Value<int>(entry.createdAt.millisecondsSinceEpoch),
+            memo: Value<String?>(entry.memo),
+            counterpartyNodeId: Value<String?>(entry.counterpartyNodeId),
+            sourceBundleId: Value<String?>(entry.sourceBundleId),
+          ),
+        );
   }
 
   @override
@@ -74,19 +76,25 @@ class DriftWalletRepository implements WalletRepository {
         .toList(growable: false);
     final recentEntries = entries.take(recentLimit).toList(growable: false);
     final logEntries = entries
-      .where((entry) => entry.kind != ledger.WalletLedgerEventKind.openingGrant)
-      .take(logLimit)
-      .toList(growable: false);
+        .where(
+          (entry) => entry.kind != ledger.WalletLedgerEventKind.openingGrant,
+        )
+        .take(logLimit)
+        .toList(growable: false);
 
     final balanceMinorUnits = entries.fold<int>(
       0,
       (sum, entry) => sum + entry.balanceImpactMinorUnits,
     );
     final relayRewardsMinorUnits = rewardEntries
-        .where((entry) => entry.kind == ledger.WalletLedgerEventKind.relayReward)
+        .where(
+          (entry) => entry.kind == ledger.WalletLedgerEventKind.relayReward,
+        )
         .fold<int>(0, (sum, entry) => sum + entry.amountMinorUnits);
     final gatewayRewardsMinorUnits = rewardEntries
-        .where((entry) => entry.kind == ledger.WalletLedgerEventKind.gatewayReward)
+        .where(
+          (entry) => entry.kind == ledger.WalletLedgerEventKind.gatewayReward,
+        )
         .fold<int>(0, (sum, entry) => sum + entry.amountMinorUnits);
     final rewardTotalMinorUnits = rewardEntries.fold<int>(
       0,
@@ -94,8 +102,9 @@ class DriftWalletRepository implements WalletRepository {
     );
     final resolvedSpendSourceIds = entries
         .where(
-        (entry) => entry.status != ledger.WalletLedgerStatus.pending &&
-          entry.sourceBundleId != null,
+          (entry) =>
+              entry.status != ledger.WalletLedgerStatus.pending &&
+              entry.sourceBundleId != null,
         )
         .map((entry) => entry.sourceBundleId!)
         .toSet();
@@ -111,20 +120,25 @@ class DriftWalletRepository implements WalletRepository {
         .where(
           (entry) =>
               entry.kind == ledger.WalletLedgerEventKind.spend &&
-          entry.status == ledger.WalletLedgerStatus.pending &&
-          (entry.sourceBundleId == null ||
-            !resolvedSpendSourceIds.contains(entry.sourceBundleId)),
+              entry.status == ledger.WalletLedgerStatus.pending &&
+              (entry.sourceBundleId == null ||
+                  !resolvedSpendSourceIds.contains(entry.sourceBundleId)),
         )
         .length;
     final pendingSpendMinorUnits = entries
         .where(
           (entry) =>
               entry.kind == ledger.WalletLedgerEventKind.spend &&
-          entry.status == ledger.WalletLedgerStatus.pending &&
-          (entry.sourceBundleId == null ||
-            !resolvedSpendSourceIds.contains(entry.sourceBundleId)),
+              entry.status == ledger.WalletLedgerStatus.pending &&
+              (entry.sourceBundleId == null ||
+                  !resolvedSpendSourceIds.contains(entry.sourceBundleId)),
         )
         .fold<int>(0, (sum, entry) => sum + entry.amountMinorUnits.abs());
+    final availableBalanceMinorUnits =
+        (balanceMinorUnits - pendingSpendMinorUnits).clamp(
+          0,
+          balanceMinorUnits,
+        );
     final trustScore = _deriveTrustScore(entries);
     final participationGrade = _deriveGrade(trustScore);
     final estimatedBundleBytes = 640 + entries.length * 144;
@@ -134,6 +148,7 @@ class DriftWalletRepository implements WalletRepository {
 
     return ledger.WalletLedgerDashboard(
       balanceMinorUnits: balanceMinorUnits,
+      availableBalanceMinorUnits: availableBalanceMinorUnits,
       relayRewardsMinorUnits: relayRewardsMinorUnits,
       gatewayRewardsMinorUnits: gatewayRewardsMinorUnits,
       rewardTotalMinorUnits: rewardTotalMinorUnits,

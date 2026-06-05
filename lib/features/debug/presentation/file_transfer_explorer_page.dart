@@ -19,7 +19,10 @@ class FileTransferExplorerPage extends ConsumerWidget {
           final total = items.length;
           final complete = items.where((item) => item.isComplete).length;
           final incomplete = total - complete;
-          final totalChunks = items.fold<int>(0, (sum, item) => sum + item.availableChunkCount);
+          final totalChunks = items.fold<int>(
+            0,
+            (sum, item) => sum + item.availableChunkCount,
+          );
 
           return ListView(
             padding: const EdgeInsets.all(12),
@@ -32,9 +35,18 @@ class FileTransferExplorerPage extends ConsumerWidget {
                     runSpacing: 8,
                     children: <Widget>[
                       _MetricChip(label: 'Transfers', value: total.toString()),
-                      _MetricChip(label: 'Complete', value: complete.toString()),
-                      _MetricChip(label: 'Incomplete', value: incomplete.toString()),
-                      _MetricChip(label: 'Chunks', value: totalChunks.toString()),
+                      _MetricChip(
+                        label: 'Complete',
+                        value: complete.toString(),
+                      ),
+                      _MetricChip(
+                        label: 'Incomplete',
+                        value: incomplete.toString(),
+                      ),
+                      _MetricChip(
+                        label: 'Chunks',
+                        value: totalChunks.toString(),
+                      ),
                     ],
                   ),
                 ),
@@ -95,7 +107,10 @@ class _ExplorerCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Chip(label: Text(kindLabel), visualDensity: VisualDensity.compact),
+                Chip(
+                  label: Text(kindLabel),
+                  visualDensity: VisualDensity.compact,
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -106,10 +121,7 @@ class _ExplorerCard extends StatelessWidget {
             Text('Created: ${_formatTimestamp(item.createdAt)}'),
             if (item.localPath != null) Text('Local path: ${item.localPath}'),
             const SizedBox(height: 12),
-            Text(
-              'Chunk map',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
+            Text('Chunk map', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             Wrap(
               spacing: 6,
@@ -121,7 +133,9 @@ class _ExplorerCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text('Metadata bundle: ${item.metadataBundleId ?? '(none)'}'),
             if (item.chunkBundleIdsByIndex.isNotEmpty)
-              Text('Chunk bundles: ${item.chunkBundleIdsByIndex.values.join(', ')}'),
+              Text(
+                'Chunk bundles: ${item.chunkBundleIdsByIndex.values.join(', ')}',
+              ),
             const SizedBox(height: 6),
             LinearProgressIndicator(
               value: item.completionFraction,
@@ -142,7 +156,10 @@ class _MetricChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Chip(label: Text('$label: $value'), visualDensity: VisualDensity.compact);
+    return Chip(
+      label: Text('$label: $value'),
+      visualDensity: VisualDensity.compact,
+    );
   }
 }
 

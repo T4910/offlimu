@@ -20,7 +20,9 @@ class Ed25519BundleSignatureService implements BundleSignatureService {
 
   @override
   Future<Bundle> sign({required Bundle bundle, required String nodeId}) async {
-    final identity = await _nodeIdentityStore.loadOrCreate(displayName: _displayName);
+    final identity = await _nodeIdentityStore.loadOrCreate(
+      displayName: _displayName,
+    );
     final signedPayload = bundle.copyWith(
       sourcePublicKey: identity.publicKeyBase64,
     );

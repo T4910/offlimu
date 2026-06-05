@@ -72,7 +72,8 @@ class _FilesPageState extends ConsumerState<FilesPage> {
           Expanded(
             child: explorerAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stackTrace) => Center(child: Text('Error: $error')),
+              error: (error, stackTrace) =>
+                  Center(child: Text('Error: $error')),
               data: (items) {
                 if (items.isEmpty) {
                   return const Center(child: Text('No stored files yet.'));
@@ -163,7 +164,9 @@ class _FilesPageState extends ConsumerState<FilesPage> {
     }
 
     try {
-      final dispatchResult = await ref.read(sendFileTransferUseCaseProvider).send(
+      final dispatchResult = await ref
+          .read(sendFileTransferUseCaseProvider)
+          .send(
             localNodeId: localNodeId,
             destinationNodeId: destinationNodeId,
             fileName: file.name,
@@ -236,7 +239,9 @@ class _FilesPageState extends ConsumerState<FilesPage> {
     }
 
     final peerOptions = peers
-        .where((peer) => peer.nodeId != ref.read(localNodeIdentityProvider).nodeId)
+        .where(
+          (peer) => peer.nodeId != ref.read(localNodeIdentityProvider).nodeId,
+        )
         .toList(growable: false);
 
     return showModalBottomSheet<String?>(
@@ -259,10 +264,15 @@ class _FilesPageState extends ConsumerState<FilesPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text('Choose destination', style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'Choose destination',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String?>(
-                    initialValue: peerOptions.isEmpty ? null : selectedPeerNodeId,
+                    initialValue: peerOptions.isEmpty
+                        ? null
+                        : selectedPeerNodeId,
                     decoration: const InputDecoration(
                       labelText: 'Recent peer',
                       border: OutlineInputBorder(),
@@ -275,7 +285,9 @@ class _FilesPageState extends ConsumerState<FilesPage> {
                       ...peerOptions.map(
                         (peer) => DropdownMenuItem<String?>(
                           value: peer.nodeId,
-                          child: Text('${peer.nodeId} (${peer.host}:${peer.port})'),
+                          child: Text(
+                            '${peer.nodeId} (${peer.host}:${peer.port})',
+                          ),
                         ),
                       ),
                     ],
@@ -344,7 +356,10 @@ class _FilesPageState extends ConsumerState<FilesPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(item.displayName, style: Theme.of(sheetContext).textTheme.titleMedium),
+              Text(
+                item.displayName,
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
               Text('Hash: ${item.contentHash}'),
               Text('Destination: ${item.destinationLabel}'),
@@ -412,7 +427,9 @@ class _FileTransferCard extends StatelessWidget {
     };
 
     final opacity = item.isComplete ? 1.0 : 0.55;
-    final accent = item.isComplete ? const Color(0xFF2E7D32) : const Color(0xFF8C6A2B);
+    final accent = item.isComplete
+        ? const Color(0xFF2E7D32)
+        : const Color(0xFF8C6A2B);
 
     return Opacity(
       opacity: opacity,
@@ -445,9 +462,8 @@ class _FileTransferCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               item.displayName,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -465,8 +481,8 @@ class _FileTransferCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFF617361),
-                            ),
+                          color: const Color(0xFF617361),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -477,8 +493,8 @@ class _FileTransferCard extends StatelessWidget {
                       Text(
                         '${item.totalBytes ?? 0} bytes • ${_formatTimestamp(item.createdAt)}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFF617361),
-                            ),
+                          color: const Color(0xFF617361),
+                        ),
                       ),
                       const SizedBox(height: 10),
                       LinearProgressIndicator(
