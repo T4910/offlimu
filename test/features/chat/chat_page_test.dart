@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:offlimu/core/di/providers.dart';
 import 'package:offlimu/domain/entities/chat_message.dart';
 import 'package:offlimu/domain/entities/chat_thread.dart';
+import 'package:offlimu/domain/entities/file_transfer_explorer_item.dart';
 import 'package:offlimu/domain/entities/node_identity.dart';
 import 'package:offlimu/domain/entities/peer_contact.dart';
 import 'package:offlimu/features/chat/presentation/chat_page.dart';
+import 'package:offlimu/features/chat/presentation/conversation_page.dart';
 import 'package:offlimu/features/chat/presentation/new_chat_page.dart';
 
 void main() {
@@ -96,6 +98,59 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('direct:node-manual'), findsOneWidget);
+  });
+
+  testWidgets('conversation shows file attachment preview in timeline', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          localNodeIdentityProvider.overrideWithValue(
+            const NodeIdentity(nodeId: 'node-a', displayName: 'Node A'),
+          ),
+          conversationMessagesProvider(
+            const ConversationMessagesRequest(peerNodeId: 'node-b', limit: 50),
+          ).overrideWith(
+            (ref) => Stream<List<ChatMessage>>.value(const <ChatMessage>[]),
+          ),
+          fileTransferExplorerProvider.overrideWithValue(
+            AsyncValue.data(<FileTransferExplorerItem>[
+              FileTransferExplorerItem(
+                contentHash: 'sha256:report',
+                fileName: 'report.pdf',
+                mimeType: 'application/pdf',
+                kind: FileTransferKind.pdf,
+                destinationNodeId: 'node-b',
+                sourceNodeId: 'node-a',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(1700000000000),
+                lastUpdatedAt: DateTime.fromMillisecondsSinceEpoch(
+                  1700000001000,
+                ),
+                totalBytes: 2048,
+                expectedChunkCount: 4,
+                chunkBundleIdsByIndex: const <int, String>{
+                  0: 'chunk-0',
+                  1: 'chunk-1',
+                },
+                metadataBundleId: 'meta-1',
+                localPath: null,
+                failedBundleCount: 0,
+                lastError: null,
+              ),
+            ]),
+          ),
+        ],
+        child: const MaterialApp(home: ConversationPage(peerNodeId: 'node-b')),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('report.pdf'), findsOneWidget);
+    expect(find.text('partial • 2/4 chunks'), findsOneWidget);
+    expect(find.byIcon(Icons.picture_as_pdf_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.refresh_rounded), findsOneWidget);
   });
 }
 

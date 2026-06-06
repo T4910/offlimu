@@ -721,6 +721,9 @@ class _FakeBundleRepository implements BundleRepository {
   Future<void> markAcknowledged(String bundleId) async {}
 
   @override
+  Future<void> resetForRetry(String bundleId) async {}
+
+  @override
   Future<bool> recordAckReceipt(Bundle ackBundle) async => false;
 
   @override

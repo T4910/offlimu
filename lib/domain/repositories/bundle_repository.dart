@@ -16,6 +16,7 @@ abstract interface class BundleRepository {
   Future<void> markSendFailed(String bundleId, {required String errorMessage});
   Future<void> markRejected(String bundleId, {required String reason});
   Future<void> markAcknowledged(String bundleId);
+  Future<void> resetForRetry(String bundleId);
   Future<bool> recordAckReceipt(Bundle ackBundle);
   Future<List<Bundle>> getPendingBundles();
   Stream<List<Bundle>> watchAllBundles();

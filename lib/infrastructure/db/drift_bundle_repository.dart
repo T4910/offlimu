@@ -247,6 +247,39 @@ class DriftBundleRepository implements BundleRepository {
   }
 
   @override
+  Future<void> resetForRetry(String bundleId) async {
+    await _db.transaction(() async {
+      await (_db.update(
+        _db.bundleRecords,
+      )..where((tbl) => tbl.bundleId.equals(bundleId))).write(
+        const BundleRecordsCompanion(
+          acknowledged: Value<bool>(false),
+          sentAtMs: Value<int?>(null),
+          failedAttempts: Value<int>(0),
+          lastError: Value<String?>(null),
+        ),
+      );
+
+      final projection = await (_db.select(
+        _db.messageProjections,
+      )..where((tbl) => tbl.bundleId.equals(bundleId))).getSingleOrNull();
+      if (projection == null) {
+        return;
+      }
+
+      await (_db.update(
+        _db.messageProjections,
+      )..where((tbl) => tbl.bundleId.equals(bundleId))).write(
+        const MessageProjectionsCompanion(
+          deliveryStatus: Value<String>('pending'),
+          failedAttempts: Value<int>(0),
+          lastError: Value<String?>(null),
+        ),
+      );
+    });
+  }
+
+  @override
   Future<bool> recordAckReceipt(Bundle ackBundle) async {
     if (!ackBundle.isAck) {
       return false;

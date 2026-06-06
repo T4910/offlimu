@@ -113,6 +113,9 @@ class _FakeBundleRepository implements BundleRepository {
   Future<void> markAcknowledged(String bundleId) => Future<void>.value();
 
   @override
+  Future<void> resetForRetry(String bundleId) => Future<void>.value();
+
+  @override
   Future<void> markRejected(String bundleId, {required String reason}) {
     return Future<void>.value();
   }

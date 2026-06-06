@@ -84,5 +84,41 @@ void main() {
       expect(loaded!.sourcePublicKey, 'public-key-123');
       expect(loaded.signature, isNull);
     });
+
+    test(
+      'resetForRetry clears failed state and makes bundle pending',
+      () async {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        addTearDown(db.close);
+
+        final repository = DriftBundleRepository(db, localNodeId: 'node-a');
+        final bundle = Bundle(
+          bundleId: 'msg-retry',
+          type: Bundle.typeChatMessage,
+          sourceNodeId: 'node-a',
+          destinationNodeId: 'node-b',
+          payload: 'hello',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1000),
+          ttlSeconds: 3600,
+          acknowledged: true,
+          failedAttempts: 2,
+          lastError: 'failed before',
+          sentAt: DateTime.fromMillisecondsSinceEpoch(2000),
+        );
+
+        await repository.save(bundle);
+        await repository.resetForRetry('msg-retry');
+
+        final loaded = await repository.getById('msg-retry');
+        final pending = await repository.getPendingBundles();
+
+        expect(loaded, isNotNull);
+        expect(loaded!.acknowledged, isFalse);
+        expect(loaded.failedAttempts, 0);
+        expect(loaded.lastError, isNull);
+        expect(loaded.sentAt, isNull);
+        expect(pending.map((bundle) => bundle.bundleId), contains('msg-retry'));
+      },
+    );
   });
 }

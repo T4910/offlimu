@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offlimu/core/di/providers.dart';
 import 'package:offlimu/domain/entities/chat_message.dart';
+import 'package:offlimu/domain/entities/file_transfer_explorer_item.dart';
 import 'package:offlimu/domain/services/content_store.dart';
 
 class ConversationPage extends ConsumerStatefulWidget {
@@ -65,6 +66,7 @@ class _ConversationPageState extends ConsumerState<ConversationPage> {
               ),
             ),
           );
+    final filesAsync = ref.watch(fileTransferExplorerProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(_title)),
@@ -77,8 +79,16 @@ class _ConversationPageState extends ConsumerState<ConversationPage> {
                   Center(child: Text('Error: $error')),
               data: (messages) {
                 final bool hasMore = messages.length >= _messagesLimit;
+                final attachments = _conversationAttachments(
+                  filesAsync.valueOrNull ?? const <FileTransferExplorerItem>[],
+                  localNodeId: localIdentity.nodeId,
+                );
+                final events = _conversationEvents(
+                  messages: messages,
+                  attachments: attachments,
+                );
 
-                if (messages.isEmpty) {
+                if (events.isEmpty) {
                   return Center(child: Text(_emptyMessage));
                 }
 
@@ -88,11 +98,28 @@ class _ConversationPageState extends ConsumerState<ConversationPage> {
                       child: ListView.separated(
                         reverse: true,
                         padding: const EdgeInsets.all(12),
-                        itemCount: messages.length,
+                        itemCount: events.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
-                          final ChatMessage message = messages[index];
-                          return _MessageBubble(message: message);
+                          final event = events[index];
+                          return switch (event) {
+                            _MessageConversationEvent(:final message) =>
+                              _MessageBubble(
+                                message: message,
+                                onResend:
+                                    message.isOutgoing &&
+                                        message.deliveryStatus ==
+                                            MessageDeliveryStatus.failed
+                                    ? () => _resendChatMessage(message)
+                                    : null,
+                              ),
+                            _FileConversationEvent(:final item) =>
+                              _FileAttachmentBubble(
+                                item: item,
+                                mine: item.sourceNodeId == localIdentity.nodeId,
+                                onResend: () => _resendFileAttachment(item),
+                              ),
+                          };
                         },
                       ),
                     ),
@@ -196,6 +223,41 @@ class _ConversationPageState extends ConsumerState<ConversationPage> {
 
   String? get _destinationNodeId =>
       widget.isBroadcast ? null : widget.peerNodeId;
+
+  List<FileTransferExplorerItem> _conversationAttachments(
+    List<FileTransferExplorerItem> files, {
+    required String localNodeId,
+  }) {
+    return files
+        .where((item) {
+          if (widget.isBroadcast) {
+            return item.destinationNodeId == null;
+          }
+          final peerNodeId = widget.peerNodeId;
+          if (peerNodeId == null) {
+            return false;
+          }
+          final outgoing =
+              item.sourceNodeId == localNodeId &&
+              item.destinationNodeId == peerNodeId;
+          final incoming =
+              item.sourceNodeId == peerNodeId &&
+              item.destinationNodeId == localNodeId;
+          return outgoing || incoming;
+        })
+        .toList(growable: false);
+  }
+
+  List<_ConversationEvent> _conversationEvents({
+    required List<ChatMessage> messages,
+    required List<FileTransferExplorerItem> attachments,
+  }) {
+    final events = <_ConversationEvent>[
+      ...messages.map(_MessageConversationEvent.new),
+      ...attachments.map(_FileConversationEvent.new),
+    ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return events;
+  }
 
   Future<void> _sendMessage({
     required String localNodeId,
@@ -332,6 +394,42 @@ class _ConversationPageState extends ConsumerState<ConversationPage> {
     }
   }
 
+  Future<void> _resendChatMessage(ChatMessage message) async {
+    final result = await ref
+        .read(resendBundleUseCaseProvider)
+        .resendChatMessage(message.messageId);
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result.requeuedAny
+              ? 'Message requeued.'
+              : 'Message cannot be requeued.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _resendFileAttachment(FileTransferExplorerItem item) async {
+    final result = await ref
+        .read(resendBundleUseCaseProvider)
+        .resendFileTransfer(item.contentHash);
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result.requeuedAny
+              ? 'File bundles requeued (${result.requeuedCount}).'
+              : 'No reusable file bundles found.',
+        ),
+      ),
+    );
+  }
+
   void _resetTransferProgress() {
     setState(() {
       _isTransferInProgress = false;
@@ -351,9 +449,10 @@ class _ConversationPageState extends ConsumerState<ConversationPage> {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message});
+  const _MessageBubble({required this.message, this.onResend});
 
   final ChatMessage message;
+  final VoidCallback? onResend;
 
   @override
   Widget build(BuildContext context) {
@@ -379,6 +478,15 @@ class _MessageBubble extends StatelessWidget {
                   _statusText(message),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+                if (onResend != null)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      tooltip: 'Resend message',
+                      icon: const Icon(Icons.refresh_rounded),
+                      onPressed: onResend,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -404,5 +512,111 @@ class _MessageBubble extends StatelessWidget {
       case MessageDeliveryStatus.received:
         return 'received';
     }
+  }
+}
+
+sealed class _ConversationEvent {
+  const _ConversationEvent();
+
+  DateTime get createdAt;
+}
+
+class _MessageConversationEvent extends _ConversationEvent {
+  const _MessageConversationEvent(this.message);
+
+  final ChatMessage message;
+
+  @override
+  DateTime get createdAt => message.createdAt;
+}
+
+class _FileConversationEvent extends _ConversationEvent {
+  const _FileConversationEvent(this.item);
+
+  final FileTransferExplorerItem item;
+
+  @override
+  DateTime get createdAt => item.createdAt;
+}
+
+class _FileAttachmentBubble extends StatelessWidget {
+  const _FileAttachmentBubble({
+    required this.item,
+    required this.mine,
+    required this.onResend,
+  });
+
+  final FileTransferExplorerItem item;
+  final bool mine;
+  final VoidCallback onResend;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 330),
+        child: Card(
+          margin: EdgeInsets.zero,
+          color: mine
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.surfaceContainerHigh,
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Icon(_fileIcon(item.kind), size: 30),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        item.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${item.statusLabel.toLowerCase()} • ${item.chunkSummary}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 6),
+                      LinearProgressIndicator(
+                        minHeight: 4,
+                        value: item.completionFraction,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: item.isComplete
+                      ? 'Resend file'
+                      : 'Retry file chunks',
+                  icon: const Icon(Icons.refresh_rounded),
+                  onPressed: onResend,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _fileIcon(FileTransferKind kind) {
+    return switch (kind) {
+      FileTransferKind.image => Icons.image_rounded,
+      FileTransferKind.pdf => Icons.picture_as_pdf_rounded,
+      FileTransferKind.video => Icons.video_file_rounded,
+      FileTransferKind.audio => Icons.audio_file_rounded,
+      FileTransferKind.text => Icons.description_rounded,
+      FileTransferKind.archive => Icons.folder_zip_rounded,
+      FileTransferKind.unknown => Icons.insert_drive_file_rounded,
+    };
   }
 }

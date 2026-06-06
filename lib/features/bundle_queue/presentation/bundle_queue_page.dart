@@ -63,14 +63,28 @@ class BundleQueuePage extends ConsumerWidget {
                     'Dest: ${bundle.destinationNodeId ?? 'broadcast'}',
                   ),
                   isThreeLine: true,
-                  trailing: IconButton(
-                    tooltip: 'Mark ACK',
-                    icon: const Icon(Icons.done_outline),
-                    onPressed: () async {
-                      await ref
-                          .read(bundleRepositoryProvider)
-                          .markAcknowledged(bundle.bundleId);
-                    },
+                  trailing: Wrap(
+                    spacing: 4,
+                    children: <Widget>[
+                      IconButton(
+                        tooltip: 'Resend bundle',
+                        icon: const Icon(Icons.refresh_rounded),
+                        onPressed: () async {
+                          await ref
+                              .read(resendBundleUseCaseProvider)
+                              .resendBundle(bundle.bundleId);
+                        },
+                      ),
+                      IconButton(
+                        tooltip: 'Mark ACK',
+                        icon: const Icon(Icons.done_outline),
+                        onPressed: () async {
+                          await ref
+                              .read(bundleRepositoryProvider)
+                              .markAcknowledged(bundle.bundleId);
+                        },
+                      ),
+                    ],
                   ),
                 ),
               );

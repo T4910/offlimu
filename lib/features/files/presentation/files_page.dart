@@ -111,8 +111,12 @@ class _FilesPageState extends ConsumerState<FilesPage> {
                       ? _FileExplorerList(
                           items: items,
                           onTap: (item) => _showTransferDetails(context, item),
+                          onResend: _resendFileTransfer,
                         )
-                      : _TransferDetailsList(items: items),
+                      : _TransferDetailsList(
+                          items: items,
+                          onResend: _resendFileTransfer,
+                        ),
                 );
               },
             ),
@@ -407,6 +411,24 @@ class _FilesPageState extends ConsumerState<FilesPage> {
     );
   }
 
+  Future<void> _resendFileTransfer(FileTransferExplorerItem item) async {
+    final result = await ref
+        .read(resendBundleUseCaseProvider)
+        .resendFileTransfer(item.contentHash);
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result.requeuedAny
+              ? 'Requeued ${result.requeuedCount} file bundles.'
+              : 'No reusable file bundles found.',
+        ),
+      ),
+    );
+  }
+
   String? _resolveMimeType(PlatformFile file) {
     final extension = file.extension?.toLowerCase();
     if (extension == null || extension.isEmpty) {
@@ -417,10 +439,15 @@ class _FilesPageState extends ConsumerState<FilesPage> {
 }
 
 class _FileTransferCard extends StatelessWidget {
-  const _FileTransferCard({required this.item, required this.onTap});
+  const _FileTransferCard({
+    required this.item,
+    required this.onTap,
+    required this.onResend,
+  });
 
   final FileTransferExplorerItem item;
   final VoidCallback onTap;
+  final VoidCallback onResend;
 
   @override
   Widget build(BuildContext context) {
@@ -488,6 +515,11 @@ class _FileTransferCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         _TransferStatusChip(item: item),
+                        IconButton(
+                          tooltip: 'Resend file',
+                          icon: const Icon(Icons.refresh_rounded),
+                          onPressed: onResend,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -530,10 +562,15 @@ class _FileTransferCard extends StatelessWidget {
 }
 
 class _FileExplorerList extends StatelessWidget {
-  const _FileExplorerList({required this.items, required this.onTap});
+  const _FileExplorerList({
+    required this.items,
+    required this.onTap,
+    required this.onResend,
+  });
 
   final List<FileTransferExplorerItem> items;
   final ValueChanged<FileTransferExplorerItem> onTap;
+  final ValueChanged<FileTransferExplorerItem> onResend;
 
   @override
   Widget build(BuildContext context) {
@@ -543,16 +580,21 @@ class _FileExplorerList extends StatelessWidget {
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final item = items[index];
-        return _FileTransferCard(item: item, onTap: () => onTap(item));
+        return _FileTransferCard(
+          item: item,
+          onTap: () => onTap(item),
+          onResend: () => onResend(item),
+        );
       },
     );
   }
 }
 
 class _TransferDetailsList extends StatelessWidget {
-  const _TransferDetailsList({required this.items});
+  const _TransferDetailsList({required this.items, required this.onResend});
 
   final List<FileTransferExplorerItem> items;
+  final ValueChanged<FileTransferExplorerItem> onResend;
 
   @override
   Widget build(BuildContext context) {
@@ -579,6 +621,11 @@ class _TransferDetailsList extends StatelessWidget {
                       ),
                     ),
                     _TransferStatusChip(item: item),
+                    IconButton(
+                      tooltip: 'Resend file',
+                      icon: const Icon(Icons.refresh_rounded),
+                      onPressed: () => onResend(item),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),

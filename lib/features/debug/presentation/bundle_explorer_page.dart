@@ -140,11 +140,37 @@ class _BundleExplorerPageState extends ConsumerState<BundleExplorerPage> {
                                   'lastError ${bundle.lastError}',
                               ].join('\n'),
                             ),
-                            trailing:
+                            trailing: Wrap(
+                              spacing: 4,
+                              children: <Widget>[
+                                IconButton(
+                                  tooltip: 'Resend bundle',
+                                  icon: const Icon(Icons.refresh_rounded),
+                                  onPressed: () async {
+                                    final result = await ref
+                                        .read(resendBundleUseCaseProvider)
+                                        .resendBundle(bundle.bundleId);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            result.requeuedAny
+                                                ? 'Bundle requeued.'
+                                                : 'Bundle cannot be requeued.',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
                                 bundle.failedAttempts > 0 ||
-                                    bundle.lastError != null
-                                ? const Icon(Icons.error_outline)
-                                : const Icon(Icons.chevron_right),
+                                        bundle.lastError != null
+                                    ? const Icon(Icons.error_outline)
+                                    : const Icon(Icons.chevron_right),
+                              ],
+                            ),
                           ),
                         ),
                       )

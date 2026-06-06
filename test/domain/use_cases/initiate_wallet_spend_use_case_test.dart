@@ -120,6 +120,9 @@ class _FakeBundleRepository implements BundleRepository {
   Future<void> markSent(String bundleId) => throw UnimplementedError();
 
   @override
+  Future<void> resetForRetry(String bundleId) => throw UnimplementedError();
+
+  @override
   Future<bool> recordAckReceipt(Bundle ackBundle) => throw UnimplementedError();
 
   @override

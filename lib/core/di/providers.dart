@@ -38,6 +38,7 @@ import 'package:offlimu/domain/services/content_store.dart';
 import 'package:offlimu/domain/use_cases/chat_message_bundle_mapper.dart';
 import 'package:offlimu/domain/use_cases/prepare_bundle_content_use_case.dart';
 import 'package:offlimu/domain/use_cases/receive_chat_message_use_case.dart';
+import 'package:offlimu/domain/use_cases/resend_bundle_use_case.dart';
 import 'package:offlimu/domain/use_cases/initiate_wallet_spend_use_case.dart';
 import 'package:offlimu/domain/use_cases/send_chat_message_use_case.dart';
 import 'package:offlimu/domain/use_cases/send_file_transfer_use_case.dart';
@@ -188,6 +189,12 @@ prepareBundleContentUseCaseProvider = Provider<PrepareBundleContentUseCase>(
     contentStore: ref.watch(contentStoreProvider),
   ),
 );
+
+final Provider<ResendBundleUseCase> resendBundleUseCaseProvider =
+    Provider<ResendBundleUseCase>(
+      (ref) =>
+          ResendBundleUseCase(bundles: ref.watch(bundleRepositoryProvider)),
+    );
 
 final Provider<ChatMessageBundleMapper> chatMessageBundleMapperProvider =
     Provider<ChatMessageBundleMapper>((ref) => const ChatMessageBundleMapper());
