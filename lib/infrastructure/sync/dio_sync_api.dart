@@ -65,12 +65,17 @@ class DioSyncApi implements SyncApi {
       );
     }
 
-    final response = await _dio.post(
-      '/sync/upload',
-      data: <String, Object?>{
-        'bundles': bundles.map(_bundleToJson).toList(growable: false),
-      },
-    );
+    final Response<dynamic> response;
+    try {
+      response = await _dio.post(
+        '/sync/upload',
+        data: <String, Object?>{
+          'bundles': bundles.map(_bundleToJson).toList(growable: false),
+        },
+      );
+    } on DioException catch (error) {
+      throw SyncApiException(_describeDioError(error));
+    }
 
     final data = _asMap(response.data);
     final acknowledged = _asStringList(data['acknowledgedBundleIds']);
@@ -115,12 +120,17 @@ class DioSyncApi implements SyncApi {
       return SyncFetchResult(bundles: result);
     }
 
-    final response = await _dio.get(
-      '/sync/fetch',
-      queryParameters: <String, Object?>{
-        'sinceMs': since.millisecondsSinceEpoch,
-      },
-    );
+    final Response<dynamic> response;
+    try {
+      response = await _dio.get(
+        '/sync/fetch',
+        queryParameters: <String, Object?>{
+          'sinceMs': since.millisecondsSinceEpoch,
+        },
+      );
+    } on DioException catch (error) {
+      throw SyncApiException(_describeDioError(error));
+    }
 
     final Map<String, dynamic> data = _asMap(response.data);
     final Object? bundlesRaw = data['bundles'];
@@ -345,4 +355,32 @@ class DioSyncApi implements SyncApi {
       html: json['html'] as String,
     );
   }
+
+  String _describeDioError(DioException error) {
+    final statusCode = error.response?.statusCode;
+    final data = _asMap(error.response?.data);
+    final serverMessage = data['message'] as String?;
+    final serverError = data['error'] as String?;
+    if (serverMessage != null && serverMessage.isNotEmpty) {
+      final prefix = statusCode == null
+          ? 'Sync server error'
+          : 'Sync server returned $statusCode';
+      return serverError == null
+          ? '$prefix: $serverMessage'
+          : '$prefix ($serverError): $serverMessage';
+    }
+    if (statusCode != null) {
+      return 'Sync server returned HTTP $statusCode.';
+    }
+    return 'Sync server request failed: ${error.message ?? error.type.name}.';
+  }
+}
+
+class SyncApiException implements Exception {
+  const SyncApiException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }

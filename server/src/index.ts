@@ -32,7 +32,7 @@ const wallet = new WalletService(store, identity, env.OPENING_GRANT_MINOR_UNITS)
 const rewards = new RewardService(wallet);
 const webSearch = new WebSearchService(store);
 const sync = new SyncService(store, wallet, rewards, webSearch);
-const app = buildApp(sync);
+const app = buildApp(sync, { logger: true });
 
 await app.listen({ port: env.PORT, host: '0.0.0.0' }).then(() => {
   console.log(`Server is running on port ${env.PORT}`);
