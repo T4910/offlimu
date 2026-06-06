@@ -32,6 +32,8 @@ void main() {
                 },
                 metadataBundleId: 'meta-1',
                 localPath: '/tmp/report.pdf',
+                failedBundleCount: 1,
+                lastError: 'Bundle expired before forwarding.',
               ),
               FileTransferExplorerItem(
                 contentHash: 'sha256:def456',
@@ -50,6 +52,8 @@ void main() {
                 },
                 metadataBundleId: 'meta-2',
                 localPath: '/tmp/photo.png',
+                failedBundleCount: 0,
+                lastError: null,
               ),
             ]),
           ),
@@ -62,8 +66,19 @@ void main() {
 
     expect(find.text('report.pdf'), findsOneWidget);
     expect(find.text('photo.png'), findsOneWidget);
+    expect(find.text('Explorer'), findsOneWidget);
+    expect(find.text('Transfer Details'), findsOneWidget);
+    expect(find.text('Failed'), findsOneWidget);
     expect(find.textContaining('3/7 chunks'), findsOneWidget);
     expect(find.textContaining('Broadcast'), findsOneWidget);
     expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+
+    await tester.tap(find.text('Transfer Details'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Last error: Bundle expired before forwarding.'),
+      findsOneWidget,
+    );
   });
 }

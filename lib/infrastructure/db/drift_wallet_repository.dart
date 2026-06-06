@@ -183,19 +183,54 @@ class DriftWalletRepository implements WalletRepository {
   }
 
   double _deriveTrustScore(List<ledger.WalletLedgerEntry> entries) {
-    final confirmed = entries
+    final rewardEntries = entries
+        .where(
+          (entry) =>
+              entry.kind == ledger.WalletLedgerEventKind.relayReward ||
+              entry.kind == ledger.WalletLedgerEventKind.gatewayReward,
+        )
+        .toList(growable: false);
+    final confirmedRewards = rewardEntries
         .where((entry) => entry.status == ledger.WalletLedgerStatus.confirmed)
         .length;
-    final rejected = entries
+    if (confirmedRewards == 0) {
+      return 0.0;
+    }
+
+    final rejectedRewards = rewardEntries
         .where((entry) => entry.status == ledger.WalletLedgerStatus.rejected)
         .length;
-    final total = entries.isEmpty ? 1 : entries.length;
-    final ratio = (confirmed - rejected).clamp(0, total) / total;
-    final score = 0.75 + ratio * 0.2;
-    return score.clamp(0.0, 1.0).toDouble();
+    final pendingRewards = rewardEntries
+        .where((entry) => entry.status == ledger.WalletLedgerStatus.pending)
+        .length;
+    final confirmedRelayRewards = rewardEntries
+        .where(
+          (entry) =>
+              entry.kind == ledger.WalletLedgerEventKind.relayReward &&
+              entry.status == ledger.WalletLedgerStatus.confirmed,
+        )
+        .length;
+
+    final reliabilityDenominator =
+        confirmedRewards + rejectedRewards + pendingRewards;
+    final reliability = reliabilityDenominator == 0
+        ? 0.0
+        : (confirmedRewards / reliabilityDenominator).clamp(0.0, 1.0);
+    final volume = (confirmedRewards / 12).clamp(0.0, 1.0);
+    final relayParticipation = (confirmedRelayRewards / 6).clamp(0.0, 1.0);
+
+    final score =
+        (reliability * 0.45) + (volume * 0.25) + (relayParticipation * 0.30);
+    final cappedScore = confirmedRelayRewards == 0
+        ? score.clamp(0.0, 0.55)
+        : score.clamp(0.0, 1.0);
+    return cappedScore.toDouble();
   }
 
   String _deriveGrade(double trustScore) {
+    if (trustScore <= 0) {
+      return 'Unrated';
+    }
     if (trustScore >= 0.95) {
       return 'A+';
     }
@@ -208,7 +243,13 @@ class DriftWalletRepository implements WalletRepository {
     if (trustScore >= 0.80) {
       return 'B+';
     }
-    return 'B';
+    if (trustScore >= 0.70) {
+      return 'B';
+    }
+    if (trustScore >= 0.55) {
+      return 'C';
+    }
+    return 'D';
   }
 
   ledger.WalletLedgerEventKind _kindFromWire(String value) {

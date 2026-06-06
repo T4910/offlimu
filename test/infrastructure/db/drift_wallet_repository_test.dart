@@ -19,7 +19,40 @@ void main() {
       expect(dashboard.recentEntries, isEmpty);
       expect(dashboard.pendingSpendCount, 0);
       expect(dashboard.logEntries, isEmpty);
+      expect(dashboard.trustScore, 0.0);
+      expect(dashboard.participationGrade, 'Unrated');
     });
+
+    test(
+      'gateway-only rewards do not create a high participation grade',
+      () async {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        addTearDown(db.close);
+
+        final repository = DriftWalletRepository(db);
+        await repository.appendEntry(
+          ledger.WalletLedgerEntry(
+            entryId: 'gateway-reward-1',
+            kind: ledger.WalletLedgerEventKind.gatewayReward,
+            title: 'Gateway Reward',
+            subtitle: 'Server sync',
+            amountMinorUnits: 500,
+            balanceImpactMinorUnits: 500,
+            status: ledger.WalletLedgerStatus.confirmed,
+            createdAt: DateTime.fromMillisecondsSinceEpoch(1700017000000),
+          ),
+        );
+
+        final dashboard = await repository.watchDashboard().first;
+
+        expect(dashboard.trustScore, lessThanOrEqualTo(0.55));
+        expect(<String>[
+          'Unrated',
+          'D',
+          'C',
+        ], contains(dashboard.participationGrade));
+      },
+    );
 
     test(
       'persists a manual grant and a pending spend without changing the grant balance',

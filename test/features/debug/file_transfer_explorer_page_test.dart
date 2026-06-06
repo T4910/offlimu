@@ -32,6 +32,8 @@ void main() {
                 },
                 metadataBundleId: 'meta-1',
                 localPath: '/tmp/report.pdf',
+                failedBundleCount: 0,
+                lastError: null,
               ),
             ]),
           ),

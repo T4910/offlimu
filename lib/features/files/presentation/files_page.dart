@@ -7,6 +7,8 @@ import 'package:offlimu/core/di/providers.dart';
 import 'package:offlimu/domain/entities/file_transfer_explorer_item.dart';
 import 'package:offlimu/domain/services/content_store.dart';
 
+enum _FilesView { explorer, details }
+
 class FilesPage extends ConsumerStatefulWidget {
   const FilesPage({super.key});
 
@@ -35,6 +37,7 @@ class _FilesPageState extends ConsumerState<FilesPage> {
   };
 
   bool _isSending = false;
+  _FilesView _activeView = _FilesView.explorer;
   String? _sendingName;
   int _sendingProcessedChunks = 0;
   int _sendingTotalChunks = 0;
@@ -60,6 +63,27 @@ class _FilesPageState extends ConsumerState<FilesPage> {
       ),
       body: Column(
         children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            child: SegmentedButton<_FilesView>(
+              segments: const <ButtonSegment<_FilesView>>[
+                ButtonSegment<_FilesView>(
+                  value: _FilesView.explorer,
+                  icon: Icon(Icons.folder_copy_rounded),
+                  label: Text('Explorer'),
+                ),
+                ButtonSegment<_FilesView>(
+                  value: _FilesView.details,
+                  icon: Icon(Icons.route_rounded),
+                  label: Text('Transfer Details'),
+                ),
+              ],
+              selected: <_FilesView>{_activeView},
+              onSelectionChanged: (selection) {
+                setState(() => _activeView = selection.single);
+              },
+            ),
+          ),
           if (_isSending)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
@@ -83,18 +107,12 @@ class _FilesPageState extends ConsumerState<FilesPage> {
                   onRefresh: () async {
                     ref.invalidate(fileTransferExplorerProvider);
                   },
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: items.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      return _FileTransferCard(
-                        item: item,
-                        onTap: () => _showTransferDetails(context, item),
-                      );
-                    },
-                  ),
+                  child: _activeView == _FilesView.explorer
+                      ? _FileExplorerList(
+                          items: items,
+                          onTap: (item) => _showTransferDetails(context, item),
+                        )
+                      : _TransferDetailsList(items: items),
                 );
               },
             ),
@@ -426,93 +444,199 @@ class _FileTransferCard extends StatelessWidget {
       FileTransferKind.unknown => 'File',
     };
 
-    final opacity = item.isComplete ? 1.0 : 0.55;
-    final accent = item.isComplete
-        ? const Color(0xFF2E7D32)
-        : const Color(0xFF8C6A2B);
+    final accent = _statusAccent(item.status);
 
-    return Opacity(
-      opacity: opacity,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Card(
-          margin: EdgeInsets.zero,
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(kindIcon, color: accent, size: 30),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              item.displayName,
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                child: Icon(kindIcon, color: accent, size: 30),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            item.displayName,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(width: 8),
-                          Chip(
-                            label: Text(kindLabel),
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        item.contentHash,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF617361),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'To ${item.destinationLabel} • ${item.chunkSummary}',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${item.totalBytes ?? 0} bytes • ${_formatTimestamp(item.createdAt)}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF617361),
+                        const SizedBox(width: 8),
+                        Chip(
+                          label: Text(kindLabel),
+                          visualDensity: VisualDensity.compact,
                         ),
+                        const SizedBox(width: 6),
+                        _TransferStatusChip(item: item),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      item.contentHash,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF617361),
                       ),
-                      const SizedBox(height: 10),
-                      LinearProgressIndicator(
-                        value: item.completionFraction,
-                        minHeight: 6,
-                        backgroundColor: const Color(0xFFDCE6D7),
-                        valueColor: AlwaysStoppedAnimation<Color>(accent),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'To ${item.destinationLabel} • ${item.chunkSummary}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${item.totalBytes ?? 0} bytes • ${_formatTimestamp(item.createdAt)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF617361),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 10),
+                    LinearProgressIndicator(
+                      value: item.completionFraction,
+                      minHeight: 6,
+                      backgroundColor: const Color(0xFFDCE6D7),
+                      valueColor: AlwaysStoppedAnimation<Color>(accent),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+}
+
+class _FileExplorerList extends StatelessWidget {
+  const _FileExplorerList({required this.items, required this.onTap});
+
+  final List<FileTransferExplorerItem> items;
+  final ValueChanged<FileTransferExplorerItem> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(12),
+      itemCount: items.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return _FileTransferCard(item: item, onTap: () => onTap(item));
+      },
+    );
+  }
+}
+
+class _TransferDetailsList extends StatelessWidget {
+  const _TransferDetailsList({required this.items});
+
+  final List<FileTransferExplorerItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(12),
+      itemCount: items.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        item.displayName,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    _TransferStatusChip(item: item),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text('Source: ${item.sourceNodeId ?? 'Unknown'}'),
+                Text('Destination: ${item.destinationLabel}'),
+                Text('Chunks: ${item.chunkSummary}'),
+                if (item.lastError != null)
+                  Text('Last error: ${item.lastError}'),
+                const SizedBox(height: 10),
+                LinearProgressIndicator(
+                  value: item.completionFraction,
+                  minHeight: 6,
+                  backgroundColor: const Color(0xFFDCE6D7),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    _statusAccent(item.status),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: item.receivedChunkIndices
+                      .map((index) => Chip(label: Text('chunk $index')))
+                      .toList(growable: false),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TransferStatusChip extends StatelessWidget {
+  const _TransferStatusChip({required this.item});
+
+  final FileTransferExplorerItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = _statusAccent(item.status);
+    return Chip(
+      label: Text(item.statusLabel),
+      visualDensity: VisualDensity.compact,
+      backgroundColor: accent.withValues(alpha: 0.12),
+      side: BorderSide(color: accent.withValues(alpha: 0.4)),
+      labelStyle: TextStyle(color: accent, fontWeight: FontWeight.w700),
+    );
+  }
+}
+
+Color _statusAccent(FileTransferStatus status) {
+  return switch (status) {
+    FileTransferStatus.complete => const Color(0xFF2E7D32),
+    FileTransferStatus.partial => const Color(0xFF8C6A2B),
+    FileTransferStatus.failed => const Color(0xFFB23B32),
+  };
 }
 
 class _TransferProgressBanner extends StatelessWidget {

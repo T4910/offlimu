@@ -43,6 +43,37 @@ void main() {
   });
 
   test(
+    'submit web search reuses an active request for the same query',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+
+      final bundleRepository = DriftBundleRepository(db, localNodeId: 'node-a');
+      final useCase = SubmitWebSearchRequestUseCase(
+        bundles: bundleRepository,
+        bundleSignatureService: _PassThroughSignatureService(),
+        now: () => DateTime.fromMillisecondsSinceEpoch(1700000000000),
+      );
+
+      final first = await useCase.submit(
+        localNodeId: 'node-a',
+        query: 'mesh   routing',
+      );
+      final second = await useCase.submit(
+        localNodeId: 'node-a',
+        query: 'Mesh Routing',
+      );
+
+      final requests = (await bundleRepository.getAllBundles())
+          .where((bundle) => bundle.type == Bundle.typeWebSearchRequest)
+          .toList(growable: false);
+
+      expect(second.bundleId, first.bundleId);
+      expect(requests, hasLength(1));
+    },
+  );
+
+  test(
     'ingest mock web results creates web file bundles and index update',
     () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());

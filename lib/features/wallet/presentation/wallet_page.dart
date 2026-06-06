@@ -6,6 +6,8 @@ import 'package:offlimu/domain/entities/wallet_ledger_entry.dart';
 
 enum WalletSection { overview, pay, logs, rewards, identity }
 
+enum _WalletLogFilter { all, payments, rewards, pending }
+
 class WalletPage extends ConsumerStatefulWidget {
   const WalletPage({super.key, this.section = WalletSection.overview});
 
@@ -675,33 +677,60 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
   }
 }
 
-class _WalletLogsSection extends StatelessWidget {
+class _WalletLogsSection extends StatefulWidget {
   const _WalletLogsSection({required this.dashboard});
 
   final WalletLedgerDashboard dashboard;
 
   @override
+  State<_WalletLogsSection> createState() => _WalletLogsSectionState();
+}
+
+class _WalletLogsSectionState extends State<_WalletLogsSection> {
+  _WalletLogFilter _filter = _WalletLogFilter.all;
+
+  @override
   Widget build(BuildContext context) {
+    final entries = _filteredEntries(widget.dashboard.logEntries);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: const <Widget>[
-            _FilterPill(label: 'All', active: true),
-            _FilterPill(label: 'Payments'),
-            _FilterPill(label: 'Rewards'),
-            _FilterPill(label: 'Pending', accent: Color(0xFFFF8E3D)),
+          children: <Widget>[
+            _FilterPill(
+              label: 'All',
+              active: _filter == _WalletLogFilter.all,
+              onTap: () => _setFilter(_WalletLogFilter.all),
+            ),
+            _FilterPill(
+              label: 'Payments',
+              active: _filter == _WalletLogFilter.payments,
+              onTap: () => _setFilter(_WalletLogFilter.payments),
+            ),
+            _FilterPill(
+              label: 'Rewards',
+              active: _filter == _WalletLogFilter.rewards,
+              onTap: () => _setFilter(_WalletLogFilter.rewards),
+            ),
+            _FilterPill(
+              label: 'Pending',
+              active: _filter == _WalletLogFilter.pending,
+              accent: const Color(0xFFFF8E3D),
+              onTap: () => _setFilter(_WalletLogFilter.pending),
+            ),
           ],
         ),
         const SizedBox(height: 12),
-        if (dashboard.logEntries.isEmpty)
+        if (entries.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 18),
             child: Center(
               child: Text(
-                'No logs yet',
+                _filter == _WalletLogFilter.all
+                    ? 'No logs yet'
+                    : 'No matching logs',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: const Color(0xFF6A8067),
                 ),
@@ -709,7 +738,7 @@ class _WalletLogsSection extends StatelessWidget {
             ),
           )
         else
-          ...dashboard.logEntries.map(
+          ...entries.map(
             (entry) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: _TransactionCard(entry: entry),
@@ -717,6 +746,37 @@ class _WalletLogsSection extends StatelessWidget {
           ),
       ],
     );
+  }
+
+  void _setFilter(_WalletLogFilter filter) {
+    setState(() => _filter = filter);
+  }
+
+  List<WalletLedgerEntry> _filteredEntries(List<WalletLedgerEntry> entries) {
+    return switch (_filter) {
+      _WalletLogFilter.all => entries,
+      _WalletLogFilter.payments =>
+        entries
+            .where(
+              (entry) =>
+                  entry.kind == WalletLedgerEventKind.spend ||
+                  entry.kind == WalletLedgerEventKind.confirmation ||
+                  entry.kind == WalletLedgerEventKind.rejection,
+            )
+            .toList(growable: false),
+      _WalletLogFilter.rewards =>
+        entries
+            .where(
+              (entry) =>
+                  entry.kind == WalletLedgerEventKind.relayReward ||
+                  entry.kind == WalletLedgerEventKind.gatewayReward,
+            )
+            .toList(growable: false),
+      _WalletLogFilter.pending =>
+        entries
+            .where((entry) => entry.status == WalletLedgerStatus.pending)
+            .toList(growable: false),
+    };
   }
 }
 
@@ -768,7 +828,7 @@ class _WalletRewardsSection extends StatelessWidget {
               _ProgressLine(
                 label: 'Participation Grade',
                 valueLabel: dashboard.participationGrade,
-                progress: 0.86,
+                progress: dashboard.trustScore,
                 accent: const Color(0xFF66A65D),
               ),
             ],
@@ -1559,11 +1619,17 @@ class _AuditRow extends StatelessWidget {
 }
 
 class _FilterPill extends StatelessWidget {
-  const _FilterPill({required this.label, this.active = false, this.accent});
+  const _FilterPill({
+    required this.label,
+    this.active = false,
+    this.accent,
+    this.onTap,
+  });
 
   final String label;
   final bool active;
   final Color? accent;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1572,19 +1638,22 @@ class _FilterPill extends StatelessWidget {
     final Color textColor =
         accent ?? (active ? const Color(0xFF245A2A) : const Color(0xFF4F6450));
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: active ? const Color(0xFFE7F4E2) : const Color(0xFFF8FBF5),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: borderColor),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: textColor,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.6,
+    return Material(
+      color: active ? const Color(0xFFE7F4E2) : const Color(0xFFF8FBF5),
+      shape: StadiumBorder(side: BorderSide(color: borderColor)),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+            ),
+          ),
         ),
       ),
     );

@@ -5,6 +5,8 @@ import 'package:offlimu/domain/entities/content_metadata_record.dart';
 
 enum FileTransferKind { image, pdf, video, audio, text, archive, unknown }
 
+enum FileTransferStatus { complete, partial, failed }
+
 class FileTransferExplorerItem {
   const FileTransferExplorerItem({
     required this.contentHash,
@@ -20,6 +22,8 @@ class FileTransferExplorerItem {
     required this.chunkBundleIdsByIndex,
     required this.metadataBundleId,
     required this.localPath,
+    required this.failedBundleCount,
+    required this.lastError,
   });
 
   final String contentHash;
@@ -35,6 +39,8 @@ class FileTransferExplorerItem {
   final Map<int, String> chunkBundleIdsByIndex;
   final String? metadataBundleId;
   final String? localPath;
+  final int failedBundleCount;
+  final String? lastError;
 
   String get displayName =>
       fileName?.trim().isNotEmpty == true ? fileName!.trim() : contentHash;
@@ -56,6 +62,26 @@ class FileTransferExplorerItem {
       return availableChunkCount > 0;
     }
     return availableChunkCount >= expected;
+  }
+
+  bool get isFailed => failedBundleCount > 0;
+
+  FileTransferStatus get status {
+    if (isFailed) {
+      return FileTransferStatus.failed;
+    }
+    if (isComplete) {
+      return FileTransferStatus.complete;
+    }
+    return FileTransferStatus.partial;
+  }
+
+  String get statusLabel {
+    return switch (status) {
+      FileTransferStatus.complete => 'Complete',
+      FileTransferStatus.partial => 'Partial',
+      FileTransferStatus.failed => 'Failed',
+    };
   }
 
   double get completionFraction {
@@ -210,6 +236,8 @@ class _FileTransferBuilder {
   int? expectedChunkCount;
   String? metadataBundleId;
   String? localPath;
+  int failedBundleCount = 0;
+  String? lastError;
   final Map<int, String> chunkBundleIdsByIndex = <int, String>{};
 
   void absorbMetadataBundle(Bundle bundle, Map<String, Object?>? payload) {
@@ -218,6 +246,7 @@ class _FileTransferBuilder {
     sourceNodeId ??= bundle.sourceNodeId;
     createdAt = _pickEarliest(createdAt, bundle.createdAt);
     lastUpdatedAt = _pickLatest(lastUpdatedAt, bundle.createdAt);
+    _absorbFailure(bundle);
 
     fileName ??= _stringField(payload, 'fileName');
     mimeType ??= _stringField(payload, 'mimeType');
@@ -235,6 +264,7 @@ class _FileTransferBuilder {
     sourceNodeId ??= bundle.sourceNodeId;
     createdAt = _pickEarliest(createdAt, bundle.createdAt);
     lastUpdatedAt = _pickLatest(lastUpdatedAt, bundle.createdAt);
+    _absorbFailure(bundle);
 
     fileName ??= _stringField(payload, 'fileName');
     mimeType ??= _stringField(payload, 'mimeType');
@@ -283,7 +313,18 @@ class _FileTransferBuilder {
       ),
       metadataBundleId: metadataBundleId,
       localPath: localPath ?? metadata?.localPath,
+      failedBundleCount: failedBundleCount,
+      lastError: lastError,
     );
+  }
+
+  void _absorbFailure(Bundle bundle) {
+    final error = bundle.lastError;
+    if (error == null || error.isEmpty) {
+      return;
+    }
+    failedBundleCount += 1;
+    lastError = error;
   }
 
   DateTime? _pickLatest(DateTime? current, DateTime candidate) {
