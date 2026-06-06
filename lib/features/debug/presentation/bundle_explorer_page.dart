@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offlimu/core/di/providers.dart';
 import 'package:offlimu/domain/entities/bundle.dart';
+import 'package:offlimu/shared/widgets/subtle_retry_button.dart';
 
 class BundleExplorerPage extends ConsumerStatefulWidget {
   const BundleExplorerPage({super.key});
@@ -143,9 +144,8 @@ class _BundleExplorerPageState extends ConsumerState<BundleExplorerPage> {
                             trailing: Wrap(
                               spacing: 4,
                               children: <Widget>[
-                                IconButton(
+                                SubtleRetryButton(
                                   tooltip: 'Resend bundle',
-                                  icon: const Icon(Icons.refresh_rounded),
                                   onPressed: () async {
                                     final result = await ref
                                         .read(resendBundleUseCaseProvider)

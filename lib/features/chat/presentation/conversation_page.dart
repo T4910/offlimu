@@ -5,6 +5,7 @@ import 'package:offlimu/core/di/providers.dart';
 import 'package:offlimu/domain/entities/chat_message.dart';
 import 'package:offlimu/domain/entities/file_transfer_explorer_item.dart';
 import 'package:offlimu/domain/services/content_store.dart';
+import 'package:offlimu/shared/widgets/subtle_retry_button.dart';
 
 class ConversationPage extends ConsumerStatefulWidget {
   const ConversationPage({required this.peerNodeId, super.key})
@@ -467,28 +468,37 @@ class _MessageBubble extends StatelessWidget {
           color: mine
               ? Theme.of(context).colorScheme.primaryContainer
               : Theme.of(context).colorScheme.surfaceContainerHigh,
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(message.body),
-                const SizedBox(height: 6),
-                Text(
-                  _statusText(message),
-                  style: Theme.of(context).textTheme.bodySmall,
+          child: Stack(
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  10,
+                  10,
+                  onResend == null ? 10 : 42,
+                  10,
                 ),
-                if (onResend != null)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: IconButton(
-                      tooltip: 'Resend message',
-                      icon: const Icon(Icons.refresh_rounded),
-                      onPressed: onResend,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(message.body),
+                    const SizedBox(height: 6),
+                    Text(
+                      _statusText(message),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
+                  ],
+                ),
+              ),
+              if (onResend != null)
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: SubtleRetryButton(
+                    tooltip: 'Resend message',
+                    onPressed: onResend,
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),
@@ -561,47 +571,53 @@ class _FileAttachmentBubble extends StatelessWidget {
           color: mine
               ? Theme.of(context).colorScheme.primaryContainer
               : Theme.of(context).colorScheme.surfaceContainerHigh,
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Icon(_fileIcon(item.kind), size: 30),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        item.displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+          child: Stack(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 10, 42, 10),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(_fileIcon(item.kind), size: 30),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            item.displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${item.statusLabel.toLowerCase()} • ${item.chunkSummary}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 6),
+                          LinearProgressIndicator(
+                            minHeight: 4,
+                            value: item.completionFraction,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${item.statusLabel.toLowerCase()} • ${item.chunkSummary}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 6),
-                      LinearProgressIndicator(
-                        minHeight: 4,
-                        value: item.completionFraction,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                IconButton(
+              ),
+              Positioned(
+                top: 6,
+                right: 6,
+                child: SubtleRetryButton(
                   tooltip: item.isComplete
                       ? 'Resend file'
                       : 'Retry file chunks',
-                  icon: const Icon(Icons.refresh_rounded),
                   onPressed: onResend,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

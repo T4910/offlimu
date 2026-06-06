@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offlimu/core/di/providers.dart';
+import 'package:offlimu/domain/entities/peer_contact.dart';
 import 'package:offlimu/domain/entities/wallet_ledger_entry.dart';
 
 enum WalletSection { overview, pay, logs, rewards, identity }
@@ -437,7 +438,7 @@ class _WalletOverviewSection extends StatelessWidget {
                 valueLabel: dashboard.participationGrade.isEmpty
                     ? '-'
                     : dashboard.participationGrade,
-                progress: dashboard.trustScore,
+                progress: _gradeProgress(dashboard.participationGrade),
                 accent: const Color(0xFF66A65D),
               ),
             ],
@@ -526,8 +527,14 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
         .toStringAsFixed(2);
   }
 
+  void _selectPeer(PeerContact peer) {
+    _recipientController.text = peer.nodeId;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final peersAsync = ref.watch(peerContactsProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -558,6 +565,26 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
                   onPressed: () {},
                   icon: const Icon(Icons.qr_code_scanner_rounded),
                 ),
+              ),
+              peersAsync.when(
+                data: (peers) {
+                  final visiblePeers = peers
+                      .where((peer) => peer.nodeId != widget.nodeId)
+                      .take(8)
+                      .toList(growable: false);
+                  if (visiblePeers.isEmpty) {
+                    return const SizedBox(height: 8);
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: _PeerContactPicker(
+                      peers: visiblePeers,
+                      onSelected: _selectPeer,
+                    ),
+                  );
+                },
+                loading: () => const SizedBox(height: 8),
+                error: (_, _) => const SizedBox(height: 8),
               ),
               const SizedBox(height: 8),
               Text(
@@ -673,6 +700,34 @@ class _WalletPaymentSectionState extends ConsumerState<_WalletPaymentSection> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _PeerContactPicker extends StatelessWidget {
+  const _PeerContactPicker({required this.peers, required this.onSelected});
+
+  final List<PeerContact> peers;
+  final ValueChanged<PeerContact> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: peers
+          .map(
+            (peer) => ActionChip(
+              avatar: const Icon(Icons.person_pin_circle_rounded, size: 18),
+              label: Text(_shortId(peer.nodeId)),
+              tooltip: peer.nodeId,
+              visualDensity: VisualDensity.compact,
+              backgroundColor: const Color(0xFFF0F7EE),
+              side: const BorderSide(color: Color(0xFFD4E5CE)),
+              onPressed: () => onSelected(peer),
+            ),
+          )
+          .toList(growable: false),
     );
   }
 }
@@ -828,7 +883,7 @@ class _WalletRewardsSection extends StatelessWidget {
               _ProgressLine(
                 label: 'Participation Grade',
                 valueLabel: dashboard.participationGrade,
-                progress: dashboard.trustScore,
+                progress: _gradeProgress(dashboard.participationGrade),
                 accent: const Color(0xFF66A65D),
               ),
             ],
@@ -1230,7 +1285,7 @@ class _ProgressLine extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(999),
           child: LinearProgressIndicator(
-            value: progress,
+            value: progress.clamp(0.0, 1.0),
             minHeight: 8,
             backgroundColor: const Color(0xFFDDE8D8),
             valueColor: AlwaysStoppedAnimation<Color>(accent),
@@ -1752,6 +1807,19 @@ String _formatTimestamp(DateTime timestamp) {
   final hour = timestamp.hour.toString().padLeft(2, '0');
   final minute = timestamp.minute.toString().padLeft(2, '0');
   return '$year-$month-$day $hour:$minute UTC';
+}
+
+double _gradeProgress(String grade) {
+  return switch (grade.trim().toUpperCase()) {
+    'A+' => 1.00,
+    'A' => 0.95,
+    'A-' => 0.90,
+    'B+' => 0.85,
+    'B' => 0.80,
+    'C' => 0.65,
+    'D' => 0.35,
+    _ => 0.0,
+  };
 }
 
 String _shortId(String nodeId) {

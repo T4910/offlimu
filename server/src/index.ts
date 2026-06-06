@@ -10,7 +10,8 @@ import { SyncService } from './services/syncService.js';
 import { WalletService } from './services/walletService.js';
 import { WebSearchService } from './services/webSearchService.js';
 
-const env = readEnv();
+process.loadEnvFile(); 
+const env = readEnv(process.env);
 
 if (!env.DATABASE_URL) {
   throw new Error('DATABASE_URL is required for the production server entrypoint.');
@@ -33,4 +34,9 @@ const webSearch = new WebSearchService(store);
 const sync = new SyncService(store, wallet, rewards, webSearch);
 const app = buildApp(sync);
 
-await app.listen({ port: env.PORT, host: '0.0.0.0' });
+await app.listen({ port: env.PORT, host: '0.0.0.0' }).then(() => {
+  console.log(`Server is running on port ${env.PORT}`);
+}).catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});
