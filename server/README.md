@@ -24,7 +24,7 @@ The JSON shape intentionally matches the current Flutter `DioSyncApi`.
 
 ```sh
 cd server
-npm install
+pnpm install
 cp .env.example .env
 ```
 
@@ -37,7 +37,7 @@ psql "$DATABASE_URL" -f migrations/001_initial.sql
 Run:
 
 ```sh
-npm run dev
+pnpm dev
 ```
 
 For Flutter client testing, run the app with:
@@ -50,8 +50,8 @@ For Flutter client testing, run the app with:
 ## Tests
 
 ```sh
-npm test
-npm run typecheck
+pnpm test
+pnpm typecheck
 ```
 
 The tests use the in-memory store so Postgres is not required for normal CI.

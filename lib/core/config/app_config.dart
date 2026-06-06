@@ -67,7 +67,7 @@ class AppConfig {
       ),
       syncMockMode: const bool.fromEnvironment(
         'OFFLIMU_SYNC_MOCK',
-        defaultValue: true,
+        defaultValue: false,
       ),
       syncBaseUrl: const String.fromEnvironment(
         'OFFLIMU_SYNC_BASE_URL',

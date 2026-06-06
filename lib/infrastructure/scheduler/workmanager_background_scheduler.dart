@@ -1,14 +1,31 @@
 import 'package:offlimu/core/config/app_config.dart';
+import 'package:offlimu/domain/services/bundle_signature_service.dart';
 import 'package:offlimu/domain/services/background_scheduler.dart';
+import 'package:offlimu/domain/services/content_store.dart';
 import 'package:offlimu/domain/repositories/bundle_repository.dart';
 import 'package:offlimu/domain/repositories/sync_job_repository.dart';
+import 'package:offlimu/domain/repositories/wallet_repository.dart';
+import 'package:offlimu/domain/repositories/web_search_repository.dart';
 import 'package:offlimu/domain/services/device_conditions_service.dart';
 import 'package:offlimu/domain/services/logger_service.dart';
+import 'package:offlimu/domain/services/crypto_service.dart';
+import 'package:offlimu/domain/services/node_identity_store.dart';
 import 'package:offlimu/domain/services/sync_api.dart';
+import 'package:offlimu/domain/use_cases/prepare_bundle_content_use_case.dart';
+import 'package:offlimu/domain/use_cases/send_file_transfer_use_case.dart';
+import 'package:offlimu/domain/use_cases/wallet_event_bundle_mapper.dart';
+import 'package:offlimu/domain/use_cases/wallet_sync_reconciliation_service.dart';
+import 'package:offlimu/domain/use_cases/web_search_result_ingestion_service.dart';
+import 'package:offlimu/infrastructure/content/local_file_content_store.dart';
+import 'package:offlimu/infrastructure/crypto/ed25519_bundle_signature_service.dart';
+import 'package:offlimu/infrastructure/crypto/ed25519_crypto_service.dart';
 import 'package:offlimu/infrastructure/db/app_database.dart';
 import 'package:offlimu/infrastructure/db/drift_bundle_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_sync_job_repository.dart';
+import 'package:offlimu/infrastructure/db/drift_wallet_repository.dart';
+import 'package:offlimu/infrastructure/db/drift_web_search_repository.dart';
 import 'package:offlimu/infrastructure/device/plugin_device_conditions_service.dart';
+import 'package:offlimu/infrastructure/identity/secure_node_identity_store.dart';
 import 'package:offlimu/infrastructure/logging/structured_logger.dart';
 import 'package:offlimu/infrastructure/settings/gateway_sync_preference_store.dart';
 import 'package:offlimu/infrastructure/sync/dio_sync_api.dart';
@@ -67,6 +84,37 @@ Future<void> _runBackgroundSync() async {
     mockMode: _appConfig.syncMockMode,
   );
   final SyncJobRepository syncJobs = DriftSyncJobRepository(db);
+  final WalletRepository walletRepository = DriftWalletRepository(db);
+  final WebSearchRepository webSearchRepository = DriftWebSearchRepository(db);
+  final ContentStore contentStore = LocalFileContentStore(
+    maxStoreBytes: _appConfig.contentStoreMaxBytes,
+  );
+  final CryptoService cryptoService = Ed25519CryptoService();
+  final NodeIdentityStore nodeIdentityStore = SecureNodeIdentityStore();
+  final BundleSignatureService bundleSignatureService =
+      Ed25519BundleSignatureService(
+        cryptoService: cryptoService,
+        nodeIdentityStore: nodeIdentityStore,
+      );
+  final prepareBundleContent = PrepareBundleContentUseCase(
+    bundles: bundles,
+    contentStore: contentStore,
+  );
+  final sendFileTransfer = SendFileTransferUseCase(
+    bundles: bundles,
+    prepareBundleContent: prepareBundleContent,
+    bundleSignatureService: bundleSignatureService,
+  );
+  final walletSyncReconciliationService = WalletSyncReconciliationService(
+    walletRepository: walletRepository,
+    mapper: const WalletEventBundleMapper(),
+  );
+  final webSearchResultIngestionService = WebSearchResultIngestionService(
+    sendFileTransfer: sendFileTransfer,
+    webSearchRepository: webSearchRepository,
+    bundleRepository: bundles,
+    bundleSignatureService: bundleSignatureService,
+  );
   final DeviceConditionsService deviceConditions =
       PluginDeviceConditionsService();
 
@@ -76,6 +124,8 @@ Future<void> _runBackgroundSync() async {
     syncApi: syncApi,
     syncJobs: syncJobs,
     deviceConditions: deviceConditions,
+    walletSyncReconciliationService: walletSyncReconciliationService,
+    webSearchResultIngestionService: webSearchResultIngestionService,
     logger: _logger,
     devicePolicy: SyncDevicePolicy(
       allowMeteredNetwork: _appConfig.syncAllowMeteredNetwork,

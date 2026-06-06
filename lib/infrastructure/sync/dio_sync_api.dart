@@ -7,7 +7,7 @@ import 'package:offlimu/domain/entities/web_search_result.dart';
 import 'package:offlimu/domain/services/sync_api.dart';
 
 class DioSyncApi implements SyncApi {
-  DioSyncApi({required String baseUrl, this.mockMode = true})
+  DioSyncApi({required String baseUrl, this.mockMode = false})
     : _dio = Dio(
         BaseOptions(
           baseUrl: baseUrl,
@@ -141,6 +141,7 @@ class DioSyncApi implements SyncApi {
       'bundleId': bundle.bundleId,
       'type': bundle.type,
       'sourceNodeId': bundle.sourceNodeId,
+      'sourcePublicKey': bundle.sourcePublicKey,
       'destinationNodeId': bundle.destinationNodeId,
       'destinationScope': bundle.destinationScope.name,
       'priority': bundle.priority.name,
@@ -165,6 +166,7 @@ class DioSyncApi implements SyncApi {
       bundleId: json['bundleId'] as String,
       type: json['type'] as String,
       sourceNodeId: json['sourceNodeId'] as String,
+      sourcePublicKey: json['sourcePublicKey'] as String?,
       destinationNodeId: json['destinationNodeId'] as String?,
       destinationScope: Bundle.destinationScopeFromWire(
         json['destinationScope'] as String?,
