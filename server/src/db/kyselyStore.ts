@@ -48,8 +48,8 @@ export class KyselySyncStore implements SyncStore {
           type: row.type,
           signatureValid: row.signature_valid,
           processingStatus: row.processing_status as UploadedBundleRecord['processingStatus'],
-          firstSeenMs: row.first_seen_ms,
-          lastSeenMs: row.last_seen_ms
+          firstSeenMs: toNumber(row.first_seen_ms),
+          lastSeenMs: toNumber(row.last_seen_ms)
         }
       : undefined;
   }
@@ -70,8 +70,8 @@ export class KyselySyncStore implements SyncStore {
       type: row.type,
       signatureValid: row.signature_valid,
       processingStatus: row.processing_status as UploadedBundleRecord['processingStatus'],
-      firstSeenMs: row.first_seen_ms,
-      lastSeenMs: row.last_seen_ms
+      firstSeenMs: toNumber(row.first_seen_ms),
+      lastSeenMs: toNumber(row.last_seen_ms)
     }));
   }
 
@@ -122,12 +122,12 @@ export class KyselySyncStore implements SyncStore {
       nodeId: row.node_id,
       counterpartyNodeId: row.counterparty_node_id,
       kind: row.kind as WalletLedgerEvent['kind'],
-      amountMinorUnits: row.amount_minor_units,
-      balanceImpactMinorUnits: row.balance_impact_minor_units,
+      amountMinorUnits: toNumber(row.amount_minor_units),
+      balanceImpactMinorUnits: toNumber(row.balance_impact_minor_units),
       status: row.status as WalletLedgerEvent['status'],
       sourceBundleId: row.source_bundle_id,
       memo: row.memo,
-      createdAtMs: row.created_at_ms
+      createdAtMs: toNumber(row.created_at_ms)
     }));
   }
 
@@ -195,7 +195,7 @@ export class KyselySyncStore implements SyncStore {
       bundleId: row.bundle_id,
       nodeId: row.node_id,
       message: row.message,
-      createdAtMs: row.created_at_ms,
+      createdAtMs: toNumber(row.created_at_ms),
       fields: (row.fields_json as Record<string, unknown> | null) ?? undefined
     }));
   }
@@ -230,7 +230,7 @@ export class KyselySyncStore implements SyncStore {
           normalizedQuery: row.normalized_query,
           maxResults: row.max_results,
           status: row.status as WebSearchRequestRecord['status'],
-          createdAtMs: row.created_at_ms
+          createdAtMs: toNumber(row.created_at_ms)
         }
       : undefined;
   }
@@ -259,7 +259,7 @@ export class KyselySyncStore implements SyncStore {
       normalizedQuery: row.normalized_query,
       maxResults: row.max_results,
       status: row.status as WebSearchRequestRecord['status'],
-      createdAtMs: row.created_at_ms
+      createdAtMs: toNumber(row.created_at_ms)
     }));
   }
 
@@ -308,10 +308,10 @@ export class KyselySyncStore implements SyncStore {
       snippet: row.snippet,
       html: row.html,
       contentHash: row.content_hash,
-      byteSize: row.byte_size,
+      byteSize: toNumber(row.byte_size),
       status: row.status as WebSearchResultRecord['status'],
       error: row.error,
-      createdAtMs: row.created_at_ms
+      createdAtMs: toNumber(row.created_at_ms)
     }));
   }
 }
@@ -321,4 +321,18 @@ function normalizeLimit(limit?: number): number {
     return 100;
   }
   return Math.min(Math.trunc(limit), 500);
+}
+
+function toNumber(value: unknown): number {
+  if (typeof value === 'number') {
+    return value;
+  }
+  if (typeof value === 'bigint') {
+    return Number(value);
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
 }

@@ -369,7 +369,15 @@ function jsonDetails(value: unknown): string {
 }
 
 function fmtTime(ms: number): string {
-  return new Date(ms).toISOString().replace('T', ' ').replace('.000Z', 'Z');
+  const value = typeof ms === 'number' ? ms : Number(ms);
+  if (!Number.isFinite(value) || value <= 0) {
+    return '-';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+  return date.toISOString().replace('T', ' ').replace('.000Z', 'Z');
 }
 
 function formatDtn(minorUnits: number): string {
