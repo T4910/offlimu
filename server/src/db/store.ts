@@ -11,6 +11,13 @@ export type UploadedBundleRecord = {
   lastSeenMs: number;
 };
 
+export type UploadedBundleFilters = {
+  limit?: number;
+  type?: string;
+  processingStatus?: UploadedBundleRecord['processingStatus'];
+  signatureValid?: boolean;
+};
+
 export type WalletLedgerEvent = {
   eventId: string;
   nodeId: string;
@@ -24,6 +31,13 @@ export type WalletLedgerEvent = {
   createdAtMs: number;
 };
 
+export type WalletLedgerFilters = {
+  limit?: number;
+  nodeId?: string;
+  kind?: WalletLedgerEvent['kind'];
+  status?: WalletLedgerEvent['status'];
+};
+
 export type AuditEvent = {
   id: string;
   kind: string;
@@ -34,6 +48,12 @@ export type AuditEvent = {
   fields?: Record<string, unknown>;
 };
 
+export type AuditEventFilters = {
+  limit?: number;
+  kind?: string;
+  nodeId?: string;
+};
+
 export type WebSearchRequestRecord = {
   bundleId: string;
   requesterNodeId: string;
@@ -42,6 +62,13 @@ export type WebSearchRequestRecord = {
   maxResults: number;
   status: 'pending' | 'completed' | 'failed';
   createdAtMs: number;
+};
+
+export type WebSearchRequestFilters = {
+  limit?: number;
+  requesterNodeId?: string;
+  status?: WebSearchRequestRecord['status'];
+  query?: string;
 };
 
 export type WebSearchResultRecord = {
@@ -59,24 +86,40 @@ export type WebSearchResultRecord = {
   createdAtMs: number;
 };
 
+export type WebSearchResultFilters = {
+  limit?: number;
+  requestBundleId?: string;
+  query?: string;
+  status?: WebSearchResultRecord['status'];
+};
+
+export type OutboxBundleFilters = {
+  limit?: number;
+  type?: string;
+  destinationNodeId?: string;
+};
+
 export interface SyncStore {
   saveUploadedBundle(record: UploadedBundleRecord): Promise<void>;
   getUploadedBundle(bundleId: string): Promise<UploadedBundleRecord | undefined>;
+  listUploadedBundles(filters?: UploadedBundleFilters): Promise<UploadedBundleRecord[]>;
   hasProcessedBundle(bundleId: string): Promise<boolean>;
   markProcessedBundle(bundleId: string): Promise<void>;
 
   appendWalletEvent(event: WalletLedgerEvent): Promise<void>;
-  listWalletEvents(nodeId?: string): Promise<WalletLedgerEvent[]>;
+  listWalletEvents(filters?: string | WalletLedgerFilters): Promise<WalletLedgerEvent[]>;
   findWalletEventBySource(sourceBundleId: string, kind?: WalletLedgerEvent['kind']): Promise<WalletLedgerEvent | undefined>;
 
   appendOutboxBundle(bundle: Bundle): Promise<void>;
   fetchOutboxBundlesSince(sinceMs: number): Promise<Bundle[]>;
+  listOutboxBundles(filters?: OutboxBundleFilters): Promise<Bundle[]>;
 
   appendAuditEvent(event: AuditEvent): Promise<void>;
-  listAuditEvents(): Promise<AuditEvent[]>;
+  listAuditEvents(filters?: AuditEventFilters): Promise<AuditEvent[]>;
 
   upsertWebSearchRequest(record: WebSearchRequestRecord): Promise<WebSearchRequestRecord>;
   findWebSearchRequestByDedupe(requesterNodeId: string, normalizedQuery: string): Promise<WebSearchRequestRecord | undefined>;
+  listWebSearchRequests(filters?: WebSearchRequestFilters): Promise<WebSearchRequestRecord[]>;
   appendWebSearchResults(results: WebSearchResultRecord[]): Promise<void>;
-  listWebSearchResults(requestBundleId: string): Promise<WebSearchResultRecord[]>;
+  listWebSearchResults(filters?: string | WebSearchResultFilters): Promise<WebSearchResultRecord[]>;
 }

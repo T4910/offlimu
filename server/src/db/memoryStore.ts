@@ -1,10 +1,16 @@
 import type {
   AuditEvent,
+  AuditEventFilters,
+  OutboxBundleFilters,
   SyncStore,
   UploadedBundleRecord,
+  UploadedBundleFilters,
   WalletLedgerEvent,
+  WalletLedgerFilters,
   WebSearchRequestRecord,
-  WebSearchResultRecord
+  WebSearchRequestFilters,
+  WebSearchResultRecord,
+  WebSearchResultFilters
 } from './store.js';
 import type { Bundle } from '../types/bundle.js';
 
@@ -26,6 +32,17 @@ export class MemorySyncStore implements SyncStore {
     return this.uploaded.get(bundleId);
   }
 
+  async listUploadedBundles(filters: UploadedBundleFilters = {}): Promise<UploadedBundleRecord[]> {
+    return applyLimit(
+      [...this.uploaded.values()]
+        .filter((record) => !filters.type || record.type === filters.type)
+        .filter((record) => !filters.processingStatus || record.processingStatus === filters.processingStatus)
+        .filter((record) => filters.signatureValid === undefined || record.signatureValid === filters.signatureValid)
+        .sort((a, b) => b.lastSeenMs - a.lastSeenMs),
+      filters.limit
+    );
+  }
+
   async hasProcessedBundle(bundleId: string): Promise<boolean> {
     return this.processed.has(bundleId);
   }
@@ -40,11 +57,14 @@ export class MemorySyncStore implements SyncStore {
     }
   }
 
-  async listWalletEvents(nodeId?: string): Promise<WalletLedgerEvent[]> {
-    const events = nodeId
-      ? this.walletEvents.filter((event) => event.nodeId === nodeId)
-      : this.walletEvents;
-    return [...events].sort((a, b) => a.createdAtMs - b.createdAtMs);
+  async listWalletEvents(filters?: string | WalletLedgerFilters): Promise<WalletLedgerEvent[]> {
+    const normalized = typeof filters === 'string' ? { nodeId: filters } : filters ?? {};
+    const events = this.walletEvents
+      .filter((event) => !normalized.nodeId || event.nodeId === normalized.nodeId)
+      .filter((event) => !normalized.kind || event.kind === normalized.kind)
+      .filter((event) => !normalized.status || event.status === normalized.status)
+      .sort((a, b) => b.createdAtMs - a.createdAtMs);
+    return applyLimit(events, normalized.limit);
   }
 
   async findWalletEventBySource(sourceBundleId: string, kind?: WalletLedgerEvent['kind']): Promise<WalletLedgerEvent | undefined> {
@@ -63,12 +83,28 @@ export class MemorySyncStore implements SyncStore {
       .sort((a, b) => a.createdAtMs - b.createdAtMs);
   }
 
+  async listOutboxBundles(filters: OutboxBundleFilters = {}): Promise<Bundle[]> {
+    return applyLimit(
+      [...this.outbox.values()]
+        .filter((bundle) => !filters.type || bundle.type === filters.type)
+        .filter((bundle) => !filters.destinationNodeId || bundle.destinationNodeId === filters.destinationNodeId)
+        .sort((a, b) => b.createdAtMs - a.createdAtMs),
+      filters.limit
+    );
+  }
+
   async appendAuditEvent(event: AuditEvent): Promise<void> {
     this.auditEvents.push(event);
   }
 
-  async listAuditEvents(): Promise<AuditEvent[]> {
-    return [...this.auditEvents];
+  async listAuditEvents(filters: AuditEventFilters = {}): Promise<AuditEvent[]> {
+    return applyLimit(
+      this.auditEvents
+        .filter((event) => !filters.kind || event.kind === filters.kind)
+        .filter((event) => !filters.nodeId || event.nodeId === filters.nodeId)
+        .sort((a, b) => b.createdAtMs - a.createdAtMs),
+      filters.limit
+    );
   }
 
   async upsertWebSearchRequest(record: WebSearchRequestRecord): Promise<WebSearchRequestRecord> {
@@ -83,6 +119,18 @@ export class MemorySyncStore implements SyncStore {
     return this.webRequests.get(`${requesterNodeId}:${normalizedQuery}`);
   }
 
+  async listWebSearchRequests(filters: WebSearchRequestFilters = {}): Promise<WebSearchRequestRecord[]> {
+    const query = filters.query?.toLowerCase();
+    return applyLimit(
+      [...this.webRequests.values()]
+        .filter((request) => !filters.requesterNodeId || request.requesterNodeId === filters.requesterNodeId)
+        .filter((request) => !filters.status || request.status === filters.status)
+        .filter((request) => !query || request.normalizedQuery.includes(query) || request.query.toLowerCase().includes(query))
+        .sort((a, b) => b.createdAtMs - a.createdAtMs),
+      filters.limit
+    );
+  }
+
   async appendWebSearchResults(results: WebSearchResultRecord[]): Promise<void> {
     for (const result of results) {
       if (!this.webResults.some((existing) => existing.id === result.id)) {
@@ -91,7 +139,23 @@ export class MemorySyncStore implements SyncStore {
     }
   }
 
-  async listWebSearchResults(requestBundleId: string): Promise<WebSearchResultRecord[]> {
-    return this.webResults.filter((result) => result.requestBundleId === requestBundleId);
+  async listWebSearchResults(filters?: string | WebSearchResultFilters): Promise<WebSearchResultRecord[]> {
+    const normalized = typeof filters === 'string' ? { requestBundleId: filters } : filters ?? {};
+    const query = normalized.query?.toLowerCase();
+    return applyLimit(
+      this.webResults
+        .filter((result) => !normalized.requestBundleId || result.requestBundleId === normalized.requestBundleId)
+        .filter((result) => !normalized.status || result.status === normalized.status)
+        .filter((result) => !query || result.query.toLowerCase().includes(query) || result.title.toLowerCase().includes(query))
+        .sort((a, b) => b.createdAtMs - a.createdAtMs),
+      normalized.limit
+    );
   }
+}
+
+function applyLimit<T>(items: T[], limit?: number): T[] {
+  if (limit === undefined || limit <= 0) {
+    return items;
+  }
+  return items.slice(0, limit);
 }

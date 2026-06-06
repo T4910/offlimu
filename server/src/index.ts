@@ -1,5 +1,6 @@
 import { Kysely, PostgresDialect } from 'kysely';
 import pg from 'pg';
+import { AdminService } from './admin/adminService.js';
 import { readEnv } from './config/env.js';
 import { createServerIdentity } from './crypto/bundleCrypto.js';
 import { KyselySyncStore } from './db/kyselyStore.js';
@@ -32,7 +33,8 @@ const wallet = new WalletService(store, identity, env.OPENING_GRANT_MINOR_UNITS)
 const rewards = new RewardService(wallet);
 const webSearch = new WebSearchService(store);
 const sync = new SyncService(store, wallet, rewards, webSearch);
-const app = buildApp(sync, { logger: true });
+const admin = new AdminService(store);
+const app = buildApp(sync, { logger: true, adminService: admin });
 
 await app.listen({ port: env.PORT, host: '0.0.0.0' }).then(() => {
   console.log(`Server is running on port ${env.PORT}`);

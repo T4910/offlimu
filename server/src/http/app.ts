@@ -1,10 +1,13 @@
 import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { registerAdminRoutes } from '../admin/adminRoutes.js';
+import type { AdminService } from '../admin/adminService.js';
 import type { SyncService } from '../services/syncService.js';
 import { fetchQuerySchema, uploadRequestSchema } from '../types/bundle.js';
 
 type BuildAppOptions = {
   logger?: boolean;
+  adminService?: AdminService;
 };
 
 export function buildApp(
@@ -14,6 +17,10 @@ export function buildApp(
   const app = Fastify({ logger: options.logger ?? false });
 
   void app.register(cors, { origin: true });
+
+  if (options.adminService) {
+    registerAdminRoutes(app, options.adminService);
+  }
 
   app.get('/health', async () => ({ ok: true }));
 

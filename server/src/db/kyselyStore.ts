@@ -3,11 +3,17 @@ import type { Bundle } from '../types/bundle.js';
 import type { Database } from './schema.js';
 import type {
   AuditEvent,
+  AuditEventFilters,
+  OutboxBundleFilters,
   SyncStore,
   UploadedBundleRecord,
+  UploadedBundleFilters,
   WalletLedgerEvent,
+  WalletLedgerFilters,
   WebSearchRequestRecord,
-  WebSearchResultRecord
+  WebSearchRequestFilters,
+  WebSearchResultRecord,
+  WebSearchResultFilters
 } from './store.js';
 
 export class KyselySyncStore implements SyncStore {
@@ -48,6 +54,27 @@ export class KyselySyncStore implements SyncStore {
       : undefined;
   }
 
+  async listUploadedBundles(filters: UploadedBundleFilters = {}): Promise<UploadedBundleRecord[]> {
+    let query = this.db.selectFrom('uploaded_bundles').selectAll();
+    if (filters.type) query = query.where('type', '=', filters.type);
+    if (filters.processingStatus) query = query.where('processing_status', '=', filters.processingStatus);
+    if (filters.signatureValid !== undefined) query = query.where('signature_valid', '=', filters.signatureValid);
+    const rows = await query
+      .orderBy('last_seen_ms desc')
+      .limit(normalizeLimit(filters.limit))
+      .execute();
+    return rows.map((row) => ({
+      bundleId: row.bundle_id,
+      bundle: row.bundle_json as Bundle,
+      sourceNodeId: row.source_node_id,
+      type: row.type,
+      signatureValid: row.signature_valid,
+      processingStatus: row.processing_status as UploadedBundleRecord['processingStatus'],
+      firstSeenMs: row.first_seen_ms,
+      lastSeenMs: row.last_seen_ms
+    }));
+  }
+
   async hasProcessedBundle(bundleId: string): Promise<boolean> {
     const row = await this.db.selectFrom('processed_bundle_ids').select('bundle_id').where('bundle_id', '=', bundleId).executeTakeFirst();
     return Boolean(row);
@@ -80,10 +107,16 @@ export class KyselySyncStore implements SyncStore {
       .execute();
   }
 
-  async listWalletEvents(nodeId?: string): Promise<WalletLedgerEvent[]> {
+  async listWalletEvents(filters?: string | WalletLedgerFilters): Promise<WalletLedgerEvent[]> {
+    const normalized = typeof filters === 'string' ? { nodeId: filters } : filters ?? {};
     let query = this.db.selectFrom('wallet_ledger_events').selectAll();
-    if (nodeId) query = query.where('node_id', '=', nodeId);
-    const rows = await query.orderBy('created_at_ms asc').execute();
+    if (normalized.nodeId) query = query.where('node_id', '=', normalized.nodeId);
+    if (normalized.kind) query = query.where('kind', '=', normalized.kind);
+    if (normalized.status) query = query.where('status', '=', normalized.status);
+    const rows = await query
+      .orderBy('created_at_ms desc')
+      .limit(normalizeLimit(normalized.limit))
+      .execute();
     return rows.map((row) => ({
       eventId: row.event_id,
       nodeId: row.node_id,
@@ -121,6 +154,21 @@ export class KyselySyncStore implements SyncStore {
     return rows.map((row) => row.bundle_json as Bundle);
   }
 
+  async listOutboxBundles(filters: OutboxBundleFilters = {}): Promise<Bundle[]> {
+    let query = this.db.selectFrom('outbox_bundles').selectAll();
+    if (filters.type) {
+      query = query.where('bundle_json', '@>', { type: filters.type });
+    }
+    if (filters.destinationNodeId) {
+      query = query.where('bundle_json', '@>', { destinationNodeId: filters.destinationNodeId });
+    }
+    const rows = await query
+      .orderBy('created_at_ms desc')
+      .limit(normalizeLimit(filters.limit))
+      .execute();
+    return rows.map((row) => row.bundle_json as Bundle);
+  }
+
   async appendAuditEvent(event: AuditEvent): Promise<void> {
     await this.db.insertInto('sync_audit_events').values({
       event_id: event.id,
@@ -133,8 +181,14 @@ export class KyselySyncStore implements SyncStore {
     }).execute();
   }
 
-  async listAuditEvents(): Promise<AuditEvent[]> {
-    const rows = await this.db.selectFrom('sync_audit_events').selectAll().orderBy('created_at_ms asc').execute();
+  async listAuditEvents(filters: AuditEventFilters = {}): Promise<AuditEvent[]> {
+    let query = this.db.selectFrom('sync_audit_events').selectAll();
+    if (filters.kind) query = query.where('kind', '=', filters.kind);
+    if (filters.nodeId) query = query.where('node_id', '=', filters.nodeId);
+    const rows = await query
+      .orderBy('created_at_ms desc')
+      .limit(normalizeLimit(filters.limit))
+      .execute();
     return rows.map((row) => ({
       id: row.event_id,
       kind: row.kind,
@@ -181,6 +235,34 @@ export class KyselySyncStore implements SyncStore {
       : undefined;
   }
 
+  async listWebSearchRequests(filters: WebSearchRequestFilters = {}): Promise<WebSearchRequestRecord[]> {
+    let query = this.db.selectFrom('web_search_requests').selectAll();
+    if (filters.requesterNodeId) query = query.where('requester_node_id', '=', filters.requesterNodeId);
+    if (filters.status) query = query.where('status', '=', filters.status);
+    if (filters.query) {
+      const pattern = `%${filters.query.toLowerCase()}%`;
+      query = query.where((eb) =>
+        eb.or([
+          eb('normalized_query', 'like', pattern),
+          eb('query', 'ilike', `%${filters.query}%`)
+        ])
+      );
+    }
+    const rows = await query
+      .orderBy('created_at_ms desc')
+      .limit(normalizeLimit(filters.limit))
+      .execute();
+    return rows.map((row) => ({
+      bundleId: row.bundle_id,
+      requesterNodeId: row.requester_node_id,
+      query: row.query,
+      normalizedQuery: row.normalized_query,
+      maxResults: row.max_results,
+      status: row.status as WebSearchRequestRecord['status'],
+      createdAtMs: row.created_at_ms
+    }));
+  }
+
   async appendWebSearchResults(results: WebSearchResultRecord[]): Promise<void> {
     for (const result of results) {
       await this.db.insertInto('web_search_results').values({
@@ -200,8 +282,23 @@ export class KyselySyncStore implements SyncStore {
     }
   }
 
-  async listWebSearchResults(requestBundleId: string): Promise<WebSearchResultRecord[]> {
-    const rows = await this.db.selectFrom('web_search_results').selectAll().where('request_bundle_id', '=', requestBundleId).execute();
+  async listWebSearchResults(filters?: string | WebSearchResultFilters): Promise<WebSearchResultRecord[]> {
+    const normalized = typeof filters === 'string' ? { requestBundleId: filters } : filters ?? {};
+    let query = this.db.selectFrom('web_search_results').selectAll();
+    if (normalized.requestBundleId) query = query.where('request_bundle_id', '=', normalized.requestBundleId);
+    if (normalized.status) query = query.where('status', '=', normalized.status);
+    if (normalized.query) {
+      query = query.where((eb) =>
+        eb.or([
+          eb('query', 'ilike', `%${normalized.query}%`),
+          eb('title', 'ilike', `%${normalized.query}%`)
+        ])
+      );
+    }
+    const rows = await query
+      .orderBy('created_at_ms desc')
+      .limit(normalizeLimit(normalized.limit))
+      .execute();
     return rows.map((row) => ({
       id: row.id,
       requestBundleId: row.request_bundle_id,
@@ -217,4 +314,11 @@ export class KyselySyncStore implements SyncStore {
       createdAtMs: row.created_at_ms
     }));
   }
+}
+
+function normalizeLimit(limit?: number): number {
+  if (limit === undefined || !Number.isFinite(limit) || limit <= 0) {
+    return 100;
+  }
+  return Math.min(Math.trunc(limit), 500);
 }

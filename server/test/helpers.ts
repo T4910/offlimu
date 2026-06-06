@@ -1,4 +1,5 @@
 import nacl from 'tweetnacl';
+import { AdminService } from '../src/admin/adminService.js';
 import { createServerIdentity, signBundle, type ServerIdentity } from '../src/crypto/bundleCrypto.js';
 import { MemorySyncStore } from '../src/db/memoryStore.js';
 import { buildApp } from '../src/http/app.js';
@@ -16,8 +17,9 @@ export function makeHarness() {
   const rewards = new RewardService(wallet);
   const webSearch = new WebSearchService(store);
   const sync = new SyncService(store, wallet, rewards, webSearch);
-  const app = buildApp(sync);
-  return { store, identity, wallet, rewards, webSearch, sync, app };
+  const admin = new AdminService(store);
+  const app = buildApp(sync, { adminService: admin });
+  return { store, identity, wallet, rewards, webSearch, sync, admin, app };
 }
 
 export function makeClientIdentity(seedByte = 1): ServerIdentity {
