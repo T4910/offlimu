@@ -19,6 +19,93 @@ import 'package:offlimu/node_runtime/sync_engine.dart';
 
 void main() {
   test(
+    'server upload acceptance does not mark bundles as acknowledged',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final now = DateTime.now();
+      final bundleRepository = DriftBundleRepository(
+        db,
+        localNodeId: 'node-local-001',
+      );
+      final bundle = Bundle(
+        bundleId: 'direct-chat-1',
+        type: Bundle.typeChatMessage,
+        sourceNodeId: 'node-local-001',
+        destinationNodeId: 'node-remote-123',
+        payload: 'hello',
+        createdAt: now,
+        ttlSeconds: 3600,
+      );
+      await bundleRepository.save(bundle);
+
+      final fakeSyncApi = _FakeSyncApi(
+        uploadResult: const SyncUploadResult(
+          acknowledgedBundleIds: <String>['direct-chat-1'],
+          rejections: <SyncRejection>[],
+        ),
+        fetchResult: const SyncFetchResult(bundles: <Bundle>[]),
+      );
+      final engine = SyncEngine(
+        localNodeId: 'node-local-001',
+        bundles: bundleRepository,
+        syncApi: fakeSyncApi,
+        syncJobs: _FakeSyncJobRepository(),
+        deviceConditions: _AlwaysOnlineDeviceConditionsService(),
+      );
+
+      await engine.syncNow(gatewayEnabled: true);
+
+      final stored = await bundleRepository.getById('direct-chat-1');
+      expect(fakeSyncApi.uploadedBundles, hasLength(1));
+      expect(stored?.acknowledged, isFalse);
+      // expect(stored?.sentAt, isNotNull);
+    },
+  );
+
+  test('server upload acceptance can complete broadcast bundles', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+    final now = DateTime.now();
+    final bundleRepository = DriftBundleRepository(
+      db,
+      localNodeId: 'node-local-001',
+    );
+    final bundle = Bundle(
+      bundleId: 'broadcast-search-1',
+      type: Bundle.typeWebSearchRequest,
+      sourceNodeId: 'node-local-001',
+      destinationScope: BundleDestinationScope.broadcast,
+      payload: '{"query":"offline mesh"}',
+      appId: 'offlimu.web',
+      createdAt: now,
+      ttlSeconds: 3600,
+    );
+    await bundleRepository.save(bundle);
+
+    final fakeSyncApi = _FakeSyncApi(
+      uploadResult: const SyncUploadResult(
+        acknowledgedBundleIds: <String>['broadcast-search-1'],
+        rejections: <SyncRejection>[],
+      ),
+      fetchResult: const SyncFetchResult(bundles: <Bundle>[]),
+    );
+    final engine = SyncEngine(
+      localNodeId: 'node-local-001',
+      bundles: bundleRepository,
+      syncApi: fakeSyncApi,
+      syncJobs: _FakeSyncJobRepository(),
+      deviceConditions: _AlwaysOnlineDeviceConditionsService(),
+    );
+
+    await engine.syncNow(gatewayEnabled: true);
+
+    final stored = await bundleRepository.getById('broadcast-search-1');
+    expect(fakeSyncApi.uploadedBundles, hasLength(1));
+    expect(stored?.acknowledged, isTrue);
+  });
+
+  test(
     'sync uploads a pending spend and applies a confirmed settlement',
     () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());

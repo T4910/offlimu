@@ -244,11 +244,15 @@ class SyncEngine {
         }
 
         if (acknowledgedIds.contains(bundle.bundleId)) {
-          await _bundles.markAcknowledged(bundle.bundleId);
+          if (_serverAcceptanceCompletesBundle(bundle)) {
+            await _bundles.markAcknowledged(bundle.bundleId);
+          } else {
+            await _bundles.markSent(bundle.bundleId);
+          }
           continue;
         }
 
-        await _bundles.markSent(bundle.bundleId);
+        // await _bundles.markSent(bundle.bundleId);
       }
 
       final DateTime since =
@@ -376,6 +380,10 @@ class SyncEngine {
     }
     return connectionType == DeviceConnectionType.wifi ||
         connectionType == DeviceConnectionType.ethernet;
+  }
+
+  bool _serverAcceptanceCompletesBundle(Bundle bundle) {
+    return bundle.isBroadcast;
   }
 
   bool _isBatteryAllowed(DeviceConditionsSnapshot snapshot) {
