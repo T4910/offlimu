@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:offlimu/core/di/providers.dart';
+import 'package:offlimu/domain/entities/peer_contact.dart';
 import 'package:offlimu/domain/entities/wallet_ledger_entry.dart' as ledger;
 import 'package:offlimu/domain/entities/node_identity.dart';
+import 'package:offlimu/domain/repositories/peer_repository.dart';
 import 'package:offlimu/domain/repositories/wallet_repository.dart';
 import 'package:offlimu/features/wallet/presentation/wallet_page.dart';
 
@@ -46,8 +48,28 @@ class _FakeWalletRepository implements WalletRepository {
   }
 }
 
+class _FakePeerRepository implements PeerRepository {
+  const _FakePeerRepository(this.peers);
+
+  final List<PeerContact> peers;
+
+  @override
+  Future<void> upsertPeer(PeerContact peer) async {}
+
+  @override
+  Stream<List<PeerContact>> watchPeers() async* {
+    yield peers;
+  }
+}
+
 void main() {
-  Widget buildWalletPage(WalletSection section, WalletRepository repo) {
+  Widget buildWalletPage(
+    WalletSection section,
+    WalletRepository repo, {
+    PeerRepository peerRepository = const _FakePeerRepository(
+      <PeerContact>[],
+    ),
+  }) {
     return ProviderScope(
       overrides: <Override>[
         localNodeIdentityProvider.overrideWithValue(
@@ -57,6 +79,7 @@ void main() {
           ),
         ),
         walletRepositoryProvider.overrideWithValue(repo),
+        peerRepositoryProvider.overrideWithValue(peerRepository),
       ],
       child: MaterialApp(home: WalletPage(section: section)),
     );
@@ -92,6 +115,34 @@ void main() {
     expect(find.text('SIGN & PROPAGATE'), findsOneWidget);
     expect(find.text('PRE-FLIGHT AUDIT'), findsOneWidget);
     expect(find.text('Back to Home'), findsNothing);
+  });
+
+  testWidgets('wallet payment page can select a peer contact as target', (
+    WidgetTester tester,
+  ) async {
+    final peer = PeerContact(
+      nodeId: 'node-peer-abc123',
+      host: '127.0.0.1',
+      port: 47802,
+      lastSeen: DateTime.fromMillisecondsSinceEpoch(1700000000000),
+    );
+
+    await tester.pumpWidget(
+      buildWalletPage(
+        WalletSection.pay,
+        _FakeWalletRepository(),
+        peerRepository: _FakePeerRepository(<PeerContact>[peer]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('node…c123'), findsOneWidget);
+
+    await tester.tap(find.text('node…c123'));
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextField>(find.byType(TextField).first);
+    expect(field.controller?.text, peer.nodeId);
   });
 
   testWidgets('wallet rewards page renders incentive metrics', (

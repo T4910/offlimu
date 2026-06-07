@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { SearchProvider } from '../src/services/webSearchPipeline.js';
 import { makeClientIdentity, makeHarness, signedWireBundle, walletSpendBundle } from './helpers.js';
 
 describe('sync API', () => {
@@ -130,6 +131,111 @@ describe('sync API', () => {
       query: 'offline mesh'
     });
     expect(body.webSearchResults[0].html).toContain('<!doctype html>');
+  });
+
+  it('returns scraped and fallback web search snapshots through sync upload', async () => {
+    const provider: SearchProvider = {
+      name: 'fake-google',
+      async search() {
+        return [
+          {
+            title: 'Scraped page',
+            url: 'https://example.com/scraped',
+            snippet: 'A scrapeable page.',
+            rank: 1,
+            provider: 'google'
+          },
+          {
+            title: 'Blocked page',
+            url: 'https://blocked.example.com/page',
+            snippet: 'A blocked page.',
+            rank: 2,
+            provider: 'google'
+          },
+          {
+            title: 'Plain page',
+            url: 'https://plain.example.com/file.txt',
+            snippet: 'A non HTML page.',
+            rank: 3,
+            provider: 'google'
+          }
+        ];
+      }
+    };
+    const fetchImpl = async (input: URL | RequestInfo) => {
+      const url = String(input);
+      if (url === 'https://blocked.example.com/robots.txt') {
+        return new Response('User-agent: *\nDisallow: /', { status: 200 });
+      }
+      if (url.endsWith('/robots.txt')) {
+        return new Response('', { status: 404 });
+      }
+      if (url === 'https://plain.example.com/file.txt') {
+        return new Response('plain text', {
+          status: 200,
+          headers: { 'content-type': 'text/plain' }
+        });
+      }
+      return new Response(
+        '<html><head><title>Scraped page</title></head><body><main><p>Useful offline content.</p></main></body></html>',
+        { status: 200, headers: { 'content-type': 'text/html' } }
+      );
+    };
+    const { app } = makeHarness({
+      webSearchOptions: {
+        provider: 'google',
+        searchProvider: provider,
+        maxResults: 3,
+        fetchImpl: fetchImpl as typeof fetch
+      }
+    });
+    const client = makeClientIdentity(50);
+    const search = signedWireBundle(
+      {
+        bundleId: 'web-search-scrape-1',
+        type: 'web_search_request',
+        sourceNodeId: client.nodeId,
+        destinationNodeId: null,
+        destinationScope: 'broadcast',
+        priority: 'high',
+        ackForBundleId: null,
+        payload: JSON.stringify({ query: 'offline scrape', requestedByNodeId: client.nodeId, maxResults: 3 }),
+        payloadReference: null,
+        appId: 'offlimu.web',
+        createdAtMs: Date.now(),
+        expiresAtMs: null,
+        ttlSeconds: 86400,
+        hopCount: 0,
+        acknowledged: false,
+        sentAtMs: null,
+        failedAttempts: 0,
+        lastError: null
+      },
+      client
+    );
+
+    const upload = await app.inject({
+      method: 'POST',
+      url: '/sync/upload',
+      payload: { bundles: [search] }
+    });
+    const body = upload.json();
+
+    expect(body.webSearchResults).toHaveLength(3);
+    expect(body.webSearchResults[0].html).toContain('Useful offline content.');
+    expect(body.webSearchResults[1].html).toContain('robots_disallowed');
+    expect(body.webSearchResults[2].html).toContain('non_html_content');
+
+    const admin = await app.inject({
+      method: 'GET',
+      url: '/admin/api/web-searches?query=scrape'
+    });
+    expect(admin.json()[0]).toMatchObject({ resultCount: 3 });
+    expect(admin.json()[0].results.map((result: { error: string | null }) => result.error)).toEqual([
+      null,
+      'robots_disallowed',
+      'non_html_content'
+    ]);
   });
 
   it('fetch respects sinceMs', async () => {

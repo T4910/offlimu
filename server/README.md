@@ -47,6 +47,20 @@ For Flutter client testing, run the app with:
 --dart-define=OFFLIMU_SYNC_BASE_URL=http://localhost:7774
 ```
 
+## Web Search
+
+The server defaults to deterministic mock web results. To use Google
+Programmable Search JSON API for candidate URLs, set:
+
+```sh
+WEB_SEARCH_PROVIDER=google
+GOOGLE_CSE_API_KEY=...
+GOOGLE_CSE_ID=...
+```
+
+Fetched result pages are bounded, robots-aware, sanitized HTML snapshots. Pages
+that cannot be scraped still return fallback HTML with a clear error reason.
+
 ## Tests
 
 ```sh

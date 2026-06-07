@@ -311,13 +311,18 @@ function bundleTable(rows: UploadedBundleRecord[]): string {
 
 function webSearchTable(rows: AdminWebSearchRow[]): string {
   return table(
-    ['Created', 'Query', 'Requester', 'Status', 'Results', 'Content Hashes'],
+    ['Created', 'Query', 'Requester', 'Status', 'Results', 'Issues', 'Content Hashes'],
     rows.map((row) => [
       fmtTime(row.createdAtMs),
       escapeHtml(row.query),
       code(row.requesterNodeId),
       pill(row.status),
       String(row.resultCount),
+      row.results
+        .map((result) => result.error)
+        .filter((error): error is string => Boolean(error))
+        .map((error) => pill(error))
+        .join('<br>') || '-',
       row.results.map((result) => code(result.contentHash)).join('<br>')
     ])
   );

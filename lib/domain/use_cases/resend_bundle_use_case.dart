@@ -18,7 +18,7 @@ class ResendBundleUseCase {
 
   Future<ResendResult> resendBundle(String bundleId) async {
     final bundle = await _bundles.getById(bundleId);
-    if (bundle == null || bundle.isExpired) {
+    if (bundle == null /*|| bundle.isExpired*/) {
       return const ResendResult(requeuedCount: 0);
     }
     await _bundles.resetForRetry(bundle.bundleId);

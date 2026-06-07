@@ -6,16 +6,16 @@ import { buildApp } from '../src/http/app.js';
 import { RewardService } from '../src/services/rewardService.js';
 import { SyncService } from '../src/services/syncService.js';
 import { WalletService } from '../src/services/walletService.js';
-import { WebSearchService } from '../src/services/webSearchService.js';
+import { WebSearchService, type WebSearchServiceOptions } from '../src/services/webSearchService.js';
 import type { Bundle, WireBundle } from '../src/types/bundle.js';
 import { toWireBundle } from '../src/types/bundle.js';
 
-export function makeHarness() {
+export function makeHarness(params: { webSearchOptions?: WebSearchServiceOptions } = {}) {
   const store = new MemorySyncStore();
   const identity = createServerIdentity({ nodeId: 'server-gateway' });
   const wallet = new WalletService(store, identity, 5000);
   const rewards = new RewardService(wallet);
-  const webSearch = new WebSearchService(store);
+  const webSearch = new WebSearchService(store, params.webSearchOptions);
   const sync = new SyncService(store, wallet, rewards, webSearch);
   const admin = new AdminService(store);
   const app = buildApp(sync, { adminService: admin });
