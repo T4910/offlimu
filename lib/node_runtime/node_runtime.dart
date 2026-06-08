@@ -296,7 +296,7 @@ class NodeRuntime {
     _isForwarding = true;
     try {
       final now = DateTime.now();
-      final List<DiscoveredPeer> peers = _peers.values.toList(growable: false);
+      final List<DiscoveredPeer> peers = _activePeers(now);
       final pending = await _bundles.getPendingBundles();
 
       final outbound = pending;
@@ -619,6 +619,24 @@ class NodeRuntime {
         .toList(growable: false);
   }
 
+  List<DiscoveredPeer> _activePeers(DateTime now) {
+    return _peers.values
+        .where((peer) => _isPeerCurrentlyActive(peer, now))
+        .toList(growable: false);
+  }
+
+  bool _isPeerCurrentlyActive(DiscoveredPeer peer, DateTime now) {
+    if (peer.nodeId == _localNodeId) {
+      return false;
+    }
+    final lastSeen = _peerSeenAt[peer.nodeId] ?? peer.lastSeen;
+    if (now.difference(lastSeen) > peerStaleAfter) {
+      return false;
+    }
+    final failures = _peerLivenessFailures[peer.nodeId] ?? 0;
+    return failures < peerLivenessFailureThreshold;
+  }
+
   List<DiscoveredPeer> _rankPeersForBundle(
     Bundle bundle,
     List<DiscoveredPeer> peers,
@@ -733,8 +751,18 @@ class NodeRuntime {
     );
     await _bundles.save(bundle);
 
-    if (bundle.isExpired || bundle.hopCount > maxHopCount) {
-      await _bundles.markAcknowledged(bundle.bundleId);
+    if (bundle.isExpired) {
+      await _bundles.markRejected(
+        bundle.bundleId,
+        reason: 'Bundle expired before inbound routing (TTL exceeded).',
+      );
+      return;
+    }
+    if (bundle.hopCount > maxHopCount) {
+      await _bundles.markRejected(
+        bundle.bundleId,
+        reason: 'Bundle exceeded max hop count ($maxHopCount).',
+      );
       return;
     }
 
@@ -769,7 +797,8 @@ class NodeRuntime {
       return;
     }
 
-    final List<DiscoveredPeer> peers = _peers.values.toList(growable: false);
+    final now = DateTime.now();
+    final List<DiscoveredPeer> peers = _activePeers(now);
     final DiscoveredPeer? directTarget = bundle.destinationNodeId == null
         ? null
         : _peers[bundle.destinationNodeId!];
@@ -840,7 +869,7 @@ class NodeRuntime {
 
   Future<void> _handleInboundCommerceBundle(Bundle bundle) async {
     await _commerceRepository?.ingestBundle(bundle, localNodeId: _localNodeId);
-    await _bundles.markAcknowledged(bundle.bundleId);
+    await _markAcknowledgedIfDirect(bundle);
     if (!bundle.isBroadcast) {
       await _enqueueAckBundleFor(bundle);
     }
@@ -848,14 +877,14 @@ class NodeRuntime {
 
   Future<void> _handleInboundWebIndexUpdate(Bundle bundle) async {
     await _webSearchResultIngestionService?.ingestIndexUpdateBundle(bundle);
-    await _bundles.markAcknowledged(bundle.bundleId);
+    await _markAcknowledgedIfDirect(bundle);
     if (!bundle.isBroadcast) {
       await _enqueueAckBundleFor(bundle);
     }
   }
 
   Future<void> _handleInboundFileShareMetadata(Bundle bundle) async {
-    await _bundles.markAcknowledged(bundle.bundleId);
+    await _markAcknowledgedIfDirect(bundle);
 
     final String? contentHash = bundle.payloadReference;
     final Map<String, Object?>? manifest = _decodeObjectPayload(bundle.payload);
@@ -994,7 +1023,7 @@ class NodeRuntime {
     await _bundles.markAcknowledged(ack.bundleId);
     final String? ackForBundleId = ack.ackForBundleId;
     if (ackForBundleId != null) {
-      await _bundles.markAcknowledged(ackForBundleId);
+      await _markAckTargetAcknowledgedIfDirect(ackForBundleId);
     }
   }
 
@@ -1010,7 +1039,7 @@ class NodeRuntime {
   }
 
   Future<void> _handleInboundAppBundle(Bundle bundle) async {
-    await _bundles.markAcknowledged(bundle.bundleId);
+    await _markAcknowledgedIfDirect(bundle);
     if (bundle.isWalletEvent && bundle.destinationNodeId == _localNodeId) {
       // Apply wallet event immediately so recipient is credited on receipt.
       await _walletSyncReconciliationService?.applyInboundWalletBundle(bundle);
@@ -1018,6 +1047,20 @@ class NodeRuntime {
     if (!bundle.isBroadcast) {
       await _enqueueAckBundleFor(bundle);
     }
+  }
+
+  Future<void> _markAcknowledgedIfDirect(Bundle bundle) async {
+    if (!bundle.isBroadcast) {
+      await _bundles.markAcknowledged(bundle.bundleId);
+    }
+  }
+
+  Future<void> _markAckTargetAcknowledgedIfDirect(String bundleId) async {
+    final target = await _bundles.getById(bundleId);
+    if (target == null || target.isBroadcast) {
+      return;
+    }
+    await _bundles.markAcknowledged(bundleId);
   }
 
   Future<void> _pruneExpiredBundlesLocked() async {
@@ -1090,11 +1133,16 @@ class NodeRuntime {
     );
 
     await _bundles.save(signedAck);
+    final now = DateTime.now();
+    final List<DiscoveredPeer> activePeers = _activePeers(now);
     final List<DiscoveredPeer> relayPeers = _rankPeersForBundle(
       signedAck,
-      _pickRelayPeers(signedAck, _peers.values.toList(growable: false)),
+      _pickRelayPeers(signedAck, activePeers),
     );
-    final DiscoveredPeer? targetPeer = _peers[inbound.sourceNodeId];
+    final DiscoveredPeer? targetPeer = _findPeerById(
+      activePeers,
+      inbound.sourceNodeId,
+    );
 
     final List<DiscoveredPeer> targets = <DiscoveredPeer>[
       ?targetPeer,
@@ -1120,6 +1168,15 @@ class NodeRuntime {
     if (sentAny) {
       await _bundles.markAcknowledged(signedAck.bundleId);
     }
+  }
+
+  DiscoveredPeer? _findPeerById(List<DiscoveredPeer> peers, String nodeId) {
+    for (final peer in peers) {
+      if (peer.nodeId == nodeId) {
+        return peer;
+      }
+    }
+    return null;
   }
 }
 

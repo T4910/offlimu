@@ -614,6 +614,12 @@ void main() {
               port: 4042,
               lastSeen: now,
             ),
+            PeerContact(
+              nodeId: 'node-stale',
+              host: '192.168.1.99',
+              port: 4099,
+              lastSeen: now.subtract(const Duration(minutes: 2)),
+            ),
           ],
         ),
         contentStore: _FakeContentStore(),
@@ -632,6 +638,10 @@ void main() {
       expect(
         fakeTransport.sentBundles.map((record) => record.peerNodeId).toSet(),
         <String>{'node-b', 'node-c', 'node-d'},
+      );
+      expect(
+        fakeTransport.sentBundles.map((record) => record.peerNodeId),
+        isNot(contains('node-stale')),
       );
       expect(
         fakeTransport.sentBundles.every(
@@ -727,6 +737,10 @@ void main() {
         fakeTransport.sentBundles.any(
           (record) => record.bundle.type == Bundle.typeAck,
         ),
+        isFalse,
+      );
+      expect(
+        fakeBundles.getSavedBundle('broadcast-chat-1')?.acknowledged,
         isFalse,
       );
 
@@ -892,7 +906,16 @@ class _FakeBundleRepository implements BundleRepository {
   }) async {}
 
   @override
-  Future<void> markAcknowledged(String bundleId) async {}
+  Future<void> markAcknowledged(String bundleId) async {
+    final existing = existingBundlesById[bundleId];
+    if (existing == null) {
+      return;
+    }
+
+    final updated = existing.copyWith(acknowledged: true);
+    existingBundlesById[bundleId] = updated;
+    _replacePendingBundle(updated);
+  }
 
   @override
   Future<void> resetForRetry(String bundleId) async {}

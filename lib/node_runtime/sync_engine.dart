@@ -264,7 +264,7 @@ class SyncEngine {
           await _bundles.markAcknowledged(bundle.bundleId);
           final ackForId = bundle.ackForBundleId;
           if (ackForId != null) {
-            await _bundles.markAcknowledged(ackForId);
+            await _markAckTargetAcknowledgedIfDirect(ackForId);
           }
           continue;
         }
@@ -285,7 +285,7 @@ class SyncEngine {
           await _walletSyncReconciliationService?.applyInboundWalletBundle(
             bundle,
           );
-          await _bundles.markAcknowledged(bundle.bundleId);
+          await _markAcknowledgedIfDirect(bundle);
           continue;
         }
 
@@ -293,7 +293,7 @@ class SyncEngine {
           await _webSearchResultIngestionService?.ingestIndexUpdateBundle(
             bundle,
           );
-          await _bundles.markAcknowledged(bundle.bundleId);
+          await _markAcknowledgedIfDirect(bundle);
           continue;
         }
 
@@ -302,11 +302,11 @@ class SyncEngine {
             bundle,
             localNodeId: _localNodeId,
           );
-          await _bundles.markAcknowledged(bundle.bundleId);
+          await _markAcknowledgedIfDirect(bundle);
           continue;
         }
 
-        if (bundle.sourceNodeId != _localNodeId) {
+        if (bundle.sourceNodeId != _localNodeId && !bundle.isBroadcast) {
           await _bundles.markAcknowledged(bundle.bundleId);
         }
       }
@@ -373,6 +373,20 @@ class SyncEngine {
 
   bool _isExpired(Bundle bundle, DateTime now) {
     return now.isAfter(bundle.expiresAt);
+  }
+
+  Future<void> _markAcknowledgedIfDirect(Bundle bundle) async {
+    if (!bundle.isBroadcast) {
+      await _bundles.markAcknowledged(bundle.bundleId);
+    }
+  }
+
+  Future<void> _markAckTargetAcknowledgedIfDirect(String bundleId) async {
+    final target = await _bundles.getById(bundleId);
+    if (target == null || target.isBroadcast) {
+      return;
+    }
+    await _bundles.markAcknowledged(bundleId);
   }
 
   bool _isNetworkAllowed(DeviceConnectionType connectionType) {
