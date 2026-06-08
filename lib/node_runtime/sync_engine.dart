@@ -396,7 +396,7 @@ class SyncEngine {
   }
 
   bool _serverAcceptanceCompletesBundle(Bundle bundle) {
-    return bundle.isBroadcast;
+    return false;
   }
 
   bool _isBatteryAllowed(DeviceConditionsSnapshot snapshot) {

@@ -59,11 +59,11 @@ void main() {
       final stored = await bundleRepository.getById('direct-chat-1');
       expect(fakeSyncApi.uploadedBundles, hasLength(1));
       expect(stored?.acknowledged, isFalse);
-      // expect(stored?.sentAt, isNotNull);
+      expect(stored?.sentAt, isNotNull);
     },
   );
 
-  test('server upload acceptance can complete broadcast bundles', () async {
+  test('server upload acceptance keeps broadcast bundles relayable', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
     final now = DateTime.now();
@@ -102,7 +102,8 @@ void main() {
 
     final stored = await bundleRepository.getById('broadcast-search-1');
     expect(fakeSyncApi.uploadedBundles, hasLength(1));
-    expect(stored?.acknowledged, isTrue);
+    expect(stored?.acknowledged, isFalse);
+    expect(stored?.sentAt, isNotNull);
   });
 
   test(

@@ -314,16 +314,18 @@ void main() {
     fakeTransport.emitIncoming(inboundBundle);
     await Future<void>.delayed(const Duration(milliseconds: 10));
 
-    expect(fakeTransport.sentBundles, hasLength(2));
+    expect(fakeTransport.sentBundles, hasLength(3));
     expect(
-      fakeTransport.sentBundles.map((record) => record.peerNodeId),
+      fakeTransport.sentBundles
+          .where((record) => record.bundle.type == Bundle.typeAck)
+          .map((record) => record.peerNodeId),
       containsAllInOrder(<String>['node-b', 'node-c']),
     );
     expect(
-      fakeTransport.sentBundles.every(
-        (record) => record.bundle.type == Bundle.typeAck,
-      ),
-      isTrue,
+      fakeTransport.sentBundles
+          .where((record) => record.bundle.type == Bundle.typeChatMessage)
+          .map((record) => record.peerNodeId),
+      <String>['node-c'],
     );
 
     await runtime.stop();
@@ -564,6 +566,174 @@ void main() {
       await runtime.dispose();
     },
   );
+
+  test(
+    'runtime sends direct outbound bundles to destination and relay peers',
+    () async {
+      final now = DateTime.now();
+      final outboundBundle = Bundle(
+        bundleId: 'outbound-fanout-1',
+        type: Bundle.typeChatMessage,
+        sourceNodeId: 'node-a',
+        sourcePublicKey: 'public-key-a',
+        destinationNodeId: 'node-b',
+        payload: 'hello mesh',
+        createdAt: now,
+        ttlSeconds: 3600,
+      );
+
+      final fakeTransport = _FakeTransportAdapter();
+      final fakeBundles = _FakeBundleRepository(
+        existingBundlesById: <String, Bundle>{
+          outboundBundle.bundleId: outboundBundle,
+        },
+        pendingBundles: <Bundle>[outboundBundle],
+      );
+      final runtime = NodeRuntime(
+        localNodeId: 'node-a',
+        discovery: _FakeDiscoveryAdapter(),
+        transport: fakeTransport,
+        bundles: fakeBundles,
+        peers: _FakePeerRepository(
+          initialPeers: <PeerContact>[
+            PeerContact(
+              nodeId: 'node-b',
+              host: '192.168.1.20',
+              port: 4040,
+              lastSeen: now,
+            ),
+            PeerContact(
+              nodeId: 'node-c',
+              host: '192.168.1.21',
+              port: 4041,
+              lastSeen: now,
+            ),
+            PeerContact(
+              nodeId: 'node-d',
+              host: '192.168.1.22',
+              port: 4042,
+              lastSeen: now,
+            ),
+          ],
+        ),
+        contentStore: _FakeContentStore(),
+        bundleSignatureService: _FakeBundleSignatureService(),
+      );
+
+      final startFuture = runtime.start();
+      await Future<void>.delayed(Duration.zero);
+      fakeTransport.releaseStart();
+      await startFuture;
+
+      await runtime.flushPendingNow();
+
+      expect(fakeTransport.sentBundles, hasLength(3));
+      expect(fakeTransport.sentBundles.first.peerNodeId, 'node-b');
+      expect(
+        fakeTransport.sentBundles.map((record) => record.peerNodeId).toSet(),
+        <String>{'node-b', 'node-c', 'node-d'},
+      );
+      expect(
+        fakeTransport.sentBundles.every(
+          (record) => record.bundle.hopCount == 1,
+        ),
+        isTrue,
+      );
+      expect(fakeBundles.getSavedBundle('outbound-fanout-1')?.hopCount, 0);
+      expect(
+        fakeBundles.getSavedBundle('outbound-fanout-1')?.acknowledged,
+        isFalse,
+      );
+      expect(
+        fakeBundles.getSavedBundle('outbound-fanout-1')?.sentAt,
+        isNotNull,
+      );
+
+      await runtime.stop();
+      await runtime.dispose();
+    },
+  );
+
+  test(
+    'runtime relays non-web broadcast bundles without broadcast ACKs',
+    () async {
+      final now = DateTime.now();
+      final broadcastBundle = Bundle(
+        bundleId: 'broadcast-chat-1',
+        type: Bundle.typeChatMessage,
+        sourceNodeId: 'node-a',
+        destinationNodeId: null,
+        destinationScope: BundleDestinationScope.broadcast,
+        payload: 'hello everyone',
+        createdAt: now,
+        ttlSeconds: 3600,
+        signature: 'signature-broadcast',
+        sourcePublicKey: 'public-key-node-a',
+      );
+
+      final fakeTransport = _FakeTransportAdapter();
+      final fakeBundles = _FakeBundleRepository();
+      final runtime = NodeRuntime(
+        localNodeId: 'node-b',
+        discovery: _FakeDiscoveryAdapter(),
+        transport: fakeTransport,
+        bundles: fakeBundles,
+        peers: _FakePeerRepository(
+          initialPeers: <PeerContact>[
+            PeerContact(
+              nodeId: 'node-a',
+              host: '192.168.1.20',
+              port: 4040,
+              lastSeen: now,
+            ),
+            PeerContact(
+              nodeId: 'node-c',
+              host: '192.168.1.21',
+              port: 4041,
+              lastSeen: now,
+            ),
+            PeerContact(
+              nodeId: 'node-d',
+              host: '192.168.1.22',
+              port: 4042,
+              lastSeen: now,
+            ),
+          ],
+        ),
+        contentStore: _FakeContentStore(),
+        bundleSignatureService: _FakeBundleSignatureService(),
+      );
+
+      final startFuture = runtime.start();
+      await Future<void>.delayed(Duration.zero);
+      fakeTransport.releaseStart();
+      await startFuture;
+
+      fakeTransport.emitIncoming(broadcastBundle);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(fakeTransport.sentBundles, hasLength(2));
+      expect(
+        fakeTransport.sentBundles.map((record) => record.peerNodeId).toSet(),
+        <String>{'node-c', 'node-d'},
+      );
+      expect(
+        fakeTransport.sentBundles.every(
+          (record) => record.bundle.bundleId == 'broadcast-chat-1',
+        ),
+        isTrue,
+      );
+      expect(
+        fakeTransport.sentBundles.any(
+          (record) => record.bundle.type == Bundle.typeAck,
+        ),
+        isFalse,
+      );
+
+      await runtime.stop();
+      await runtime.dispose();
+    },
+  );
 }
 
 class _FakeDiscoveryAdapter implements DiscoveryAdapter {
@@ -679,7 +849,11 @@ class _FakeBundleRepository implements BundleRepository {
     Map<String, Bundle>? existingBundlesById,
     List<Bundle>? pendingBundles,
   }) : existingBundlesById = existingBundlesById ?? <String, Bundle>{},
-       pendingBundles = pendingBundles ?? <Bundle>[];
+       pendingBundles = pendingBundles ?? <Bundle>[] {
+    for (final bundle in this.pendingBundles) {
+      this.existingBundlesById.putIfAbsent(bundle.bundleId, () => bundle);
+    }
+  }
 
   @override
   Future<void> saveContentMetadata(ContentMetadataRecord metadata) async {}

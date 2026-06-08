@@ -334,61 +334,68 @@ class NodeRuntime {
           continue;
         }
 
-        final peer = _pickTargetPeer(bundle, peers);
-        if (peer == null) {
+        final targetPeers = _pickTargetPeers(bundle, peers);
+        if (targetPeers.isEmpty) {
           continue;
         }
 
         final nextHopBundle = bundle.copyWith(hopCount: bundle.hopCount + 1);
+        var sentAny = false;
+        Object? lastError;
 
-        try {
-          _updateTelemetry(
-            (t) => t.copyWith(outboundSendAttempts: t.outboundSendAttempts + 1),
-          );
-          await _transport.sendBundle(
-            peerNodeId: peer.nodeId,
-            bundle: nextHopBundle,
-          );
-          _logger?.info(
-            'bundle_sent',
-            scope: 'runtime',
-            fields: {
-              'bundleId': bundle.bundleId,
-              'type': bundle.type,
-              'peerNodeId': peer.nodeId,
-            },
-          );
-          _recordPeerSendSuccess(peer.nodeId);
-          _updateTelemetry(
-            (t) =>
-                t.copyWith(outboundSendSuccesses: t.outboundSendSuccesses + 1),
-          );
-          await _bundles.save(nextHopBundle);
-          if (bundle.isAck) {
-            await _bundles.markAcknowledged(bundle.bundleId);
-          } else {
-            await _bundles.markSent(bundle.bundleId);
+        for (final peer in targetPeers) {
+          try {
+            _updateTelemetry(
+              (t) =>
+                  t.copyWith(outboundSendAttempts: t.outboundSendAttempts + 1),
+            );
+            await _transport.sendBundle(
+              peerNodeId: peer.nodeId,
+              bundle: nextHopBundle,
+            );
+            _logger?.info(
+              'bundle_sent',
+              scope: 'runtime',
+              fields: {
+                'bundleId': bundle.bundleId,
+                'type': bundle.type,
+                'peerNodeId': peer.nodeId,
+              },
+            );
+            _recordPeerSendSuccess(peer.nodeId);
+            _updateTelemetry(
+              (t) => t.copyWith(
+                outboundSendSuccesses: t.outboundSendSuccesses + 1,
+              ),
+            );
+            sentAny = true;
+          } catch (error) {
+            lastError = error;
+            _logger?.warning(
+              'bundle_send_failed',
+              scope: 'runtime',
+              fields: {
+                'bundleId': bundle.bundleId,
+                'type': bundle.type,
+                'peerNodeId': peer.nodeId,
+                'error': error.toString(),
+              },
+            );
+            _recordPeerSendFailure(peer.nodeId);
+            _updateTelemetry(
+              (t) =>
+                  t.copyWith(outboundSendFailures: t.outboundSendFailures + 1),
+            );
           }
-        } catch (error) {
-          _logger?.warning(
-            'bundle_send_failed',
-            scope: 'runtime',
-            fields: {
-              'bundleId': bundle.bundleId,
-              'type': bundle.type,
-              'peerNodeId': peer.nodeId,
-              'error': error.toString(),
-            },
-          );
-          _recordPeerSendFailure(peer.nodeId);
-          _updateTelemetry(
-            (t) => t.copyWith(outboundSendFailures: t.outboundSendFailures + 1),
-          );
+        }
+
+        if (sentAny) {
+          await _bundles.markSent(bundle.bundleId);
+        } else if (lastError != null) {
           await _bundles.markSendFailed(
             bundle.bundleId,
-            errorMessage: error.toString(),
+            errorMessage: lastError.toString(),
           );
-          // Keep the bundle pending for retry on next cycle.
         }
       }
     } finally {
@@ -573,36 +580,27 @@ class NodeRuntime {
     _peerCountController.add(_peerCount);
   }
 
-  DiscoveredPeer? _pickTargetPeer(Bundle bundle, List<DiscoveredPeer> peers) {
+  List<DiscoveredPeer> _pickTargetPeers(
+    Bundle bundle,
+    List<DiscoveredPeer> peers,
+  ) {
     final destinationId = bundle.destinationNodeId;
-    if (destinationId != null) {
-      final directPeer = _peers[destinationId];
-      if (directPeer != null) {
-        if (directPeer.nodeId == _localNodeId) {
-          return null;
-        }
-        return directPeer;
-      }
-      final relayPeers = _rankPeersForBundle(
-        bundle,
-        _pickRelayPeers(bundle, peers),
-      );
-      if (relayPeers.isEmpty) {
-        return null;
-      }
-      return relayPeers.first;
-    }
-    if (peers.isEmpty) {
-      return null;
-    }
     final rankedPeers = _rankPeersForBundle(
       bundle,
       _pickRelayPeers(bundle, peers),
     );
-    if (rankedPeers.isEmpty) {
-      return null;
+    if (destinationId == null || rankedPeers.length < 2) {
+      return rankedPeers;
     }
-    return rankedPeers.first;
+
+    final directIndex = rankedPeers.indexWhere(
+      (peer) => peer.nodeId == destinationId,
+    );
+    if (directIndex <= 0) {
+      return rankedPeers;
+    }
+    final directPeer = rankedPeers.removeAt(directIndex);
+    return <DiscoveredPeer>[directPeer, ...rankedPeers];
   }
 
   List<DiscoveredPeer> _pickRelayPeers(
@@ -614,14 +612,9 @@ class NodeRuntime {
     }
 
     final String sourceNodeId = bundle.sourceNodeId;
-    final String? destinationNodeId = bundle.destinationNodeId;
-
     return peers
         .where(
-          (peer) =>
-              peer.nodeId != _localNodeId &&
-              peer.nodeId != sourceNodeId &&
-              (destinationNodeId == null || peer.nodeId != destinationNodeId),
+          (peer) => peer.nodeId != _localNodeId && peer.nodeId != sourceNodeId,
         )
         .toList(growable: false);
   }
@@ -671,15 +664,6 @@ class NodeRuntime {
             priorityWeight);
 
     return recencyScore + reliability;
-  }
-
-  int _relayFanoutFor(BundlePriority priority) {
-    return switch (priority) {
-      BundlePriority.low => 1,
-      BundlePriority.normal => 1,
-      BundlePriority.high => 2,
-      BundlePriority.critical => 3,
-    };
   }
 
   void _recordPeerSendSuccess(String peerNodeId) {
@@ -754,22 +738,18 @@ class NodeRuntime {
       return;
     }
 
-    if (bundle.destinationNodeId != null &&
-        bundle.destinationNodeId != _localNodeId &&
-        !bundle.isSyncRejection) {
+    final bool isForLocalNode =
+        bundle.isBroadcast || bundle.destinationNodeId == _localNodeId;
+    if (isForLocalNode || bundle.isAck || bundle.isSyncRejection) {
+      await _routeInboundBundle(bundle);
+    }
+
+    if (bundle.sourceNodeId != _localNodeId &&
+        !bundle.isSyncRejection &&
+        bundle.isForwardable(maxHopCount: maxHopCount)) {
       await _forwardInboundBundle(bundle);
       return;
     }
-
-    if (bundle.isBroadcast && bundle.isWebBundle) {
-      await _routeInboundBundle(bundle);
-      if (bundle.sourceNodeId != _localNodeId) {
-        await _forwardInboundBundle(bundle);
-      }
-      return;
-    }
-
-    await _routeInboundBundle(bundle);
   }
 
   Future<void> _forwardInboundBundle(Bundle bundle) async {
@@ -798,20 +778,13 @@ class NodeRuntime {
       bundle,
       _pickRelayPeers(bundle, peers),
     );
-    final int fanout = bundle.isAck
-        ? rankedRelays.length
-        : _relayFanoutFor(bundle.priority);
-
     final List<DiscoveredPeer> relayTargets = <DiscoveredPeer>[
       ...directTarget == null
           ? const <DiscoveredPeer>[]
           : <DiscoveredPeer>[directTarget],
-      ...rankedRelays
-          .where(
-            (peer) =>
-                directTarget == null || peer.nodeId != directTarget.nodeId,
-          )
-          .take(fanout),
+      ...rankedRelays.where(
+        (peer) => directTarget == null || peer.nodeId != directTarget.nodeId,
+      ),
     ];
 
     if (relayTargets.isEmpty) {
@@ -820,12 +793,14 @@ class NodeRuntime {
 
     final Bundle relayedBundle = bundle.copyWith(hopCount: bundle.hopCount + 1);
 
+    var sentAny = false;
     for (final peer in relayTargets) {
       try {
         await _transport.sendBundle(
           peerNodeId: peer.nodeId,
           bundle: relayedBundle,
         );
+        sentAny = true;
         _recordPeerSendSuccess(peer.nodeId);
         _updateTelemetry(
           (t) => t.copyWith(inboundBundlesRelayed: t.inboundBundlesRelayed + 1),
@@ -836,7 +811,9 @@ class NodeRuntime {
       }
     }
 
-    await _bundles.markAcknowledged(bundle.bundleId);
+    if (sentAny) {
+      await _bundles.markSent(bundle.bundleId);
+    }
   }
 
   Future<void> _routeInboundBundle(Bundle bundle) {
@@ -872,7 +849,9 @@ class NodeRuntime {
   Future<void> _handleInboundWebIndexUpdate(Bundle bundle) async {
     await _webSearchResultIngestionService?.ingestIndexUpdateBundle(bundle);
     await _bundles.markAcknowledged(bundle.bundleId);
-    await _enqueueAckBundleFor(bundle);
+    if (!bundle.isBroadcast) {
+      await _enqueueAckBundleFor(bundle);
+    }
   }
 
   Future<void> _handleInboundFileShareMetadata(Bundle bundle) async {
@@ -881,7 +860,9 @@ class NodeRuntime {
     final String? contentHash = bundle.payloadReference;
     final Map<String, Object?>? manifest = _decodeObjectPayload(bundle.payload);
     if (contentHash == null || contentHash.isEmpty || manifest == null) {
-      await _enqueueAckBundleFor(bundle);
+      if (!bundle.isBroadcast) {
+        await _enqueueAckBundleFor(bundle);
+      }
       return;
     }
 
@@ -897,7 +878,9 @@ class NodeRuntime {
       ),
     );
 
-    await _enqueueAckBundleFor(bundle);
+    if (!bundle.isBroadcast) {
+      await _enqueueAckBundleFor(bundle);
+    }
   }
 
   Future<void> _handleInboundFileShareChunk(Bundle bundle) async {
@@ -974,7 +957,9 @@ class NodeRuntime {
       }
     }
 
-    await _enqueueAckBundleFor(bundle);
+    if (!bundle.isBroadcast) {
+      await _enqueueAckBundleFor(bundle);
+    }
   }
 
   Map<String, Object?>? _decodeObjectPayload(String? payload) {
@@ -1030,7 +1015,9 @@ class NodeRuntime {
       // Apply wallet event immediately so recipient is credited on receipt.
       await _walletSyncReconciliationService?.applyInboundWalletBundle(bundle);
     }
-    await _enqueueAckBundleFor(bundle);
+    if (!bundle.isBroadcast) {
+      await _enqueueAckBundleFor(bundle);
+    }
   }
 
   Future<void> _pruneExpiredBundlesLocked() async {
