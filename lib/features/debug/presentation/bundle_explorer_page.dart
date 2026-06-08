@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offlimu/core/di/providers.dart';
 import 'package:offlimu/domain/entities/bundle.dart';
-import 'package:offlimu/shared/widgets/subtle_retry_button.dart';
+import 'package:offlimu/core/widgets/subtle_retry_button.dart';
 
 class BundleExplorerPage extends ConsumerStatefulWidget {
   const BundleExplorerPage({super.key});

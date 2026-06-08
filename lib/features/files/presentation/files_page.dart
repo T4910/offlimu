@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offlimu/core/di/providers.dart';
 import 'package:offlimu/domain/entities/file_transfer_explorer_item.dart';
 import 'package:offlimu/domain/services/content_store.dart';
-import 'package:offlimu/shared/widgets/subtle_retry_button.dart';
+import 'package:offlimu/core/widgets/subtle_retry_button.dart';
 
 enum _FilesView { explorer, details }
 
