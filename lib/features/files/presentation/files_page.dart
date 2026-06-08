@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:offlimu/core/di/providers.dart';
 import 'package:offlimu/domain/entities/file_transfer_explorer_item.dart';
 import 'package:offlimu/domain/services/content_store.dart';
 import 'package:offlimu/core/widgets/subtle_retry_button.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum _FilesView { explorer, details }
 
@@ -111,7 +113,10 @@ class _FilesPageState extends ConsumerState<FilesPage> {
                   child: _activeView == _FilesView.explorer
                       ? _FileExplorerList(
                           items: items,
-                          onTap: (item) => _showTransferDetails(context, item),
+                          onTap: (item) => item.status.isComplete
+                              ? _openFileOutsideApp(item)
+                              : _showTransferDetails(context, item),
+                          onOpen: _openFileOutsideApp,
                           onResend: _resendFileTransfer,
                         )
                       : _TransferDetailsList(
@@ -400,9 +405,23 @@ class _FilesPageState extends ConsumerState<FilesPage> {
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Navigator.of(sheetContext).pop(),
-                  child: const Text('Close'),
+                child: Wrap(
+                  spacing: 8,
+                  children: <Widget>[
+                    if (item.status.isComplete)
+                      FilledButton.icon(
+                        onPressed: () {
+                          Navigator.of(sheetContext).pop();
+                          _openFileOutsideApp(item);
+                        },
+                        icon: const Icon(Icons.open_in_new_rounded),
+                        label: const Text('Open'),
+                      ),
+                    TextButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      child: const Text('Close'),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -430,6 +449,69 @@ class _FilesPageState extends ConsumerState<FilesPage> {
     );
   }
 
+  Future<void> _openFileOutsideApp(FileTransferExplorerItem item) async {
+    if (item.status != FileTransferStatus.complete) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            item.status == FileTransferStatus.failed
+                ? 'File transfer failed. Resend it before opening.'
+                : 'File is still downloading. ${item.chunkSummary} available.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final path = item.localPath;
+    if (path == null || path.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No local file path is available.')),
+      );
+      return;
+    }
+
+    final file = File(path);
+    final exists = await file.exists();
+    if (!mounted) {
+      return;
+    }
+    if (!exists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('File is no longer available locally.')),
+      );
+      return;
+    }
+
+    try {
+      final opened = await launchUrl(
+        Uri.file(file.absolute.path),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!mounted) {
+        return;
+      }
+      if (!opened) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No app was available to open file.')),
+        );
+      }
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open file externally.')),
+      );
+    }
+  }
+
   String? _resolveMimeType(PlatformFile file) {
     final extension = file.extension?.toLowerCase();
     if (extension == null || extension.isEmpty) {
@@ -443,11 +525,13 @@ class _FileTransferCard extends StatelessWidget {
   const _FileTransferCard({
     required this.item,
     required this.onTap,
+    required this.onOpen,
     required this.onResend,
   });
 
   final FileTransferExplorerItem item;
   final VoidCallback onTap;
+  final VoidCallback onOpen;
   final VoidCallback onResend;
 
   @override
@@ -516,6 +600,13 @@ class _FileTransferCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         _TransferStatusChip(item: item),
+                        if (item.status.isComplete)
+                          IconButton(
+                            tooltip: 'Open file',
+                            icon: const Icon(Icons.open_in_new_rounded),
+                            onPressed: onOpen,
+                            visualDensity: VisualDensity.compact,
+                          ),
                         SubtleRetryButton(
                           tooltip: 'Resend file',
                           onPressed: onResend,
@@ -565,11 +656,13 @@ class _FileExplorerList extends StatelessWidget {
   const _FileExplorerList({
     required this.items,
     required this.onTap,
+    required this.onOpen,
     required this.onResend,
   });
 
   final List<FileTransferExplorerItem> items;
   final ValueChanged<FileTransferExplorerItem> onTap;
+  final ValueChanged<FileTransferExplorerItem> onOpen;
   final ValueChanged<FileTransferExplorerItem> onResend;
 
   @override
@@ -583,6 +676,7 @@ class _FileExplorerList extends StatelessWidget {
         return _FileTransferCard(
           item: item,
           onTap: () => onTap(item),
+          onOpen: () => onOpen(item),
           onResend: () => onResend(item),
         );
       },
@@ -675,6 +769,10 @@ class _TransferStatusChip extends StatelessWidget {
       labelStyle: TextStyle(color: accent, fontWeight: FontWeight.w700),
     );
   }
+}
+
+extension on FileTransferStatus {
+  bool get isComplete => this == FileTransferStatus.complete;
 }
 
 Color _statusAccent(FileTransferStatus status) {
