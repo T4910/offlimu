@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:offlimu/core/di/providers.dart';
+import 'package:offlimu/domain/entities/pending_web_search_request.dart';
 import 'package:offlimu/domain/entities/web_index_entry.dart';
 
 class SearchPage extends ConsumerStatefulWidget {
@@ -30,6 +31,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           ? recentWebIndexEntriesProvider
           : webSearchEntriesProvider(_query),
     );
+    final pendingRequests = ref.watch(pendingWebSearchRequestsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Offline Search')),
@@ -68,6 +70,21 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     ),
                   ),
                 ],
+                pendingRequests.when(
+                  data: (items) => items.isEmpty
+                      ? const SizedBox.shrink()
+                      : _PendingSearchRequests(requests: items),
+                  loading: () => const SizedBox.shrink(),
+                  error: (error, stackTrace) => Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      'Pending search requests unavailable: $error',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 28),
                 entries.when(
                   data: (items) => _SearchResults(
@@ -133,6 +150,95 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         setState(() => _requesting = false);
       }
     }
+  }
+}
+
+class _PendingSearchRequests extends StatelessWidget {
+  const _PendingSearchRequests({required this.requests});
+
+  final List<PendingWebSearchRequest> requests;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    return Padding(
+      padding: const EdgeInsets.only(top: 18),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.86),
+              border: Border.all(color: const Color(0xFFC9DEC4)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'Pending requests',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: const Color(0xFF214B2A),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...requests.map(
+                    (request) => _PendingSearchTile(request: request, now: now),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PendingSearchTile extends StatelessWidget {
+  const _PendingSearchTile({required this.request, required this.now});
+
+  final PendingWebSearchRequest request;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final ttl = request.timeToLive(now);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        children: <Widget>[
+          const Icon(Icons.wifi_tethering_rounded, color: Color(0xFF2F7A3A)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  request.query,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  'Waiting for gateway • requested ${_relativeSearchTime(request.createdAt, now)} • expires in ${_formatTtl(ttl)}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF536B58),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -371,6 +477,33 @@ class _SearchBackground extends StatelessWidget {
       child: CustomPaint(painter: _GridPainter()),
     );
   }
+}
+
+String _relativeSearchTime(DateTime timestamp, DateTime now) {
+  final difference = now.difference(timestamp);
+  if (difference.inSeconds < 60) {
+    return '< 1 min ago';
+  }
+  if (difference.inMinutes < 60) {
+    return '${difference.inMinutes} min ago';
+  }
+  if (difference.inHours < 24) {
+    return '${difference.inHours} hr ago';
+  }
+  return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+}
+
+String _formatTtl(Duration duration) {
+  if (duration.inMinutes < 1) {
+    return '< 1 min';
+  }
+  if (duration.inHours < 1) {
+    return '${duration.inMinutes} min';
+  }
+  if (duration.inDays < 1) {
+    return '${duration.inHours} hr';
+  }
+  return '${duration.inDays} day${duration.inDays == 1 ? '' : 's'}';
 }
 
 class _GridPainter extends CustomPainter {

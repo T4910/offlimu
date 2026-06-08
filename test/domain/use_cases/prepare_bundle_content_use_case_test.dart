@@ -76,6 +76,14 @@ class _FakeContentStore implements ContentStore {
   }
 
   @override
+  Future<void> delete({required String contentHash}) async {
+    if (lastSavedHash == contentHash) {
+      lastSavedHash = null;
+      lastSavedBytes = null;
+    }
+  }
+
+  @override
   Future<void> clear() async {}
 }
 
@@ -100,6 +108,13 @@ class _FakeBundleRepository implements BundleRepository {
       }
     }
     return Future<ContentMetadataRecord?>.value(null);
+  }
+
+  @override
+  Future<void> deleteContentMetadata(String contentHash) async {
+    savedMetadata.removeWhere(
+      (metadata) => metadata.contentHash == contentHash,
+    );
   }
 
   @override

@@ -11,6 +11,26 @@ enum RuntimeHealth {
   stopping,
 }
 
+enum PeerActivityStatus { active, degraded, offline }
+
+class PeerActivitySnapshot {
+  const PeerActivitySnapshot({
+    required this.nodeId,
+    required this.status,
+    required this.lastReachableAt,
+    required this.lastSeenAt,
+    required this.consecutiveFailures,
+  });
+
+  final String nodeId;
+  final PeerActivityStatus status;
+  final DateTime? lastReachableAt;
+  final DateTime? lastSeenAt;
+  final int consecutiveFailures;
+
+  bool get isActive => status == PeerActivityStatus.active;
+}
+
 class RuntimeTelemetry {
   const RuntimeTelemetry({
     this.discoveryEvents = 0,

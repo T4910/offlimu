@@ -80,6 +80,9 @@ class _FakeContentStore implements ContentStore {
   Future<Uint8List?> read({required String contentHash}) async => null;
 
   @override
+  Future<void> delete({required String contentHash}) async {}
+
+  @override
   Future<void> clear() async {}
 }
 

@@ -87,6 +87,13 @@ class DriftBundleRepository implements BundleRepository {
   }
 
   @override
+  Future<void> deleteContentMetadata(String contentHash) async {
+    await (_db.delete(
+      _db.contentMetadata,
+    )..where((tbl) => tbl.contentHash.equals(contentHash))).go();
+  }
+
+  @override
   Future<List<Bundle>> getAllBundles() async {
     final List<BundleRecord> rows = await _allBundlesQuery().get();
     return rows.map(_toEntity).toList(growable: false);

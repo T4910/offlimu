@@ -125,64 +125,54 @@ class _CommerceProductDetailPageState
             return const Center(child: Text('Product not found.'));
           }
           final isOwnProduct = product.vendorNodeId == localNodeId;
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: <Widget>[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: AspectRatio(
-                  aspectRatio: 16 / 10,
-                  child: _ProductImage(product: product),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                product.title,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(product.description),
-              const SizedBox(height: 16),
-              _InfoRow(label: 'Vendor', value: product.vendorNodeId),
-              _InfoRow(label: 'Price', value: product.priceLabel),
-              _InfoRow(
-                label: 'Status',
-                value: product.isAvailable ? 'Available' : 'Out of stock',
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _detailsController,
-                enabled: product.isAvailable && !isOwnProduct && !_submitting,
-                minLines: 4,
-                maxLines: 7,
-                decoration: const InputDecoration(
-                  labelText: 'Delivery address and notes',
-                  alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 14),
-              FilledButton.icon(
-                onPressed: product.isAvailable && !isOwnProduct && !_submitting
-                    ? () => _submitOrder(product)
-                    : null,
-                icon: _submitting
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.shopping_bag_rounded),
-                label: Text(
-                  isOwnProduct
-                      ? 'This is your listing'
-                      : product.isAvailable
-                      ? 'Buy for ${product.priceLabel}'
-                      : 'Out of stock',
-                ),
-              ),
-            ],
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final details = _ProductDetailsPanel(
+                product: product,
+                detailsController: _detailsController,
+                isOwnProduct: isOwnProduct,
+                submitting: _submitting,
+                onSubmit: () => _submitOrder(product),
+              );
+
+              if (constraints.maxWidth >= 760) {
+                return ListView(
+                  padding: const EdgeInsets.all(24),
+                  children: <Widget>[
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1120),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Flexible(
+                              flex: 5,
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 520,
+                                ),
+                                child: _ProductHeroImage(product: product),
+                              ),
+                            ),
+                            const SizedBox(width: 28),
+                            Expanded(flex: 6, child: details),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              return ListView(
+                padding: const EdgeInsets.all(16),
+                children: <Widget>[
+                  _ProductHeroImage(product: product),
+                  const SizedBox(height: 16),
+                  details,
+                ],
+              );
+            },
           );
         },
       ),
@@ -218,6 +208,94 @@ class _CommerceProductDetailPageState
         setState(() => _submitting = false);
       }
     }
+  }
+}
+
+class _ProductHeroImage extends StatelessWidget {
+  const _ProductHeroImage({required this.product});
+
+  final CommerceProduct product;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: AspectRatio(
+        aspectRatio: 16 / 10,
+        child: _ProductImage(product: product),
+      ),
+    );
+  }
+}
+
+class _ProductDetailsPanel extends StatelessWidget {
+  const _ProductDetailsPanel({
+    required this.product,
+    required this.detailsController,
+    required this.isOwnProduct,
+    required this.submitting,
+    required this.onSubmit,
+  });
+
+  final CommerceProduct product;
+  final TextEditingController detailsController;
+  final bool isOwnProduct;
+  final bool submitting;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(
+          product.title,
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 8),
+        Text(product.description),
+        const SizedBox(height: 16),
+        _InfoRow(label: 'Vendor', value: product.vendorNodeId),
+        _InfoRow(label: 'Price', value: product.priceLabel),
+        _InfoRow(
+          label: 'Status',
+          value: product.isAvailable ? 'Available' : 'Out of stock',
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: detailsController,
+          enabled: product.isAvailable && !isOwnProduct && !submitting,
+          minLines: 4,
+          maxLines: 7,
+          decoration: const InputDecoration(
+            labelText: 'Delivery address and notes',
+            alignLabelWithHint: true,
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 14),
+        FilledButton.icon(
+          onPressed: product.isAvailable && !isOwnProduct && !submitting
+              ? onSubmit
+              : null,
+          icon: submitting
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.shopping_bag_rounded),
+          label: Text(
+            isOwnProduct
+                ? 'This is your listing'
+                : product.isAvailable
+                ? 'Buy for ${product.priceLabel}'
+                : 'Out of stock',
+          ),
+        ),
+      ],
+    );
   }
 }
 

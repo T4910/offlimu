@@ -7,6 +7,7 @@ abstract interface class BundleRepository {
   Future<Bundle?> getById(String bundleId);
   Future<void> saveContentMetadata(ContentMetadataRecord metadata);
   Future<ContentMetadataRecord?> getContentMetadata(String contentHash);
+  Future<void> deleteContentMetadata(String contentHash);
   Stream<List<ContentMetadataRecord>> watchRecentContentMetadata({
     int limit = 50,
   });

@@ -166,6 +166,11 @@ class _MemoryContentStore implements ContentStore {
   }
 
   @override
+  Future<void> delete({required String contentHash}) async {
+    _bytesByHash.remove(contentHash);
+  }
+
+  @override
   Future<void> clear() async {
     _bytesByHash.clear();
   }

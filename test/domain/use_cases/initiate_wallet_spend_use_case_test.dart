@@ -101,6 +101,10 @@ class _FakeBundleRepository implements BundleRepository {
       throw UnimplementedError();
 
   @override
+  Future<void> deleteContentMetadata(String contentHash) =>
+      throw UnimplementedError();
+
+  @override
   Future<List<Bundle>> getPendingBundles() => throw UnimplementedError();
 
   @override

@@ -15,6 +15,7 @@ class NodeStatusPage extends ConsumerWidget {
 
     final runtimeAsync = ref.watch(nodeRuntimeStateProvider);
     final peerContactsAsync = ref.watch(peerContactsProvider);
+    final peerActivityAsync = ref.watch(peerActivitySnapshotsProvider);
     final syncState = ref.watch(syncRunStateProvider);
     final gatewayEnabled = ref.watch(gatewayEnabledProvider);
     final gatewaySyncStatus = ref.watch(gatewaySyncStatusProvider);
@@ -38,6 +39,7 @@ class NodeStatusPage extends ConsumerWidget {
               const SizedBox(height: 10),
               _PeerHistoryCard(
                 peersAsync: peerContactsAsync,
+                activityAsync: peerActivityAsync,
                 onRefreshPeers: () async {
                   try {
                     await nodeRuntime.refreshPeersNow();
@@ -263,11 +265,13 @@ class _QuickActionsCard extends StatelessWidget {
 class _PeerHistoryCard extends StatelessWidget {
   const _PeerHistoryCard({
     required this.peersAsync,
+    required this.activityAsync,
     required this.onRefreshPeers,
     required this.onCopyPeer,
   });
 
   final AsyncValue<List<PeerContact>> peersAsync;
+  final AsyncValue<Map<String, PeerActivitySnapshot>> activityAsync;
   final Future<void> Function() onRefreshPeers;
   final ValueChanged<String> onCopyPeer;
 
@@ -314,6 +318,7 @@ class _PeerHistoryCard extends StatelessWidget {
                       .map<Widget>(
                         (peer) => _PeerTile(
                           peer: peer,
+                          activity: activityAsync.valueOrNull?[peer.nodeId],
                           onCopy: () => onCopyPeer(peer.nodeId),
                         ),
                       )
@@ -329,15 +334,21 @@ class _PeerHistoryCard extends StatelessWidget {
 }
 
 class _PeerTile extends StatelessWidget {
-  const _PeerTile({required this.peer, required this.onCopy});
+  const _PeerTile({
+    required this.peer,
+    required this.activity,
+    required this.onCopy,
+  });
 
   final PeerContact peer;
+  final PeerActivitySnapshot? activity;
   final VoidCallback onCopy;
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final active = now.difference(peer.lastSeen).inSeconds <= 60;
+    final status = activity?.status ?? _statusFromLastSeen(peer.lastSeen, now);
+    final lastConnected = activity?.lastReachableAt ?? peer.lastSeen;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: DecoratedBox(
@@ -351,12 +362,12 @@ class _PeerTile extends StatelessWidget {
           title: Row(
             children: <Widget>[
               Expanded(child: Text(_shortNodeId(peer.nodeId))),
-              _PeerBadge(active: active),
+              _PeerBadge(status: status),
             ],
           ),
           subtitle: Text(
             '${peer.host}:${peer.port} • seen ${peer.seenCount}x\n'
-            'Last connected ${_relativeTime(peer.lastSeen, now)}',
+            'Last connected ${_relativeTime(lastConnected, now)}',
           ),
           isThreeLine: true,
           trailing: IconButton(
@@ -368,6 +379,12 @@ class _PeerTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  PeerActivityStatus _statusFromLastSeen(DateTime lastSeen, DateTime now) {
+    return now.difference(lastSeen).inSeconds <= 60
+        ? PeerActivityStatus.active
+        : PeerActivityStatus.offline;
   }
 }
 
@@ -514,17 +531,25 @@ class _ActionButton extends StatelessWidget {
 }
 
 class _PeerBadge extends StatelessWidget {
-  const _PeerBadge({required this.active});
+  const _PeerBadge({required this.status});
 
-  final bool active;
+  final PeerActivityStatus status;
 
   @override
   Widget build(BuildContext context) {
+    final active = status == PeerActivityStatus.active;
+    final degraded = status == PeerActivityStatus.degraded;
     return Chip(
-      label: Text(active ? 'Active' : 'Offline'),
+      label: Text(switch (status) {
+        PeerActivityStatus.active => 'Active',
+        PeerActivityStatus.degraded => 'Degraded',
+        PeerActivityStatus.offline => 'Offline',
+      }),
       visualDensity: VisualDensity.compact,
       backgroundColor: active
           ? Theme.of(context).colorScheme.primaryContainer
+          : degraded
+          ? Theme.of(context).colorScheme.secondaryContainer
           : Theme.of(context).colorScheme.surfaceContainerHighest,
     );
   }

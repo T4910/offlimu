@@ -25,5 +25,7 @@ abstract interface class ContentStore {
 
   Future<Uint8List?> read({required String contentHash});
 
+  Future<void> delete({required String contentHash});
+
   Future<void> clear();
 }

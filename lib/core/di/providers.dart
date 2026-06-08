@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -18,6 +19,7 @@ import 'package:offlimu/domain/entities/file_transfer_explorer_item.dart';
 import 'package:offlimu/domain/entities/node_identity.dart';
 import 'package:offlimu/domain/entities/node_public_identity.dart';
 import 'package:offlimu/domain/entities/peer_contact.dart';
+import 'package:offlimu/domain/entities/pending_web_search_request.dart';
 import 'package:offlimu/domain/entities/sync_job_history_entry.dart';
 import 'package:offlimu/domain/entities/wallet_ledger_entry.dart';
 import 'package:offlimu/domain/entities/web_index_entry.dart';
@@ -42,6 +44,7 @@ import 'package:offlimu/domain/use_cases/chat_message_bundle_mapper.dart';
 import 'package:offlimu/domain/use_cases/commerce_order_actions_use_case.dart';
 import 'package:offlimu/domain/use_cases/prepare_bundle_content_use_case.dart';
 import 'package:offlimu/domain/use_cases/receive_chat_message_use_case.dart';
+import 'package:offlimu/domain/use_cases/remove_file_transfer_use_case.dart';
 import 'package:offlimu/domain/use_cases/resend_bundle_use_case.dart';
 import 'package:offlimu/domain/use_cases/initiate_wallet_spend_use_case.dart';
 import 'package:offlimu/domain/use_cases/publish_product_use_case.dart';
@@ -200,6 +203,14 @@ final Provider<ResendBundleUseCase> resendBundleUseCaseProvider =
     Provider<ResendBundleUseCase>(
       (ref) =>
           ResendBundleUseCase(bundles: ref.watch(bundleRepositoryProvider)),
+    );
+
+final Provider<RemoveFileTransferUseCase> removeFileTransferUseCaseProvider =
+    Provider<RemoveFileTransferUseCase>(
+      (ref) => RemoveFileTransferUseCase(
+        bundles: ref.watch(bundleRepositoryProvider),
+        contentStore: ref.watch(contentStoreProvider),
+      ),
     );
 
 final Provider<ChatMessageBundleMapper> chatMessageBundleMapperProvider =
@@ -510,6 +521,38 @@ final StreamProvider<List<WebIndexEntry>> recentWebIndexEntriesProvider =
       (ref) => ref.watch(webSearchRepositoryProvider).watchRecent(limit: 50),
     );
 
+final Provider<AsyncValue<List<PendingWebSearchRequest>>>
+pendingWebSearchRequestsProvider =
+    Provider<AsyncValue<List<PendingWebSearchRequest>>>((ref) {
+      final bundlesAsync = ref.watch(allBundlesProvider);
+      final entriesAsync = ref.watch(recentWebIndexEntriesProvider);
+      final localNodeId = ref.watch(localNodeIdentityProvider).nodeId;
+
+      if (bundlesAsync.hasError) {
+        return AsyncValue.error(
+          bundlesAsync.error!,
+          bundlesAsync.stackTrace ?? StackTrace.current,
+        );
+      }
+      if (entriesAsync.hasError) {
+        return AsyncValue.error(
+          entriesAsync.error!,
+          entriesAsync.stackTrace ?? StackTrace.current,
+        );
+      }
+      if (!bundlesAsync.hasValue || !entriesAsync.hasValue) {
+        return const AsyncValue.loading();
+      }
+
+      return AsyncValue.data(
+        _buildPendingWebSearchRequests(
+          bundles: bundlesAsync.value!,
+          entries: entriesAsync.value!,
+          localNodeId: localNodeId,
+        ),
+      );
+    });
+
 final StreamProviderFamily<List<WebIndexEntry>, String>
 webSearchEntriesProvider = StreamProvider.family<List<WebIndexEntry>, String>(
   (ref, query) =>
@@ -804,6 +847,14 @@ final StreamProvider<RuntimeTelemetry> runtimeTelemetryProvider =
       yield* runtime.telemetryStream;
     });
 
+final StreamProvider<Map<String, PeerActivitySnapshot>>
+peerActivitySnapshotsProvider =
+    StreamProvider<Map<String, PeerActivitySnapshot>>((ref) async* {
+      final runtime = ref.watch(nodeRuntimeProvider);
+      yield runtime.peerActivitySnapshot;
+      yield* runtime.peerActivityStream;
+    });
+
 final Provider<AsyncValue<NodeRuntimeState>> nodeRuntimeStateProvider =
     Provider<AsyncValue<NodeRuntimeState>>((ref) {
       final identity = ref.watch(localNodeIdentityProvider);
@@ -883,6 +934,67 @@ Future<void> _runScheduledTask(Ref ref, String taskId) async {
   if (taskId == _scheduledRetryTaskId) {
     await ref.read(nodeRuntimeProvider).flushPendingNow();
   }
+}
+
+List<PendingWebSearchRequest> _buildPendingWebSearchRequests({
+  required List<Bundle> bundles,
+  required List<WebIndexEntry> entries,
+  required String localNodeId,
+}) {
+  final now = DateTime.now();
+  final satisfiedQueries = entries
+      .map((entry) => _normalizeSearchQuery(entry.query))
+      .where((query) => query.isNotEmpty)
+      .toSet();
+
+  final requests = <PendingWebSearchRequest>[];
+  for (final bundle in bundles) {
+    if (bundle.type != Bundle.typeWebSearchRequest ||
+        bundle.appId != 'offlimu.web' ||
+        bundle.sourceNodeId != localNodeId ||
+        bundle.acknowledged ||
+        bundle.lastError != null ||
+        now.isAfter(bundle.expiresAt)) {
+      continue;
+    }
+    final query = _webSearchQueryFromBundle(bundle);
+    if (query == null ||
+        satisfiedQueries.contains(_normalizeSearchQuery(query))) {
+      continue;
+    }
+    requests.add(
+      PendingWebSearchRequest(
+        bundleId: bundle.bundleId,
+        query: query,
+        createdAt: bundle.createdAt,
+        expiresAt: bundle.expiresAt,
+      ),
+    );
+  }
+
+  requests.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  return requests;
+}
+
+String? _webSearchQueryFromBundle(Bundle bundle) {
+  final payload = bundle.payload;
+  if (payload == null || payload.isEmpty) {
+    return null;
+  }
+  try {
+    final parsed = jsonDecode(payload);
+    if (parsed is Map) {
+      final query = parsed['query']?.toString().trim();
+      return query == null || query.isEmpty ? null : query;
+    }
+  } catch (_) {
+    return null;
+  }
+  return null;
+}
+
+String _normalizeSearchQuery(String value) {
+  return value.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
 }
 
 bool _isRunningInWidgetTest() {

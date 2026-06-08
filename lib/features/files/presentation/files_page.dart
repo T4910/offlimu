@@ -117,10 +117,12 @@ class _FilesPageState extends ConsumerState<FilesPage> {
                               ? _openFileOutsideApp(item)
                               : _showTransferDetails(context, item),
                           onOpen: _openFileOutsideApp,
+                          onRemove: _confirmRemoveFileTransfer,
                           onResend: _resendFileTransfer,
                         )
                       : _TransferDetailsList(
                           items: items,
+                          onRemove: _confirmRemoveFileTransfer,
                           onResend: _resendFileTransfer,
                         ),
                 );
@@ -417,6 +419,14 @@ class _FilesPageState extends ConsumerState<FilesPage> {
                         icon: const Icon(Icons.open_in_new_rounded),
                         label: const Text('Open'),
                       ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        _confirmRemoveFileTransfer(item);
+                      },
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      label: const Text('Remove'),
+                    ),
                     TextButton(
                       onPressed: () => Navigator.of(sheetContext).pop(),
                       child: const Text('Close'),
@@ -447,6 +457,55 @@ class _FilesPageState extends ConsumerState<FilesPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmRemoveFileTransfer(FileTransferExplorerItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove local file?'),
+        content: Text(
+          'This removes ${item.displayName} from this device only, including cached bytes and local transfer records. Other nodes keep their copies.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    try {
+      final result = await ref
+          .read(removeFileTransferUseCaseProvider)
+          .remove(item.contentHash);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Removed ${item.displayName} (${result.deletedBundleCount} bundle records).',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Remove failed: $error')));
+    }
   }
 
   Future<void> _openFileOutsideApp(FileTransferExplorerItem item) async {
@@ -526,12 +585,14 @@ class _FileTransferCard extends StatelessWidget {
     required this.item,
     required this.onTap,
     required this.onOpen,
+    required this.onRemove,
     required this.onResend,
   });
 
   final FileTransferExplorerItem item;
   final VoidCallback onTap;
   final VoidCallback onOpen;
+  final VoidCallback onRemove;
   final VoidCallback onResend;
 
   @override
@@ -607,6 +668,12 @@ class _FileTransferCard extends StatelessWidget {
                             onPressed: onOpen,
                             visualDensity: VisualDensity.compact,
                           ),
+                        IconButton(
+                          tooltip: 'Remove local file',
+                          icon: const Icon(Icons.delete_outline_rounded),
+                          onPressed: onRemove,
+                          visualDensity: VisualDensity.compact,
+                        ),
                         SubtleRetryButton(
                           tooltip: 'Resend file',
                           onPressed: onResend,
@@ -657,12 +724,14 @@ class _FileExplorerList extends StatelessWidget {
     required this.items,
     required this.onTap,
     required this.onOpen,
+    required this.onRemove,
     required this.onResend,
   });
 
   final List<FileTransferExplorerItem> items;
   final ValueChanged<FileTransferExplorerItem> onTap;
   final ValueChanged<FileTransferExplorerItem> onOpen;
+  final ValueChanged<FileTransferExplorerItem> onRemove;
   final ValueChanged<FileTransferExplorerItem> onResend;
 
   @override
@@ -677,6 +746,7 @@ class _FileExplorerList extends StatelessWidget {
           item: item,
           onTap: () => onTap(item),
           onOpen: () => onOpen(item),
+          onRemove: () => onRemove(item),
           onResend: () => onResend(item),
         );
       },
@@ -685,9 +755,14 @@ class _FileExplorerList extends StatelessWidget {
 }
 
 class _TransferDetailsList extends StatelessWidget {
-  const _TransferDetailsList({required this.items, required this.onResend});
+  const _TransferDetailsList({
+    required this.items,
+    required this.onRemove,
+    required this.onResend,
+  });
 
   final List<FileTransferExplorerItem> items;
+  final ValueChanged<FileTransferExplorerItem> onRemove;
   final ValueChanged<FileTransferExplorerItem> onResend;
 
   @override
@@ -715,6 +790,12 @@ class _TransferDetailsList extends StatelessWidget {
                       ),
                     ),
                     _TransferStatusChip(item: item),
+                    IconButton(
+                      tooltip: 'Remove local file',
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      onPressed: () => onRemove(item),
+                      visualDensity: VisualDensity.compact,
+                    ),
                     SubtleRetryButton(
                       tooltip: 'Resend file',
                       onPressed: () => onResend(item),

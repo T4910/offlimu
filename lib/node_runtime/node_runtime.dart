@@ -75,6 +75,7 @@ class NodeRuntime {
   final int peerLivenessFailureThreshold;
   final Map<String, DiscoveredPeer> _peers = <String, DiscoveredPeer>{};
   final Map<String, DateTime> _peerSeenAt = <String, DateTime>{};
+  final Map<String, DateTime> _peerLastReachableAt = <String, DateTime>{};
   final Map<String, DateTime> _peerLastUpsertAt = <String, DateTime>{};
   final Map<String, int> _peerLivenessFailures = <String, int>{};
   final Map<String, _PeerRoutingStats> _peerRoutingStats =
@@ -88,6 +89,9 @@ class NodeRuntime {
       StreamController<int>.broadcast();
   final StreamController<RuntimeTelemetry> _telemetryController =
       StreamController<RuntimeTelemetry>.broadcast();
+  final StreamController<Map<String, PeerActivitySnapshot>>
+  _peerActivityController =
+      StreamController<Map<String, PeerActivitySnapshot>>.broadcast();
 
   StreamSubscription<dynamic>? _discoverySubscription;
   StreamSubscription<dynamic>? _incomingBundleSubscription;
@@ -111,7 +115,12 @@ class NodeRuntime {
 
   Stream<RuntimeHealth> get healthStream => _healthController.stream;
   Stream<RuntimeTelemetry> get telemetryStream => _telemetryController.stream;
+  Stream<Map<String, PeerActivitySnapshot>> get peerActivityStream =>
+      _peerActivityController.stream;
   Stream<int> get peerCountStream => _peerCountController.stream;
+
+  Map<String, PeerActivitySnapshot> get peerActivitySnapshot =>
+      Map<String, PeerActivitySnapshot>.unmodifiable(_buildPeerActivityMap());
 
   Future<void> start() async {
     await _enqueueOrchestration(_startLocked);
@@ -132,6 +141,7 @@ class NodeRuntime {
       await _healthController.close();
       await _peerCountController.close();
       await _telemetryController.close();
+      await _peerActivityController.close();
     });
   }
 
@@ -253,12 +263,14 @@ class NodeRuntime {
 
     _peers.clear();
     _peerSeenAt.clear();
+    _peerLastReachableAt.clear();
     _peerLastUpsertAt.clear();
     _peerLivenessFailures.clear();
     _peerRoutingStats.clear();
     _fileTransferAssemblies.clear();
     _peerCount = 0;
     _peerCountController.add(_peerCount);
+    _emitPeerActivity();
 
     await _transport.stop();
     await _discovery.stop();
@@ -422,7 +434,9 @@ class NodeRuntime {
       if (isAlive) {
         aliveCount++;
         _peerSeenAt[peer.nodeId] = now;
+        _peerLastReachableAt[peer.nodeId] = now;
         _peerLivenessFailures[peer.nodeId] = 0;
+        unawaited(_upsertReachablePeer(peer, now));
         continue;
       }
 
@@ -443,6 +457,7 @@ class NodeRuntime {
         _removePeer(peer.nodeId);
       }
     }
+    _emitPeerActivity();
 
     if (_peers.isEmpty) {
       _setHealth(RuntimeHealth.discovering);
@@ -467,6 +482,7 @@ class NodeRuntime {
     final previous = _peers[peer.nodeId];
     _peers[peer.nodeId] = normalizedPeer;
     _peerSeenAt[peer.nodeId] = now;
+    _peerLastReachableAt[peer.nodeId] = now;
     _peerLivenessFailures[peer.nodeId] = 0;
     _peerRoutingStats.putIfAbsent(peer.nodeId, _PeerRoutingStats.new);
 
@@ -513,6 +529,7 @@ class NodeRuntime {
 
     _peerCount = _peers.length;
     _peerCountController.add(_peerCount);
+    _emitPeerActivity();
     _setHealth(
       _peerCount > 0 ? RuntimeHealth.connected : RuntimeHealth.discovering,
     );
@@ -553,6 +570,7 @@ class NodeRuntime {
     if (changed) {
       _peerCount = _peers.length;
       _peerCountController.add(_peerCount);
+      _emitPeerActivity();
       _setHealth(
         _peerCount > 0 ? RuntimeHealth.connected : RuntimeHealth.discovering,
       );
@@ -572,12 +590,14 @@ class NodeRuntime {
     );
 
     _peerSeenAt.remove(nodeId);
+    _peerLastReachableAt.remove(nodeId);
     _peerLastUpsertAt.remove(nodeId);
     _peerLivenessFailures.remove(nodeId);
     _peerRoutingStats.remove(nodeId);
 
     _peerCount = _peers.length;
     _peerCountController.add(_peerCount);
+    _emitPeerActivity();
   }
 
   List<DiscoveredPeer> _pickTargetPeers(
@@ -686,11 +706,19 @@ class NodeRuntime {
 
   void _recordPeerSendSuccess(String peerNodeId) {
     final previous = _peerRoutingStats[peerNodeId] ?? const _PeerRoutingStats();
+    final now = DateTime.now();
     _peerRoutingStats[peerNodeId] = previous.copyWith(
       successCount: previous.successCount + 1,
       consecutiveFailures: 0,
-      lastSuccessAt: DateTime.now(),
+      lastSuccessAt: now,
     );
+    _peerSeenAt[peerNodeId] = now;
+    _peerLastReachableAt[peerNodeId] = now;
+    final peer = _peers[peerNodeId];
+    if (peer != null) {
+      unawaited(_upsertReachablePeer(peer, now));
+    }
+    _emitPeerActivity();
   }
 
   void _recordPeerSendFailure(String peerNodeId) {
@@ -700,6 +728,61 @@ class NodeRuntime {
       consecutiveFailures: previous.consecutiveFailures + 1,
       lastFailureAt: DateTime.now(),
     );
+    _emitPeerActivity();
+  }
+
+  Future<void> _upsertReachablePeer(DiscoveredPeer peer, DateTime now) async {
+    await _peerRepository.upsertPeer(
+      PeerContact(
+        nodeId: peer.nodeId,
+        host: peer.host,
+        port: peer.port,
+        lastSeen: now,
+      ),
+    );
+  }
+
+  Map<String, PeerActivitySnapshot> _buildPeerActivityMap() {
+    final now = DateTime.now();
+    return <String, PeerActivitySnapshot>{
+      for (final peer in _peers.values)
+        peer.nodeId: PeerActivitySnapshot(
+          nodeId: peer.nodeId,
+          status: _peerActivityStatus(peer, now),
+          lastReachableAt: _peerLastReachableAt[peer.nodeId],
+          lastSeenAt: _peerSeenAt[peer.nodeId] ?? peer.lastSeen,
+          consecutiveFailures:
+              _peerRoutingStats[peer.nodeId]?.consecutiveFailures ??
+              _peerLivenessFailures[peer.nodeId] ??
+              0,
+        ),
+    };
+  }
+
+  PeerActivityStatus _peerActivityStatus(DiscoveredPeer peer, DateTime now) {
+    final failures = _peerLivenessFailures[peer.nodeId] ?? 0;
+    final routingFailures =
+        _peerRoutingStats[peer.nodeId]?.consecutiveFailures ?? 0;
+    final lastReachable = _peerLastReachableAt[peer.nodeId];
+    final lastSeen = _peerSeenAt[peer.nodeId] ?? peer.lastSeen;
+    final recentReachable =
+        lastReachable != null &&
+        now.difference(lastReachable) <= peerStaleAfter;
+    final recentSeen = now.difference(lastSeen) <= peerStaleAfter;
+
+    if (recentReachable && failures == 0 && routingFailures == 0) {
+      return PeerActivityStatus.active;
+    }
+    if (recentSeen || recentReachable) {
+      return PeerActivityStatus.degraded;
+    }
+    return PeerActivityStatus.offline;
+  }
+
+  void _emitPeerActivity() {
+    if (!_peerActivityController.isClosed) {
+      _peerActivityController.add(peerActivitySnapshot);
+    }
   }
 
   Future<void> _handleIncomingBundle(Bundle bundle) async {

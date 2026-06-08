@@ -184,4 +184,9 @@ class _MemoryContentStore implements ContentStore {
   Future<Uint8List?> read({required String contentHash}) async {
     return _bytesByHash[contentHash];
   }
+
+  @override
+  Future<void> delete({required String contentHash}) async {
+    _bytesByHash.remove(contentHash);
+  }
 }

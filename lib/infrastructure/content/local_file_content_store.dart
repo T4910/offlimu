@@ -44,6 +44,14 @@ class LocalFileContentStore implements ContentStore {
   }
 
   @override
+  Future<void> delete({required String contentHash}) async {
+    final File file = await _resolveFile(contentHash);
+    if (await file.exists()) {
+      await file.delete();
+    }
+  }
+
+  @override
   Future<void> clear() async {
     final Directory root = await _resolveRootDirectory();
     if (await root.exists()) {

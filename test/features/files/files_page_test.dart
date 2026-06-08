@@ -72,6 +72,7 @@ void main() {
     expect(find.textContaining('3/7 chunks'), findsOneWidget);
     expect(find.textContaining('Broadcast'), findsOneWidget);
     expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+    expect(find.byTooltip('Remove local file'), findsWidgets);
 
     await tester.tap(find.text('Transfer Details'));
     await tester.pumpAndSettle();

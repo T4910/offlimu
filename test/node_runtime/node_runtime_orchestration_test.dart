@@ -583,6 +583,34 @@ void main() {
       );
 
       final fakeTransport = _FakeTransportAdapter();
+      final fakePeerRepository = _FakePeerRepository(
+        initialPeers: <PeerContact>[
+          PeerContact(
+            nodeId: 'node-b',
+            host: '192.168.1.20',
+            port: 4040,
+            lastSeen: now,
+          ),
+          PeerContact(
+            nodeId: 'node-c',
+            host: '192.168.1.21',
+            port: 4041,
+            lastSeen: now,
+          ),
+          PeerContact(
+            nodeId: 'node-d',
+            host: '192.168.1.22',
+            port: 4042,
+            lastSeen: now,
+          ),
+          PeerContact(
+            nodeId: 'node-stale',
+            host: '192.168.1.99',
+            port: 4099,
+            lastSeen: now.subtract(const Duration(minutes: 2)),
+          ),
+        ],
+      );
       final fakeBundles = _FakeBundleRepository(
         existingBundlesById: <String, Bundle>{
           outboundBundle.bundleId: outboundBundle,
@@ -594,34 +622,7 @@ void main() {
         discovery: _FakeDiscoveryAdapter(),
         transport: fakeTransport,
         bundles: fakeBundles,
-        peers: _FakePeerRepository(
-          initialPeers: <PeerContact>[
-            PeerContact(
-              nodeId: 'node-b',
-              host: '192.168.1.20',
-              port: 4040,
-              lastSeen: now,
-            ),
-            PeerContact(
-              nodeId: 'node-c',
-              host: '192.168.1.21',
-              port: 4041,
-              lastSeen: now,
-            ),
-            PeerContact(
-              nodeId: 'node-d',
-              host: '192.168.1.22',
-              port: 4042,
-              lastSeen: now,
-            ),
-            PeerContact(
-              nodeId: 'node-stale',
-              host: '192.168.1.99',
-              port: 4099,
-              lastSeen: now.subtract(const Duration(minutes: 2)),
-            ),
-          ],
-        ),
+        peers: fakePeerRepository,
         contentStore: _FakeContentStore(),
         bundleSignatureService: _FakeBundleSignatureService(),
       );
@@ -632,8 +633,13 @@ void main() {
       await startFuture;
 
       await runtime.flushPendingNow();
+      await Future<void>.delayed(Duration.zero);
 
       expect(fakeTransport.sentBundles, hasLength(3));
+      expect(
+        fakePeerRepository.upsertedPeers.map((peer) => peer.nodeId).toSet(),
+        containsAll(<String>{'node-b', 'node-c', 'node-d'}),
+      );
       expect(fakeTransport.sentBundles.first.peerNodeId, 'node-b');
       expect(
         fakeTransport.sentBundles.map((record) => record.peerNodeId).toSet(),
@@ -840,6 +846,9 @@ class _FakeContentStore implements ContentStore {
   Future<Uint8List?> read({required String contentHash}) async => null;
 
   @override
+  Future<void> delete({required String contentHash}) async {}
+
+  @override
   Future<void> clear() async {}
 }
 
@@ -848,9 +857,12 @@ class _FakePeerRepository implements PeerRepository {
     : initialPeers = initialPeers ?? const <PeerContact>[];
 
   final List<PeerContact> initialPeers;
+  final List<PeerContact> upsertedPeers = <PeerContact>[];
 
   @override
-  Future<void> upsertPeer(PeerContact peer) async {}
+  Future<void> upsertPeer(PeerContact peer) async {
+    upsertedPeers.add(peer);
+  }
 
   @override
   Stream<List<PeerContact>> watchPeers() {
@@ -875,6 +887,9 @@ class _FakeBundleRepository implements BundleRepository {
   @override
   Future<ContentMetadataRecord?> getContentMetadata(String contentHash) async =>
       null;
+
+  @override
+  Future<void> deleteContentMetadata(String contentHash) async {}
 
   @override
   Stream<List<ContentMetadataRecord>> watchRecentContentMetadata({
