@@ -137,6 +137,50 @@ class WebIndexRecords extends Table {
   Set<Column<Object>>? get primaryKey => {contentHash};
 }
 
+class CommerceProducts extends Table {
+  @override
+  String get tableName => 'commerce_products';
+
+  TextColumn get productId => text()();
+  TextColumn get title => text()();
+  TextColumn get description => text()();
+  TextColumn get vendorNodeId => text()();
+  IntColumn get priceMinorUnits => integer()();
+  TextColumn get imageContentHash => text()();
+  TextColumn get imageMimeType => text().nullable()();
+  TextColumn get availability => text()();
+  IntColumn get createdAtMs => integer()();
+  IntColumn get updatedAtMs => integer()();
+  TextColumn get sourceBundleId => text()();
+
+  @override
+  Set<Column<Object>>? get primaryKey => {productId};
+}
+
+class CommerceOrders extends Table {
+  @override
+  String get tableName => 'commerce_orders';
+
+  TextColumn get orderId => text()();
+  TextColumn get productId => text()();
+  TextColumn get productTitle => text().nullable()();
+  TextColumn get buyerNodeId => text()();
+  TextColumn get vendorNodeId => text()();
+  IntColumn get priceMinorUnits => integer()();
+  TextColumn get details => text()();
+  TextColumn get paymentBundleId => text().nullable()();
+  TextColumn get refundBundleId => text().nullable()();
+  TextColumn get status => text()();
+  IntColumn get createdAtMs => integer()();
+  IntColumn get updatedAtMs => integer()();
+  TextColumn get sourceBundleId => text()();
+  TextColumn get lastStatusBundleId => text().nullable()();
+  TextColumn get rejectionReason => text().nullable()();
+
+  @override
+  Set<Column<Object>>? get primaryKey => {orderId};
+}
+
 @DriftDatabase(
   tables: <Type>[
     BundleRecords,
@@ -147,6 +191,8 @@ class WebIndexRecords extends Table {
     ContentMetadata,
     WalletLedgerEntries,
     WebIndexRecords,
+    CommerceProducts,
+    CommerceOrders,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -155,7 +201,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -214,6 +260,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 14) {
         await m.createTable(webIndexRecords);
       }
+      if (from < 15) {
+        await m.createTable(commerceProducts);
+        await m.createTable(commerceOrders);
+      }
     },
   );
 
@@ -241,6 +291,8 @@ class AppDatabase extends _$AppDatabase {
       await delete(contentMetadata).go();
       await delete(walletLedgerEntries).go();
       await delete(webIndexRecords).go();
+      await delete(commerceProducts).go();
+      await delete(commerceOrders).go();
       await customStatement('DELETE FROM sqlite_sequence;');
     });
   }

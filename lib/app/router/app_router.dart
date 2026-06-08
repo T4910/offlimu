@@ -6,6 +6,7 @@ import 'package:offlimu/features/debug/presentation/file_transfer_explorer_page.
 import 'package:offlimu/features/chat/presentation/chat_page.dart';
 import 'package:offlimu/features/chat/presentation/conversation_page.dart';
 import 'package:offlimu/features/chat/presentation/new_chat_page.dart';
+import 'package:offlimu/features/commerce/presentation/commerce_page.dart';
 import 'package:offlimu/features/files/presentation/files_page.dart';
 import 'package:offlimu/features/node_status/presentation/node_status_page.dart';
 import 'package:offlimu/features/search/presentation/offline_web_page.dart';
@@ -77,6 +78,17 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(path: '/files', builder: (context, state) => const FilesPage()),
+    GoRoute(
+      path: '/commerce',
+      builder: (context, state) => const CommercePage(),
+    ),
+    GoRoute(
+      path: '/commerce/product/:productId',
+      builder: (context, state) {
+        final productId = state.pathParameters['productId'] ?? '';
+        return CommerceProductDetailPage(productId: productId);
+      },
+    ),
     GoRoute(path: '/search', builder: (context, state) => const SearchPage()),
     GoRoute(
       path: '/search/page/:contentHash',

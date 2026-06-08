@@ -4968,6 +4968,1635 @@ class WebIndexRecordsCompanion extends UpdateCompanion<WebIndexRecord> {
   }
 }
 
+class $CommerceProductsTable extends CommerceProducts
+    with TableInfo<$CommerceProductsTable, CommerceProduct> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CommerceProductsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _productIdMeta = const VerificationMeta(
+    'productId',
+  );
+  @override
+  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
+    'product_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _vendorNodeIdMeta = const VerificationMeta(
+    'vendorNodeId',
+  );
+  @override
+  late final GeneratedColumn<String> vendorNodeId = GeneratedColumn<String>(
+    'vendor_node_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _priceMinorUnitsMeta = const VerificationMeta(
+    'priceMinorUnits',
+  );
+  @override
+  late final GeneratedColumn<int> priceMinorUnits = GeneratedColumn<int>(
+    'price_minor_units',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _imageContentHashMeta = const VerificationMeta(
+    'imageContentHash',
+  );
+  @override
+  late final GeneratedColumn<String> imageContentHash = GeneratedColumn<String>(
+    'image_content_hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _imageMimeTypeMeta = const VerificationMeta(
+    'imageMimeType',
+  );
+  @override
+  late final GeneratedColumn<String> imageMimeType = GeneratedColumn<String>(
+    'image_mime_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _availabilityMeta = const VerificationMeta(
+    'availability',
+  );
+  @override
+  late final GeneratedColumn<String> availability = GeneratedColumn<String>(
+    'availability',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMsMeta = const VerificationMeta(
+    'createdAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtMs = GeneratedColumn<int>(
+    'created_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMsMeta = const VerificationMeta(
+    'updatedAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtMs = GeneratedColumn<int>(
+    'updated_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceBundleIdMeta = const VerificationMeta(
+    'sourceBundleId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceBundleId = GeneratedColumn<String>(
+    'source_bundle_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    productId,
+    title,
+    description,
+    vendorNodeId,
+    priceMinorUnits,
+    imageContentHash,
+    imageMimeType,
+    availability,
+    createdAtMs,
+    updatedAtMs,
+    sourceBundleId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'commerce_products';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CommerceProduct> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('product_id')) {
+      context.handle(
+        _productIdMeta,
+        productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_productIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_descriptionMeta);
+    }
+    if (data.containsKey('vendor_node_id')) {
+      context.handle(
+        _vendorNodeIdMeta,
+        vendorNodeId.isAcceptableOrUnknown(
+          data['vendor_node_id']!,
+          _vendorNodeIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_vendorNodeIdMeta);
+    }
+    if (data.containsKey('price_minor_units')) {
+      context.handle(
+        _priceMinorUnitsMeta,
+        priceMinorUnits.isAcceptableOrUnknown(
+          data['price_minor_units']!,
+          _priceMinorUnitsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_priceMinorUnitsMeta);
+    }
+    if (data.containsKey('image_content_hash')) {
+      context.handle(
+        _imageContentHashMeta,
+        imageContentHash.isAcceptableOrUnknown(
+          data['image_content_hash']!,
+          _imageContentHashMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_imageContentHashMeta);
+    }
+    if (data.containsKey('image_mime_type')) {
+      context.handle(
+        _imageMimeTypeMeta,
+        imageMimeType.isAcceptableOrUnknown(
+          data['image_mime_type']!,
+          _imageMimeTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('availability')) {
+      context.handle(
+        _availabilityMeta,
+        availability.isAcceptableOrUnknown(
+          data['availability']!,
+          _availabilityMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_availabilityMeta);
+    }
+    if (data.containsKey('created_at_ms')) {
+      context.handle(
+        _createdAtMsMeta,
+        createdAtMs.isAcceptableOrUnknown(
+          data['created_at_ms']!,
+          _createdAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMsMeta);
+    }
+    if (data.containsKey('updated_at_ms')) {
+      context.handle(
+        _updatedAtMsMeta,
+        updatedAtMs.isAcceptableOrUnknown(
+          data['updated_at_ms']!,
+          _updatedAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMsMeta);
+    }
+    if (data.containsKey('source_bundle_id')) {
+      context.handle(
+        _sourceBundleIdMeta,
+        sourceBundleId.isAcceptableOrUnknown(
+          data['source_bundle_id']!,
+          _sourceBundleIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceBundleIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {productId};
+  @override
+  CommerceProduct map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CommerceProduct(
+      productId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      vendorNodeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}vendor_node_id'],
+      )!,
+      priceMinorUnits: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}price_minor_units'],
+      )!,
+      imageContentHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_content_hash'],
+      )!,
+      imageMimeType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_mime_type'],
+      ),
+      availability: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}availability'],
+      )!,
+      createdAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_ms'],
+      )!,
+      updatedAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_ms'],
+      )!,
+      sourceBundleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_bundle_id'],
+      )!,
+    );
+  }
+
+  @override
+  $CommerceProductsTable createAlias(String alias) {
+    return $CommerceProductsTable(attachedDatabase, alias);
+  }
+}
+
+class CommerceProduct extends DataClass implements Insertable<CommerceProduct> {
+  final String productId;
+  final String title;
+  final String description;
+  final String vendorNodeId;
+  final int priceMinorUnits;
+  final String imageContentHash;
+  final String? imageMimeType;
+  final String availability;
+  final int createdAtMs;
+  final int updatedAtMs;
+  final String sourceBundleId;
+  const CommerceProduct({
+    required this.productId,
+    required this.title,
+    required this.description,
+    required this.vendorNodeId,
+    required this.priceMinorUnits,
+    required this.imageContentHash,
+    this.imageMimeType,
+    required this.availability,
+    required this.createdAtMs,
+    required this.updatedAtMs,
+    required this.sourceBundleId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['product_id'] = Variable<String>(productId);
+    map['title'] = Variable<String>(title);
+    map['description'] = Variable<String>(description);
+    map['vendor_node_id'] = Variable<String>(vendorNodeId);
+    map['price_minor_units'] = Variable<int>(priceMinorUnits);
+    map['image_content_hash'] = Variable<String>(imageContentHash);
+    if (!nullToAbsent || imageMimeType != null) {
+      map['image_mime_type'] = Variable<String>(imageMimeType);
+    }
+    map['availability'] = Variable<String>(availability);
+    map['created_at_ms'] = Variable<int>(createdAtMs);
+    map['updated_at_ms'] = Variable<int>(updatedAtMs);
+    map['source_bundle_id'] = Variable<String>(sourceBundleId);
+    return map;
+  }
+
+  CommerceProductsCompanion toCompanion(bool nullToAbsent) {
+    return CommerceProductsCompanion(
+      productId: Value(productId),
+      title: Value(title),
+      description: Value(description),
+      vendorNodeId: Value(vendorNodeId),
+      priceMinorUnits: Value(priceMinorUnits),
+      imageContentHash: Value(imageContentHash),
+      imageMimeType: imageMimeType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageMimeType),
+      availability: Value(availability),
+      createdAtMs: Value(createdAtMs),
+      updatedAtMs: Value(updatedAtMs),
+      sourceBundleId: Value(sourceBundleId),
+    );
+  }
+
+  factory CommerceProduct.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CommerceProduct(
+      productId: serializer.fromJson<String>(json['productId']),
+      title: serializer.fromJson<String>(json['title']),
+      description: serializer.fromJson<String>(json['description']),
+      vendorNodeId: serializer.fromJson<String>(json['vendorNodeId']),
+      priceMinorUnits: serializer.fromJson<int>(json['priceMinorUnits']),
+      imageContentHash: serializer.fromJson<String>(json['imageContentHash']),
+      imageMimeType: serializer.fromJson<String?>(json['imageMimeType']),
+      availability: serializer.fromJson<String>(json['availability']),
+      createdAtMs: serializer.fromJson<int>(json['createdAtMs']),
+      updatedAtMs: serializer.fromJson<int>(json['updatedAtMs']),
+      sourceBundleId: serializer.fromJson<String>(json['sourceBundleId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'productId': serializer.toJson<String>(productId),
+      'title': serializer.toJson<String>(title),
+      'description': serializer.toJson<String>(description),
+      'vendorNodeId': serializer.toJson<String>(vendorNodeId),
+      'priceMinorUnits': serializer.toJson<int>(priceMinorUnits),
+      'imageContentHash': serializer.toJson<String>(imageContentHash),
+      'imageMimeType': serializer.toJson<String?>(imageMimeType),
+      'availability': serializer.toJson<String>(availability),
+      'createdAtMs': serializer.toJson<int>(createdAtMs),
+      'updatedAtMs': serializer.toJson<int>(updatedAtMs),
+      'sourceBundleId': serializer.toJson<String>(sourceBundleId),
+    };
+  }
+
+  CommerceProduct copyWith({
+    String? productId,
+    String? title,
+    String? description,
+    String? vendorNodeId,
+    int? priceMinorUnits,
+    String? imageContentHash,
+    Value<String?> imageMimeType = const Value.absent(),
+    String? availability,
+    int? createdAtMs,
+    int? updatedAtMs,
+    String? sourceBundleId,
+  }) => CommerceProduct(
+    productId: productId ?? this.productId,
+    title: title ?? this.title,
+    description: description ?? this.description,
+    vendorNodeId: vendorNodeId ?? this.vendorNodeId,
+    priceMinorUnits: priceMinorUnits ?? this.priceMinorUnits,
+    imageContentHash: imageContentHash ?? this.imageContentHash,
+    imageMimeType: imageMimeType.present
+        ? imageMimeType.value
+        : this.imageMimeType,
+    availability: availability ?? this.availability,
+    createdAtMs: createdAtMs ?? this.createdAtMs,
+    updatedAtMs: updatedAtMs ?? this.updatedAtMs,
+    sourceBundleId: sourceBundleId ?? this.sourceBundleId,
+  );
+  CommerceProduct copyWithCompanion(CommerceProductsCompanion data) {
+    return CommerceProduct(
+      productId: data.productId.present ? data.productId.value : this.productId,
+      title: data.title.present ? data.title.value : this.title,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      vendorNodeId: data.vendorNodeId.present
+          ? data.vendorNodeId.value
+          : this.vendorNodeId,
+      priceMinorUnits: data.priceMinorUnits.present
+          ? data.priceMinorUnits.value
+          : this.priceMinorUnits,
+      imageContentHash: data.imageContentHash.present
+          ? data.imageContentHash.value
+          : this.imageContentHash,
+      imageMimeType: data.imageMimeType.present
+          ? data.imageMimeType.value
+          : this.imageMimeType,
+      availability: data.availability.present
+          ? data.availability.value
+          : this.availability,
+      createdAtMs: data.createdAtMs.present
+          ? data.createdAtMs.value
+          : this.createdAtMs,
+      updatedAtMs: data.updatedAtMs.present
+          ? data.updatedAtMs.value
+          : this.updatedAtMs,
+      sourceBundleId: data.sourceBundleId.present
+          ? data.sourceBundleId.value
+          : this.sourceBundleId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CommerceProduct(')
+          ..write('productId: $productId, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('vendorNodeId: $vendorNodeId, ')
+          ..write('priceMinorUnits: $priceMinorUnits, ')
+          ..write('imageContentHash: $imageContentHash, ')
+          ..write('imageMimeType: $imageMimeType, ')
+          ..write('availability: $availability, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('updatedAtMs: $updatedAtMs, ')
+          ..write('sourceBundleId: $sourceBundleId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    productId,
+    title,
+    description,
+    vendorNodeId,
+    priceMinorUnits,
+    imageContentHash,
+    imageMimeType,
+    availability,
+    createdAtMs,
+    updatedAtMs,
+    sourceBundleId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CommerceProduct &&
+          other.productId == this.productId &&
+          other.title == this.title &&
+          other.description == this.description &&
+          other.vendorNodeId == this.vendorNodeId &&
+          other.priceMinorUnits == this.priceMinorUnits &&
+          other.imageContentHash == this.imageContentHash &&
+          other.imageMimeType == this.imageMimeType &&
+          other.availability == this.availability &&
+          other.createdAtMs == this.createdAtMs &&
+          other.updatedAtMs == this.updatedAtMs &&
+          other.sourceBundleId == this.sourceBundleId);
+}
+
+class CommerceProductsCompanion extends UpdateCompanion<CommerceProduct> {
+  final Value<String> productId;
+  final Value<String> title;
+  final Value<String> description;
+  final Value<String> vendorNodeId;
+  final Value<int> priceMinorUnits;
+  final Value<String> imageContentHash;
+  final Value<String?> imageMimeType;
+  final Value<String> availability;
+  final Value<int> createdAtMs;
+  final Value<int> updatedAtMs;
+  final Value<String> sourceBundleId;
+  final Value<int> rowid;
+  const CommerceProductsCompanion({
+    this.productId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.description = const Value.absent(),
+    this.vendorNodeId = const Value.absent(),
+    this.priceMinorUnits = const Value.absent(),
+    this.imageContentHash = const Value.absent(),
+    this.imageMimeType = const Value.absent(),
+    this.availability = const Value.absent(),
+    this.createdAtMs = const Value.absent(),
+    this.updatedAtMs = const Value.absent(),
+    this.sourceBundleId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CommerceProductsCompanion.insert({
+    required String productId,
+    required String title,
+    required String description,
+    required String vendorNodeId,
+    required int priceMinorUnits,
+    required String imageContentHash,
+    this.imageMimeType = const Value.absent(),
+    required String availability,
+    required int createdAtMs,
+    required int updatedAtMs,
+    required String sourceBundleId,
+    this.rowid = const Value.absent(),
+  }) : productId = Value(productId),
+       title = Value(title),
+       description = Value(description),
+       vendorNodeId = Value(vendorNodeId),
+       priceMinorUnits = Value(priceMinorUnits),
+       imageContentHash = Value(imageContentHash),
+       availability = Value(availability),
+       createdAtMs = Value(createdAtMs),
+       updatedAtMs = Value(updatedAtMs),
+       sourceBundleId = Value(sourceBundleId);
+  static Insertable<CommerceProduct> custom({
+    Expression<String>? productId,
+    Expression<String>? title,
+    Expression<String>? description,
+    Expression<String>? vendorNodeId,
+    Expression<int>? priceMinorUnits,
+    Expression<String>? imageContentHash,
+    Expression<String>? imageMimeType,
+    Expression<String>? availability,
+    Expression<int>? createdAtMs,
+    Expression<int>? updatedAtMs,
+    Expression<String>? sourceBundleId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (productId != null) 'product_id': productId,
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
+      if (vendorNodeId != null) 'vendor_node_id': vendorNodeId,
+      if (priceMinorUnits != null) 'price_minor_units': priceMinorUnits,
+      if (imageContentHash != null) 'image_content_hash': imageContentHash,
+      if (imageMimeType != null) 'image_mime_type': imageMimeType,
+      if (availability != null) 'availability': availability,
+      if (createdAtMs != null) 'created_at_ms': createdAtMs,
+      if (updatedAtMs != null) 'updated_at_ms': updatedAtMs,
+      if (sourceBundleId != null) 'source_bundle_id': sourceBundleId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CommerceProductsCompanion copyWith({
+    Value<String>? productId,
+    Value<String>? title,
+    Value<String>? description,
+    Value<String>? vendorNodeId,
+    Value<int>? priceMinorUnits,
+    Value<String>? imageContentHash,
+    Value<String?>? imageMimeType,
+    Value<String>? availability,
+    Value<int>? createdAtMs,
+    Value<int>? updatedAtMs,
+    Value<String>? sourceBundleId,
+    Value<int>? rowid,
+  }) {
+    return CommerceProductsCompanion(
+      productId: productId ?? this.productId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      vendorNodeId: vendorNodeId ?? this.vendorNodeId,
+      priceMinorUnits: priceMinorUnits ?? this.priceMinorUnits,
+      imageContentHash: imageContentHash ?? this.imageContentHash,
+      imageMimeType: imageMimeType ?? this.imageMimeType,
+      availability: availability ?? this.availability,
+      createdAtMs: createdAtMs ?? this.createdAtMs,
+      updatedAtMs: updatedAtMs ?? this.updatedAtMs,
+      sourceBundleId: sourceBundleId ?? this.sourceBundleId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (productId.present) {
+      map['product_id'] = Variable<String>(productId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (vendorNodeId.present) {
+      map['vendor_node_id'] = Variable<String>(vendorNodeId.value);
+    }
+    if (priceMinorUnits.present) {
+      map['price_minor_units'] = Variable<int>(priceMinorUnits.value);
+    }
+    if (imageContentHash.present) {
+      map['image_content_hash'] = Variable<String>(imageContentHash.value);
+    }
+    if (imageMimeType.present) {
+      map['image_mime_type'] = Variable<String>(imageMimeType.value);
+    }
+    if (availability.present) {
+      map['availability'] = Variable<String>(availability.value);
+    }
+    if (createdAtMs.present) {
+      map['created_at_ms'] = Variable<int>(createdAtMs.value);
+    }
+    if (updatedAtMs.present) {
+      map['updated_at_ms'] = Variable<int>(updatedAtMs.value);
+    }
+    if (sourceBundleId.present) {
+      map['source_bundle_id'] = Variable<String>(sourceBundleId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CommerceProductsCompanion(')
+          ..write('productId: $productId, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('vendorNodeId: $vendorNodeId, ')
+          ..write('priceMinorUnits: $priceMinorUnits, ')
+          ..write('imageContentHash: $imageContentHash, ')
+          ..write('imageMimeType: $imageMimeType, ')
+          ..write('availability: $availability, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('updatedAtMs: $updatedAtMs, ')
+          ..write('sourceBundleId: $sourceBundleId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CommerceOrdersTable extends CommerceOrders
+    with TableInfo<$CommerceOrdersTable, CommerceOrder> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CommerceOrdersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _orderIdMeta = const VerificationMeta(
+    'orderId',
+  );
+  @override
+  late final GeneratedColumn<String> orderId = GeneratedColumn<String>(
+    'order_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _productIdMeta = const VerificationMeta(
+    'productId',
+  );
+  @override
+  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
+    'product_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _productTitleMeta = const VerificationMeta(
+    'productTitle',
+  );
+  @override
+  late final GeneratedColumn<String> productTitle = GeneratedColumn<String>(
+    'product_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _buyerNodeIdMeta = const VerificationMeta(
+    'buyerNodeId',
+  );
+  @override
+  late final GeneratedColumn<String> buyerNodeId = GeneratedColumn<String>(
+    'buyer_node_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _vendorNodeIdMeta = const VerificationMeta(
+    'vendorNodeId',
+  );
+  @override
+  late final GeneratedColumn<String> vendorNodeId = GeneratedColumn<String>(
+    'vendor_node_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _priceMinorUnitsMeta = const VerificationMeta(
+    'priceMinorUnits',
+  );
+  @override
+  late final GeneratedColumn<int> priceMinorUnits = GeneratedColumn<int>(
+    'price_minor_units',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _detailsMeta = const VerificationMeta(
+    'details',
+  );
+  @override
+  late final GeneratedColumn<String> details = GeneratedColumn<String>(
+    'details',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _paymentBundleIdMeta = const VerificationMeta(
+    'paymentBundleId',
+  );
+  @override
+  late final GeneratedColumn<String> paymentBundleId = GeneratedColumn<String>(
+    'payment_bundle_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _refundBundleIdMeta = const VerificationMeta(
+    'refundBundleId',
+  );
+  @override
+  late final GeneratedColumn<String> refundBundleId = GeneratedColumn<String>(
+    'refund_bundle_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMsMeta = const VerificationMeta(
+    'createdAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtMs = GeneratedColumn<int>(
+    'created_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMsMeta = const VerificationMeta(
+    'updatedAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtMs = GeneratedColumn<int>(
+    'updated_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceBundleIdMeta = const VerificationMeta(
+    'sourceBundleId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceBundleId = GeneratedColumn<String>(
+    'source_bundle_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastStatusBundleIdMeta =
+      const VerificationMeta('lastStatusBundleId');
+  @override
+  late final GeneratedColumn<String> lastStatusBundleId =
+      GeneratedColumn<String>(
+        'last_status_bundle_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _rejectionReasonMeta = const VerificationMeta(
+    'rejectionReason',
+  );
+  @override
+  late final GeneratedColumn<String> rejectionReason = GeneratedColumn<String>(
+    'rejection_reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    orderId,
+    productId,
+    productTitle,
+    buyerNodeId,
+    vendorNodeId,
+    priceMinorUnits,
+    details,
+    paymentBundleId,
+    refundBundleId,
+    status,
+    createdAtMs,
+    updatedAtMs,
+    sourceBundleId,
+    lastStatusBundleId,
+    rejectionReason,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'commerce_orders';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CommerceOrder> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('order_id')) {
+      context.handle(
+        _orderIdMeta,
+        orderId.isAcceptableOrUnknown(data['order_id']!, _orderIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_orderIdMeta);
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(
+        _productIdMeta,
+        productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_productIdMeta);
+    }
+    if (data.containsKey('product_title')) {
+      context.handle(
+        _productTitleMeta,
+        productTitle.isAcceptableOrUnknown(
+          data['product_title']!,
+          _productTitleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('buyer_node_id')) {
+      context.handle(
+        _buyerNodeIdMeta,
+        buyerNodeId.isAcceptableOrUnknown(
+          data['buyer_node_id']!,
+          _buyerNodeIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_buyerNodeIdMeta);
+    }
+    if (data.containsKey('vendor_node_id')) {
+      context.handle(
+        _vendorNodeIdMeta,
+        vendorNodeId.isAcceptableOrUnknown(
+          data['vendor_node_id']!,
+          _vendorNodeIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_vendorNodeIdMeta);
+    }
+    if (data.containsKey('price_minor_units')) {
+      context.handle(
+        _priceMinorUnitsMeta,
+        priceMinorUnits.isAcceptableOrUnknown(
+          data['price_minor_units']!,
+          _priceMinorUnitsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_priceMinorUnitsMeta);
+    }
+    if (data.containsKey('details')) {
+      context.handle(
+        _detailsMeta,
+        details.isAcceptableOrUnknown(data['details']!, _detailsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_detailsMeta);
+    }
+    if (data.containsKey('payment_bundle_id')) {
+      context.handle(
+        _paymentBundleIdMeta,
+        paymentBundleId.isAcceptableOrUnknown(
+          data['payment_bundle_id']!,
+          _paymentBundleIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('refund_bundle_id')) {
+      context.handle(
+        _refundBundleIdMeta,
+        refundBundleId.isAcceptableOrUnknown(
+          data['refund_bundle_id']!,
+          _refundBundleIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('created_at_ms')) {
+      context.handle(
+        _createdAtMsMeta,
+        createdAtMs.isAcceptableOrUnknown(
+          data['created_at_ms']!,
+          _createdAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMsMeta);
+    }
+    if (data.containsKey('updated_at_ms')) {
+      context.handle(
+        _updatedAtMsMeta,
+        updatedAtMs.isAcceptableOrUnknown(
+          data['updated_at_ms']!,
+          _updatedAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMsMeta);
+    }
+    if (data.containsKey('source_bundle_id')) {
+      context.handle(
+        _sourceBundleIdMeta,
+        sourceBundleId.isAcceptableOrUnknown(
+          data['source_bundle_id']!,
+          _sourceBundleIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceBundleIdMeta);
+    }
+    if (data.containsKey('last_status_bundle_id')) {
+      context.handle(
+        _lastStatusBundleIdMeta,
+        lastStatusBundleId.isAcceptableOrUnknown(
+          data['last_status_bundle_id']!,
+          _lastStatusBundleIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rejection_reason')) {
+      context.handle(
+        _rejectionReasonMeta,
+        rejectionReason.isAcceptableOrUnknown(
+          data['rejection_reason']!,
+          _rejectionReasonMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {orderId};
+  @override
+  CommerceOrder map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CommerceOrder(
+      orderId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}order_id'],
+      )!,
+      productId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_id'],
+      )!,
+      productTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_title'],
+      ),
+      buyerNodeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}buyer_node_id'],
+      )!,
+      vendorNodeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}vendor_node_id'],
+      )!,
+      priceMinorUnits: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}price_minor_units'],
+      )!,
+      details: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}details'],
+      )!,
+      paymentBundleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payment_bundle_id'],
+      ),
+      refundBundleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}refund_bundle_id'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      createdAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_ms'],
+      )!,
+      updatedAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_ms'],
+      )!,
+      sourceBundleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_bundle_id'],
+      )!,
+      lastStatusBundleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_status_bundle_id'],
+      ),
+      rejectionReason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rejection_reason'],
+      ),
+    );
+  }
+
+  @override
+  $CommerceOrdersTable createAlias(String alias) {
+    return $CommerceOrdersTable(attachedDatabase, alias);
+  }
+}
+
+class CommerceOrder extends DataClass implements Insertable<CommerceOrder> {
+  final String orderId;
+  final String productId;
+  final String? productTitle;
+  final String buyerNodeId;
+  final String vendorNodeId;
+  final int priceMinorUnits;
+  final String details;
+  final String? paymentBundleId;
+  final String? refundBundleId;
+  final String status;
+  final int createdAtMs;
+  final int updatedAtMs;
+  final String sourceBundleId;
+  final String? lastStatusBundleId;
+  final String? rejectionReason;
+  const CommerceOrder({
+    required this.orderId,
+    required this.productId,
+    this.productTitle,
+    required this.buyerNodeId,
+    required this.vendorNodeId,
+    required this.priceMinorUnits,
+    required this.details,
+    this.paymentBundleId,
+    this.refundBundleId,
+    required this.status,
+    required this.createdAtMs,
+    required this.updatedAtMs,
+    required this.sourceBundleId,
+    this.lastStatusBundleId,
+    this.rejectionReason,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['order_id'] = Variable<String>(orderId);
+    map['product_id'] = Variable<String>(productId);
+    if (!nullToAbsent || productTitle != null) {
+      map['product_title'] = Variable<String>(productTitle);
+    }
+    map['buyer_node_id'] = Variable<String>(buyerNodeId);
+    map['vendor_node_id'] = Variable<String>(vendorNodeId);
+    map['price_minor_units'] = Variable<int>(priceMinorUnits);
+    map['details'] = Variable<String>(details);
+    if (!nullToAbsent || paymentBundleId != null) {
+      map['payment_bundle_id'] = Variable<String>(paymentBundleId);
+    }
+    if (!nullToAbsent || refundBundleId != null) {
+      map['refund_bundle_id'] = Variable<String>(refundBundleId);
+    }
+    map['status'] = Variable<String>(status);
+    map['created_at_ms'] = Variable<int>(createdAtMs);
+    map['updated_at_ms'] = Variable<int>(updatedAtMs);
+    map['source_bundle_id'] = Variable<String>(sourceBundleId);
+    if (!nullToAbsent || lastStatusBundleId != null) {
+      map['last_status_bundle_id'] = Variable<String>(lastStatusBundleId);
+    }
+    if (!nullToAbsent || rejectionReason != null) {
+      map['rejection_reason'] = Variable<String>(rejectionReason);
+    }
+    return map;
+  }
+
+  CommerceOrdersCompanion toCompanion(bool nullToAbsent) {
+    return CommerceOrdersCompanion(
+      orderId: Value(orderId),
+      productId: Value(productId),
+      productTitle: productTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(productTitle),
+      buyerNodeId: Value(buyerNodeId),
+      vendorNodeId: Value(vendorNodeId),
+      priceMinorUnits: Value(priceMinorUnits),
+      details: Value(details),
+      paymentBundleId: paymentBundleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paymentBundleId),
+      refundBundleId: refundBundleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(refundBundleId),
+      status: Value(status),
+      createdAtMs: Value(createdAtMs),
+      updatedAtMs: Value(updatedAtMs),
+      sourceBundleId: Value(sourceBundleId),
+      lastStatusBundleId: lastStatusBundleId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastStatusBundleId),
+      rejectionReason: rejectionReason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rejectionReason),
+    );
+  }
+
+  factory CommerceOrder.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CommerceOrder(
+      orderId: serializer.fromJson<String>(json['orderId']),
+      productId: serializer.fromJson<String>(json['productId']),
+      productTitle: serializer.fromJson<String?>(json['productTitle']),
+      buyerNodeId: serializer.fromJson<String>(json['buyerNodeId']),
+      vendorNodeId: serializer.fromJson<String>(json['vendorNodeId']),
+      priceMinorUnits: serializer.fromJson<int>(json['priceMinorUnits']),
+      details: serializer.fromJson<String>(json['details']),
+      paymentBundleId: serializer.fromJson<String?>(json['paymentBundleId']),
+      refundBundleId: serializer.fromJson<String?>(json['refundBundleId']),
+      status: serializer.fromJson<String>(json['status']),
+      createdAtMs: serializer.fromJson<int>(json['createdAtMs']),
+      updatedAtMs: serializer.fromJson<int>(json['updatedAtMs']),
+      sourceBundleId: serializer.fromJson<String>(json['sourceBundleId']),
+      lastStatusBundleId: serializer.fromJson<String?>(
+        json['lastStatusBundleId'],
+      ),
+      rejectionReason: serializer.fromJson<String?>(json['rejectionReason']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'orderId': serializer.toJson<String>(orderId),
+      'productId': serializer.toJson<String>(productId),
+      'productTitle': serializer.toJson<String?>(productTitle),
+      'buyerNodeId': serializer.toJson<String>(buyerNodeId),
+      'vendorNodeId': serializer.toJson<String>(vendorNodeId),
+      'priceMinorUnits': serializer.toJson<int>(priceMinorUnits),
+      'details': serializer.toJson<String>(details),
+      'paymentBundleId': serializer.toJson<String?>(paymentBundleId),
+      'refundBundleId': serializer.toJson<String?>(refundBundleId),
+      'status': serializer.toJson<String>(status),
+      'createdAtMs': serializer.toJson<int>(createdAtMs),
+      'updatedAtMs': serializer.toJson<int>(updatedAtMs),
+      'sourceBundleId': serializer.toJson<String>(sourceBundleId),
+      'lastStatusBundleId': serializer.toJson<String?>(lastStatusBundleId),
+      'rejectionReason': serializer.toJson<String?>(rejectionReason),
+    };
+  }
+
+  CommerceOrder copyWith({
+    String? orderId,
+    String? productId,
+    Value<String?> productTitle = const Value.absent(),
+    String? buyerNodeId,
+    String? vendorNodeId,
+    int? priceMinorUnits,
+    String? details,
+    Value<String?> paymentBundleId = const Value.absent(),
+    Value<String?> refundBundleId = const Value.absent(),
+    String? status,
+    int? createdAtMs,
+    int? updatedAtMs,
+    String? sourceBundleId,
+    Value<String?> lastStatusBundleId = const Value.absent(),
+    Value<String?> rejectionReason = const Value.absent(),
+  }) => CommerceOrder(
+    orderId: orderId ?? this.orderId,
+    productId: productId ?? this.productId,
+    productTitle: productTitle.present ? productTitle.value : this.productTitle,
+    buyerNodeId: buyerNodeId ?? this.buyerNodeId,
+    vendorNodeId: vendorNodeId ?? this.vendorNodeId,
+    priceMinorUnits: priceMinorUnits ?? this.priceMinorUnits,
+    details: details ?? this.details,
+    paymentBundleId: paymentBundleId.present
+        ? paymentBundleId.value
+        : this.paymentBundleId,
+    refundBundleId: refundBundleId.present
+        ? refundBundleId.value
+        : this.refundBundleId,
+    status: status ?? this.status,
+    createdAtMs: createdAtMs ?? this.createdAtMs,
+    updatedAtMs: updatedAtMs ?? this.updatedAtMs,
+    sourceBundleId: sourceBundleId ?? this.sourceBundleId,
+    lastStatusBundleId: lastStatusBundleId.present
+        ? lastStatusBundleId.value
+        : this.lastStatusBundleId,
+    rejectionReason: rejectionReason.present
+        ? rejectionReason.value
+        : this.rejectionReason,
+  );
+  CommerceOrder copyWithCompanion(CommerceOrdersCompanion data) {
+    return CommerceOrder(
+      orderId: data.orderId.present ? data.orderId.value : this.orderId,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      productTitle: data.productTitle.present
+          ? data.productTitle.value
+          : this.productTitle,
+      buyerNodeId: data.buyerNodeId.present
+          ? data.buyerNodeId.value
+          : this.buyerNodeId,
+      vendorNodeId: data.vendorNodeId.present
+          ? data.vendorNodeId.value
+          : this.vendorNodeId,
+      priceMinorUnits: data.priceMinorUnits.present
+          ? data.priceMinorUnits.value
+          : this.priceMinorUnits,
+      details: data.details.present ? data.details.value : this.details,
+      paymentBundleId: data.paymentBundleId.present
+          ? data.paymentBundleId.value
+          : this.paymentBundleId,
+      refundBundleId: data.refundBundleId.present
+          ? data.refundBundleId.value
+          : this.refundBundleId,
+      status: data.status.present ? data.status.value : this.status,
+      createdAtMs: data.createdAtMs.present
+          ? data.createdAtMs.value
+          : this.createdAtMs,
+      updatedAtMs: data.updatedAtMs.present
+          ? data.updatedAtMs.value
+          : this.updatedAtMs,
+      sourceBundleId: data.sourceBundleId.present
+          ? data.sourceBundleId.value
+          : this.sourceBundleId,
+      lastStatusBundleId: data.lastStatusBundleId.present
+          ? data.lastStatusBundleId.value
+          : this.lastStatusBundleId,
+      rejectionReason: data.rejectionReason.present
+          ? data.rejectionReason.value
+          : this.rejectionReason,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CommerceOrder(')
+          ..write('orderId: $orderId, ')
+          ..write('productId: $productId, ')
+          ..write('productTitle: $productTitle, ')
+          ..write('buyerNodeId: $buyerNodeId, ')
+          ..write('vendorNodeId: $vendorNodeId, ')
+          ..write('priceMinorUnits: $priceMinorUnits, ')
+          ..write('details: $details, ')
+          ..write('paymentBundleId: $paymentBundleId, ')
+          ..write('refundBundleId: $refundBundleId, ')
+          ..write('status: $status, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('updatedAtMs: $updatedAtMs, ')
+          ..write('sourceBundleId: $sourceBundleId, ')
+          ..write('lastStatusBundleId: $lastStatusBundleId, ')
+          ..write('rejectionReason: $rejectionReason')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    orderId,
+    productId,
+    productTitle,
+    buyerNodeId,
+    vendorNodeId,
+    priceMinorUnits,
+    details,
+    paymentBundleId,
+    refundBundleId,
+    status,
+    createdAtMs,
+    updatedAtMs,
+    sourceBundleId,
+    lastStatusBundleId,
+    rejectionReason,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CommerceOrder &&
+          other.orderId == this.orderId &&
+          other.productId == this.productId &&
+          other.productTitle == this.productTitle &&
+          other.buyerNodeId == this.buyerNodeId &&
+          other.vendorNodeId == this.vendorNodeId &&
+          other.priceMinorUnits == this.priceMinorUnits &&
+          other.details == this.details &&
+          other.paymentBundleId == this.paymentBundleId &&
+          other.refundBundleId == this.refundBundleId &&
+          other.status == this.status &&
+          other.createdAtMs == this.createdAtMs &&
+          other.updatedAtMs == this.updatedAtMs &&
+          other.sourceBundleId == this.sourceBundleId &&
+          other.lastStatusBundleId == this.lastStatusBundleId &&
+          other.rejectionReason == this.rejectionReason);
+}
+
+class CommerceOrdersCompanion extends UpdateCompanion<CommerceOrder> {
+  final Value<String> orderId;
+  final Value<String> productId;
+  final Value<String?> productTitle;
+  final Value<String> buyerNodeId;
+  final Value<String> vendorNodeId;
+  final Value<int> priceMinorUnits;
+  final Value<String> details;
+  final Value<String?> paymentBundleId;
+  final Value<String?> refundBundleId;
+  final Value<String> status;
+  final Value<int> createdAtMs;
+  final Value<int> updatedAtMs;
+  final Value<String> sourceBundleId;
+  final Value<String?> lastStatusBundleId;
+  final Value<String?> rejectionReason;
+  final Value<int> rowid;
+  const CommerceOrdersCompanion({
+    this.orderId = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.productTitle = const Value.absent(),
+    this.buyerNodeId = const Value.absent(),
+    this.vendorNodeId = const Value.absent(),
+    this.priceMinorUnits = const Value.absent(),
+    this.details = const Value.absent(),
+    this.paymentBundleId = const Value.absent(),
+    this.refundBundleId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdAtMs = const Value.absent(),
+    this.updatedAtMs = const Value.absent(),
+    this.sourceBundleId = const Value.absent(),
+    this.lastStatusBundleId = const Value.absent(),
+    this.rejectionReason = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CommerceOrdersCompanion.insert({
+    required String orderId,
+    required String productId,
+    this.productTitle = const Value.absent(),
+    required String buyerNodeId,
+    required String vendorNodeId,
+    required int priceMinorUnits,
+    required String details,
+    this.paymentBundleId = const Value.absent(),
+    this.refundBundleId = const Value.absent(),
+    required String status,
+    required int createdAtMs,
+    required int updatedAtMs,
+    required String sourceBundleId,
+    this.lastStatusBundleId = const Value.absent(),
+    this.rejectionReason = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : orderId = Value(orderId),
+       productId = Value(productId),
+       buyerNodeId = Value(buyerNodeId),
+       vendorNodeId = Value(vendorNodeId),
+       priceMinorUnits = Value(priceMinorUnits),
+       details = Value(details),
+       status = Value(status),
+       createdAtMs = Value(createdAtMs),
+       updatedAtMs = Value(updatedAtMs),
+       sourceBundleId = Value(sourceBundleId);
+  static Insertable<CommerceOrder> custom({
+    Expression<String>? orderId,
+    Expression<String>? productId,
+    Expression<String>? productTitle,
+    Expression<String>? buyerNodeId,
+    Expression<String>? vendorNodeId,
+    Expression<int>? priceMinorUnits,
+    Expression<String>? details,
+    Expression<String>? paymentBundleId,
+    Expression<String>? refundBundleId,
+    Expression<String>? status,
+    Expression<int>? createdAtMs,
+    Expression<int>? updatedAtMs,
+    Expression<String>? sourceBundleId,
+    Expression<String>? lastStatusBundleId,
+    Expression<String>? rejectionReason,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (orderId != null) 'order_id': orderId,
+      if (productId != null) 'product_id': productId,
+      if (productTitle != null) 'product_title': productTitle,
+      if (buyerNodeId != null) 'buyer_node_id': buyerNodeId,
+      if (vendorNodeId != null) 'vendor_node_id': vendorNodeId,
+      if (priceMinorUnits != null) 'price_minor_units': priceMinorUnits,
+      if (details != null) 'details': details,
+      if (paymentBundleId != null) 'payment_bundle_id': paymentBundleId,
+      if (refundBundleId != null) 'refund_bundle_id': refundBundleId,
+      if (status != null) 'status': status,
+      if (createdAtMs != null) 'created_at_ms': createdAtMs,
+      if (updatedAtMs != null) 'updated_at_ms': updatedAtMs,
+      if (sourceBundleId != null) 'source_bundle_id': sourceBundleId,
+      if (lastStatusBundleId != null)
+        'last_status_bundle_id': lastStatusBundleId,
+      if (rejectionReason != null) 'rejection_reason': rejectionReason,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CommerceOrdersCompanion copyWith({
+    Value<String>? orderId,
+    Value<String>? productId,
+    Value<String?>? productTitle,
+    Value<String>? buyerNodeId,
+    Value<String>? vendorNodeId,
+    Value<int>? priceMinorUnits,
+    Value<String>? details,
+    Value<String?>? paymentBundleId,
+    Value<String?>? refundBundleId,
+    Value<String>? status,
+    Value<int>? createdAtMs,
+    Value<int>? updatedAtMs,
+    Value<String>? sourceBundleId,
+    Value<String?>? lastStatusBundleId,
+    Value<String?>? rejectionReason,
+    Value<int>? rowid,
+  }) {
+    return CommerceOrdersCompanion(
+      orderId: orderId ?? this.orderId,
+      productId: productId ?? this.productId,
+      productTitle: productTitle ?? this.productTitle,
+      buyerNodeId: buyerNodeId ?? this.buyerNodeId,
+      vendorNodeId: vendorNodeId ?? this.vendorNodeId,
+      priceMinorUnits: priceMinorUnits ?? this.priceMinorUnits,
+      details: details ?? this.details,
+      paymentBundleId: paymentBundleId ?? this.paymentBundleId,
+      refundBundleId: refundBundleId ?? this.refundBundleId,
+      status: status ?? this.status,
+      createdAtMs: createdAtMs ?? this.createdAtMs,
+      updatedAtMs: updatedAtMs ?? this.updatedAtMs,
+      sourceBundleId: sourceBundleId ?? this.sourceBundleId,
+      lastStatusBundleId: lastStatusBundleId ?? this.lastStatusBundleId,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (orderId.present) {
+      map['order_id'] = Variable<String>(orderId.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<String>(productId.value);
+    }
+    if (productTitle.present) {
+      map['product_title'] = Variable<String>(productTitle.value);
+    }
+    if (buyerNodeId.present) {
+      map['buyer_node_id'] = Variable<String>(buyerNodeId.value);
+    }
+    if (vendorNodeId.present) {
+      map['vendor_node_id'] = Variable<String>(vendorNodeId.value);
+    }
+    if (priceMinorUnits.present) {
+      map['price_minor_units'] = Variable<int>(priceMinorUnits.value);
+    }
+    if (details.present) {
+      map['details'] = Variable<String>(details.value);
+    }
+    if (paymentBundleId.present) {
+      map['payment_bundle_id'] = Variable<String>(paymentBundleId.value);
+    }
+    if (refundBundleId.present) {
+      map['refund_bundle_id'] = Variable<String>(refundBundleId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (createdAtMs.present) {
+      map['created_at_ms'] = Variable<int>(createdAtMs.value);
+    }
+    if (updatedAtMs.present) {
+      map['updated_at_ms'] = Variable<int>(updatedAtMs.value);
+    }
+    if (sourceBundleId.present) {
+      map['source_bundle_id'] = Variable<String>(sourceBundleId.value);
+    }
+    if (lastStatusBundleId.present) {
+      map['last_status_bundle_id'] = Variable<String>(lastStatusBundleId.value);
+    }
+    if (rejectionReason.present) {
+      map['rejection_reason'] = Variable<String>(rejectionReason.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CommerceOrdersCompanion(')
+          ..write('orderId: $orderId, ')
+          ..write('productId: $productId, ')
+          ..write('productTitle: $productTitle, ')
+          ..write('buyerNodeId: $buyerNodeId, ')
+          ..write('vendorNodeId: $vendorNodeId, ')
+          ..write('priceMinorUnits: $priceMinorUnits, ')
+          ..write('details: $details, ')
+          ..write('paymentBundleId: $paymentBundleId, ')
+          ..write('refundBundleId: $refundBundleId, ')
+          ..write('status: $status, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('updatedAtMs: $updatedAtMs, ')
+          ..write('sourceBundleId: $sourceBundleId, ')
+          ..write('lastStatusBundleId: $lastStatusBundleId, ')
+          ..write('rejectionReason: $rejectionReason, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4985,6 +6614,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $WebIndexRecordsTable webIndexRecords = $WebIndexRecordsTable(
     this,
   );
+  late final $CommerceProductsTable commerceProducts = $CommerceProductsTable(
+    this,
+  );
+  late final $CommerceOrdersTable commerceOrders = $CommerceOrdersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4998,6 +6631,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     contentMetadata,
     walletLedgerEntries,
     webIndexRecords,
+    commerceProducts,
+    commerceOrders,
   ];
 }
 
@@ -7423,6 +9058,758 @@ typedef $$WebIndexRecordsTableProcessedTableManager =
       WebIndexRecord,
       PrefetchHooks Function()
     >;
+typedef $$CommerceProductsTableCreateCompanionBuilder =
+    CommerceProductsCompanion Function({
+      required String productId,
+      required String title,
+      required String description,
+      required String vendorNodeId,
+      required int priceMinorUnits,
+      required String imageContentHash,
+      Value<String?> imageMimeType,
+      required String availability,
+      required int createdAtMs,
+      required int updatedAtMs,
+      required String sourceBundleId,
+      Value<int> rowid,
+    });
+typedef $$CommerceProductsTableUpdateCompanionBuilder =
+    CommerceProductsCompanion Function({
+      Value<String> productId,
+      Value<String> title,
+      Value<String> description,
+      Value<String> vendorNodeId,
+      Value<int> priceMinorUnits,
+      Value<String> imageContentHash,
+      Value<String?> imageMimeType,
+      Value<String> availability,
+      Value<int> createdAtMs,
+      Value<int> updatedAtMs,
+      Value<String> sourceBundleId,
+      Value<int> rowid,
+    });
+
+class $$CommerceProductsTableFilterComposer
+    extends Composer<_$AppDatabase, $CommerceProductsTable> {
+  $$CommerceProductsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get vendorNodeId => $composableBuilder(
+    column: $table.vendorNodeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get priceMinorUnits => $composableBuilder(
+    column: $table.priceMinorUnits,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageContentHash => $composableBuilder(
+    column: $table.imageContentHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageMimeType => $composableBuilder(
+    column: $table.imageMimeType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get availability => $composableBuilder(
+    column: $table.availability,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceBundleId => $composableBuilder(
+    column: $table.sourceBundleId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CommerceProductsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CommerceProductsTable> {
+  $$CommerceProductsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get vendorNodeId => $composableBuilder(
+    column: $table.vendorNodeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get priceMinorUnits => $composableBuilder(
+    column: $table.priceMinorUnits,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get imageContentHash => $composableBuilder(
+    column: $table.imageContentHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get imageMimeType => $composableBuilder(
+    column: $table.imageMimeType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get availability => $composableBuilder(
+    column: $table.availability,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceBundleId => $composableBuilder(
+    column: $table.sourceBundleId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CommerceProductsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CommerceProductsTable> {
+  $$CommerceProductsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get productId =>
+      $composableBuilder(column: $table.productId, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get vendorNodeId => $composableBuilder(
+    column: $table.vendorNodeId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get priceMinorUnits => $composableBuilder(
+    column: $table.priceMinorUnits,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get imageContentHash => $composableBuilder(
+    column: $table.imageContentHash,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get imageMimeType => $composableBuilder(
+    column: $table.imageMimeType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get availability => $composableBuilder(
+    column: $table.availability,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceBundleId => $composableBuilder(
+    column: $table.sourceBundleId,
+    builder: (column) => column,
+  );
+}
+
+class $$CommerceProductsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CommerceProductsTable,
+          CommerceProduct,
+          $$CommerceProductsTableFilterComposer,
+          $$CommerceProductsTableOrderingComposer,
+          $$CommerceProductsTableAnnotationComposer,
+          $$CommerceProductsTableCreateCompanionBuilder,
+          $$CommerceProductsTableUpdateCompanionBuilder,
+          (
+            CommerceProduct,
+            BaseReferences<
+              _$AppDatabase,
+              $CommerceProductsTable,
+              CommerceProduct
+            >,
+          ),
+          CommerceProduct,
+          PrefetchHooks Function()
+        > {
+  $$CommerceProductsTableTableManager(
+    _$AppDatabase db,
+    $CommerceProductsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CommerceProductsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CommerceProductsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CommerceProductsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> productId = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<String> vendorNodeId = const Value.absent(),
+                Value<int> priceMinorUnits = const Value.absent(),
+                Value<String> imageContentHash = const Value.absent(),
+                Value<String?> imageMimeType = const Value.absent(),
+                Value<String> availability = const Value.absent(),
+                Value<int> createdAtMs = const Value.absent(),
+                Value<int> updatedAtMs = const Value.absent(),
+                Value<String> sourceBundleId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CommerceProductsCompanion(
+                productId: productId,
+                title: title,
+                description: description,
+                vendorNodeId: vendorNodeId,
+                priceMinorUnits: priceMinorUnits,
+                imageContentHash: imageContentHash,
+                imageMimeType: imageMimeType,
+                availability: availability,
+                createdAtMs: createdAtMs,
+                updatedAtMs: updatedAtMs,
+                sourceBundleId: sourceBundleId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String productId,
+                required String title,
+                required String description,
+                required String vendorNodeId,
+                required int priceMinorUnits,
+                required String imageContentHash,
+                Value<String?> imageMimeType = const Value.absent(),
+                required String availability,
+                required int createdAtMs,
+                required int updatedAtMs,
+                required String sourceBundleId,
+                Value<int> rowid = const Value.absent(),
+              }) => CommerceProductsCompanion.insert(
+                productId: productId,
+                title: title,
+                description: description,
+                vendorNodeId: vendorNodeId,
+                priceMinorUnits: priceMinorUnits,
+                imageContentHash: imageContentHash,
+                imageMimeType: imageMimeType,
+                availability: availability,
+                createdAtMs: createdAtMs,
+                updatedAtMs: updatedAtMs,
+                sourceBundleId: sourceBundleId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CommerceProductsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CommerceProductsTable,
+      CommerceProduct,
+      $$CommerceProductsTableFilterComposer,
+      $$CommerceProductsTableOrderingComposer,
+      $$CommerceProductsTableAnnotationComposer,
+      $$CommerceProductsTableCreateCompanionBuilder,
+      $$CommerceProductsTableUpdateCompanionBuilder,
+      (
+        CommerceProduct,
+        BaseReferences<_$AppDatabase, $CommerceProductsTable, CommerceProduct>,
+      ),
+      CommerceProduct,
+      PrefetchHooks Function()
+    >;
+typedef $$CommerceOrdersTableCreateCompanionBuilder =
+    CommerceOrdersCompanion Function({
+      required String orderId,
+      required String productId,
+      Value<String?> productTitle,
+      required String buyerNodeId,
+      required String vendorNodeId,
+      required int priceMinorUnits,
+      required String details,
+      Value<String?> paymentBundleId,
+      Value<String?> refundBundleId,
+      required String status,
+      required int createdAtMs,
+      required int updatedAtMs,
+      required String sourceBundleId,
+      Value<String?> lastStatusBundleId,
+      Value<String?> rejectionReason,
+      Value<int> rowid,
+    });
+typedef $$CommerceOrdersTableUpdateCompanionBuilder =
+    CommerceOrdersCompanion Function({
+      Value<String> orderId,
+      Value<String> productId,
+      Value<String?> productTitle,
+      Value<String> buyerNodeId,
+      Value<String> vendorNodeId,
+      Value<int> priceMinorUnits,
+      Value<String> details,
+      Value<String?> paymentBundleId,
+      Value<String?> refundBundleId,
+      Value<String> status,
+      Value<int> createdAtMs,
+      Value<int> updatedAtMs,
+      Value<String> sourceBundleId,
+      Value<String?> lastStatusBundleId,
+      Value<String?> rejectionReason,
+      Value<int> rowid,
+    });
+
+class $$CommerceOrdersTableFilterComposer
+    extends Composer<_$AppDatabase, $CommerceOrdersTable> {
+  $$CommerceOrdersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get orderId => $composableBuilder(
+    column: $table.orderId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productTitle => $composableBuilder(
+    column: $table.productTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get buyerNodeId => $composableBuilder(
+    column: $table.buyerNodeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get vendorNodeId => $composableBuilder(
+    column: $table.vendorNodeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get priceMinorUnits => $composableBuilder(
+    column: $table.priceMinorUnits,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get details => $composableBuilder(
+    column: $table.details,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get paymentBundleId => $composableBuilder(
+    column: $table.paymentBundleId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get refundBundleId => $composableBuilder(
+    column: $table.refundBundleId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceBundleId => $composableBuilder(
+    column: $table.sourceBundleId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastStatusBundleId => $composableBuilder(
+    column: $table.lastStatusBundleId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rejectionReason => $composableBuilder(
+    column: $table.rejectionReason,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CommerceOrdersTableOrderingComposer
+    extends Composer<_$AppDatabase, $CommerceOrdersTable> {
+  $$CommerceOrdersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get orderId => $composableBuilder(
+    column: $table.orderId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productTitle => $composableBuilder(
+    column: $table.productTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get buyerNodeId => $composableBuilder(
+    column: $table.buyerNodeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get vendorNodeId => $composableBuilder(
+    column: $table.vendorNodeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get priceMinorUnits => $composableBuilder(
+    column: $table.priceMinorUnits,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get details => $composableBuilder(
+    column: $table.details,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get paymentBundleId => $composableBuilder(
+    column: $table.paymentBundleId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get refundBundleId => $composableBuilder(
+    column: $table.refundBundleId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceBundleId => $composableBuilder(
+    column: $table.sourceBundleId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastStatusBundleId => $composableBuilder(
+    column: $table.lastStatusBundleId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rejectionReason => $composableBuilder(
+    column: $table.rejectionReason,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CommerceOrdersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CommerceOrdersTable> {
+  $$CommerceOrdersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get orderId =>
+      $composableBuilder(column: $table.orderId, builder: (column) => column);
+
+  GeneratedColumn<String> get productId =>
+      $composableBuilder(column: $table.productId, builder: (column) => column);
+
+  GeneratedColumn<String> get productTitle => $composableBuilder(
+    column: $table.productTitle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get buyerNodeId => $composableBuilder(
+    column: $table.buyerNodeId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get vendorNodeId => $composableBuilder(
+    column: $table.vendorNodeId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get priceMinorUnits => $composableBuilder(
+    column: $table.priceMinorUnits,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get details =>
+      $composableBuilder(column: $table.details, builder: (column) => column);
+
+  GeneratedColumn<String> get paymentBundleId => $composableBuilder(
+    column: $table.paymentBundleId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get refundBundleId => $composableBuilder(
+    column: $table.refundBundleId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceBundleId => $composableBuilder(
+    column: $table.sourceBundleId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastStatusBundleId => $composableBuilder(
+    column: $table.lastStatusBundleId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rejectionReason => $composableBuilder(
+    column: $table.rejectionReason,
+    builder: (column) => column,
+  );
+}
+
+class $$CommerceOrdersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CommerceOrdersTable,
+          CommerceOrder,
+          $$CommerceOrdersTableFilterComposer,
+          $$CommerceOrdersTableOrderingComposer,
+          $$CommerceOrdersTableAnnotationComposer,
+          $$CommerceOrdersTableCreateCompanionBuilder,
+          $$CommerceOrdersTableUpdateCompanionBuilder,
+          (
+            CommerceOrder,
+            BaseReferences<_$AppDatabase, $CommerceOrdersTable, CommerceOrder>,
+          ),
+          CommerceOrder,
+          PrefetchHooks Function()
+        > {
+  $$CommerceOrdersTableTableManager(
+    _$AppDatabase db,
+    $CommerceOrdersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CommerceOrdersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CommerceOrdersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CommerceOrdersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> orderId = const Value.absent(),
+                Value<String> productId = const Value.absent(),
+                Value<String?> productTitle = const Value.absent(),
+                Value<String> buyerNodeId = const Value.absent(),
+                Value<String> vendorNodeId = const Value.absent(),
+                Value<int> priceMinorUnits = const Value.absent(),
+                Value<String> details = const Value.absent(),
+                Value<String?> paymentBundleId = const Value.absent(),
+                Value<String?> refundBundleId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> createdAtMs = const Value.absent(),
+                Value<int> updatedAtMs = const Value.absent(),
+                Value<String> sourceBundleId = const Value.absent(),
+                Value<String?> lastStatusBundleId = const Value.absent(),
+                Value<String?> rejectionReason = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CommerceOrdersCompanion(
+                orderId: orderId,
+                productId: productId,
+                productTitle: productTitle,
+                buyerNodeId: buyerNodeId,
+                vendorNodeId: vendorNodeId,
+                priceMinorUnits: priceMinorUnits,
+                details: details,
+                paymentBundleId: paymentBundleId,
+                refundBundleId: refundBundleId,
+                status: status,
+                createdAtMs: createdAtMs,
+                updatedAtMs: updatedAtMs,
+                sourceBundleId: sourceBundleId,
+                lastStatusBundleId: lastStatusBundleId,
+                rejectionReason: rejectionReason,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String orderId,
+                required String productId,
+                Value<String?> productTitle = const Value.absent(),
+                required String buyerNodeId,
+                required String vendorNodeId,
+                required int priceMinorUnits,
+                required String details,
+                Value<String?> paymentBundleId = const Value.absent(),
+                Value<String?> refundBundleId = const Value.absent(),
+                required String status,
+                required int createdAtMs,
+                required int updatedAtMs,
+                required String sourceBundleId,
+                Value<String?> lastStatusBundleId = const Value.absent(),
+                Value<String?> rejectionReason = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CommerceOrdersCompanion.insert(
+                orderId: orderId,
+                productId: productId,
+                productTitle: productTitle,
+                buyerNodeId: buyerNodeId,
+                vendorNodeId: vendorNodeId,
+                priceMinorUnits: priceMinorUnits,
+                details: details,
+                paymentBundleId: paymentBundleId,
+                refundBundleId: refundBundleId,
+                status: status,
+                createdAtMs: createdAtMs,
+                updatedAtMs: updatedAtMs,
+                sourceBundleId: sourceBundleId,
+                lastStatusBundleId: lastStatusBundleId,
+                rejectionReason: rejectionReason,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CommerceOrdersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CommerceOrdersTable,
+      CommerceOrder,
+      $$CommerceOrdersTableFilterComposer,
+      $$CommerceOrdersTableOrderingComposer,
+      $$CommerceOrdersTableAnnotationComposer,
+      $$CommerceOrdersTableCreateCompanionBuilder,
+      $$CommerceOrdersTableUpdateCompanionBuilder,
+      (
+        CommerceOrder,
+        BaseReferences<_$AppDatabase, $CommerceOrdersTable, CommerceOrder>,
+      ),
+      CommerceOrder,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7443,4 +9830,8 @@ class $AppDatabaseManager {
       $$WalletLedgerEntriesTableTableManager(_db, _db.walletLedgerEntries);
   $$WebIndexRecordsTableTableManager get webIndexRecords =>
       $$WebIndexRecordsTableTableManager(_db, _db.webIndexRecords);
+  $$CommerceProductsTableTableManager get commerceProducts =>
+      $$CommerceProductsTableTableManager(_db, _db.commerceProducts);
+  $$CommerceOrdersTableTableManager get commerceOrders =>
+      $$CommerceOrdersTableTableManager(_db, _db.commerceOrders);
 }

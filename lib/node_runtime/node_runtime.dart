@@ -7,6 +7,7 @@ import 'package:offlimu/domain/entities/bundle.dart';
 import 'package:offlimu/domain/entities/content_metadata_record.dart';
 import 'package:offlimu/domain/entities/peer_contact.dart';
 import 'package:offlimu/domain/repositories/bundle_repository.dart';
+import 'package:offlimu/domain/repositories/commerce_repository.dart';
 import 'package:offlimu/domain/repositories/peer_repository.dart';
 import 'package:offlimu/domain/services/bundle_signature_service.dart';
 import 'package:offlimu/domain/services/discovery_adapter.dart';
@@ -36,6 +37,7 @@ class NodeRuntime {
     LoggerService? logger,
     WalletSyncReconciliationService? walletSyncReconciliationService,
     WebSearchResultIngestionService? webSearchResultIngestionService,
+    CommerceRepository? commerceRepository,
   }) : _localNodeId = localNodeId,
        _discovery = discovery,
        _transport = transport,
@@ -45,7 +47,8 @@ class NodeRuntime {
        _bundleSignatureService = bundleSignatureService,
        _logger = logger,
        _walletSyncReconciliationService = walletSyncReconciliationService,
-       _webSearchResultIngestionService = webSearchResultIngestionService {
+       _webSearchResultIngestionService = webSearchResultIngestionService,
+       _commerceRepository = commerceRepository {
     _healthController.add(_health);
     _peerCountController.add(_peerCount);
     _telemetryController.add(_telemetry);
@@ -62,6 +65,7 @@ class NodeRuntime {
   final LoggerService? _logger;
   final WalletSyncReconciliationService? _walletSyncReconciliationService;
   final WebSearchResultIngestionService? _webSearchResultIngestionService;
+  final CommerceRepository? _commerceRepository;
   final int maxHopCount;
   final int maxSendAttempts;
   final Duration retryBaseDelay;
@@ -851,7 +855,18 @@ class NodeRuntime {
     if (bundle.type == Bundle.typeWebIndexUpdate) {
       return _handleInboundWebIndexUpdate(bundle);
     }
+    if (bundle.isCommerceBundle) {
+      return _handleInboundCommerceBundle(bundle);
+    }
     return _handleInboundAppBundle(bundle);
+  }
+
+  Future<void> _handleInboundCommerceBundle(Bundle bundle) async {
+    await _commerceRepository?.ingestBundle(bundle, localNodeId: _localNodeId);
+    await _bundles.markAcknowledged(bundle.bundleId);
+    if (!bundle.isBroadcast) {
+      await _enqueueAckBundleFor(bundle);
+    }
   }
 
   Future<void> _handleInboundWebIndexUpdate(Bundle bundle) async {

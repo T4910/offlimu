@@ -9,7 +9,7 @@ import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 void main() {
   group('AppDatabase migrations', () {
-    test('migrates v9 schema to v14 and preserves rows', () async {
+    test('migrates v9 schema to v15 and preserves rows', () async {
       final tempDir = await Directory.systemTemp.createTemp('offlimu-db-');
       final dbFile = File(p.join(tempDir.path, 'offlimu.sqlite'));
 
@@ -152,6 +152,20 @@ INSERT INTO bundle_records (
           .get();
       expect(webIndexTableRows, isNotEmpty);
 
+      final commerceProductTableRows = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'commerce_products'",
+          )
+          .get();
+      expect(commerceProductTableRows, isNotEmpty);
+
+      final commerceOrderTableRows = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'commerce_orders'",
+          )
+          .get();
+      expect(commerceOrderTableRows, isNotEmpty);
+
       final legacy = await db
           .customSelect(
             '''
@@ -180,7 +194,7 @@ WHERE bundle_id = ?
     });
 
     test(
-      'fresh v14 schema includes DTN metadata, wallet ledger, content metadata, and web index tables',
+      'fresh v15 schema includes DTN metadata, wallet ledger, content metadata, web index, and commerce tables',
       () async {
         final db = AppDatabase.forTesting(NativeDatabase.memory());
         addTearDown(db.close);
@@ -188,7 +202,7 @@ WHERE bundle_id = ?
         final version = await db
             .customSelect('PRAGMA user_version')
             .getSingle();
-        expect(version.data['user_version'], 14);
+        expect(version.data['user_version'], 15);
 
         final columnRows = await db
             .customSelect('PRAGMA table_info(bundle_records)')
@@ -271,6 +285,53 @@ WHERE bundle_id = ?
             'source_request_id',
             'total_bytes',
             'expected_chunk_count',
+            'created_at_ms',
+            'updated_at_ms',
+          }),
+        );
+
+        final commerceProductColumns = await db
+            .customSelect('PRAGMA table_info(commerce_products)')
+            .get();
+        final commerceProductColumnNames = commerceProductColumns
+            .map((row) => row.data['name'] as String)
+            .toSet();
+
+        expect(
+          commerceProductColumnNames,
+          containsAll(<String>{
+            'product_id',
+            'title',
+            'description',
+            'vendor_node_id',
+            'price_minor_units',
+            'image_content_hash',
+            'availability',
+            'created_at_ms',
+            'updated_at_ms',
+            'source_bundle_id',
+          }),
+        );
+
+        final commerceOrderColumns = await db
+            .customSelect('PRAGMA table_info(commerce_orders)')
+            .get();
+        final commerceOrderColumnNames = commerceOrderColumns
+            .map((row) => row.data['name'] as String)
+            .toSet();
+
+        expect(
+          commerceOrderColumnNames,
+          containsAll(<String>{
+            'order_id',
+            'product_id',
+            'buyer_node_id',
+            'vendor_node_id',
+            'price_minor_units',
+            'details',
+            'payment_bundle_id',
+            'refund_bundle_id',
+            'status',
             'created_at_ms',
             'updated_at_ms',
           }),

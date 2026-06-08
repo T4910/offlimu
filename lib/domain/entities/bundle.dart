@@ -39,6 +39,12 @@ class Bundle {
   static const String typeWalletConfirmation = 'wallet_confirmation';
   static const String typeWalletRejection = 'wallet_rejection';
   static const String typeWalletReward = 'wallet_reward';
+  static const String typeCommerceProductUpsert = 'commerce_product_upsert';
+  static const String typeCommerceProductOutOfStock =
+      'commerce_product_out_of_stock';
+  static const String typeCommerceOrder = 'commerce_order';
+  static const String typeCommerceOrderReceived = 'commerce_order_received';
+  static const String typeCommerceOrderRejected = 'commerce_order_rejected';
 
   final String bundleId;
   final String type;
@@ -74,6 +80,13 @@ class Bundle {
       appId == 'offlimu.web' ||
       type == typeWebSearchRequest ||
       type == typeWebIndexUpdate;
+  bool get isCommerceBundle =>
+      appId == 'offlimu.commerce' ||
+      type == typeCommerceProductUpsert ||
+      type == typeCommerceProductOutOfStock ||
+      type == typeCommerceOrder ||
+      type == typeCommerceOrderReceived ||
+      type == typeCommerceOrderRejected;
 
   String get signaturePayload => jsonEncode(<String, Object?>{
     'bundleId': bundleId,

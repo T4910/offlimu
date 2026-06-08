@@ -3,6 +3,7 @@ import 'package:offlimu/domain/services/bundle_signature_service.dart';
 import 'package:offlimu/domain/services/background_scheduler.dart';
 import 'package:offlimu/domain/services/content_store.dart';
 import 'package:offlimu/domain/repositories/bundle_repository.dart';
+import 'package:offlimu/domain/repositories/commerce_repository.dart';
 import 'package:offlimu/domain/repositories/sync_job_repository.dart';
 import 'package:offlimu/domain/repositories/wallet_repository.dart';
 import 'package:offlimu/domain/repositories/web_search_repository.dart';
@@ -21,6 +22,7 @@ import 'package:offlimu/infrastructure/crypto/ed25519_bundle_signature_service.d
 import 'package:offlimu/infrastructure/crypto/ed25519_crypto_service.dart';
 import 'package:offlimu/infrastructure/db/app_database.dart';
 import 'package:offlimu/infrastructure/db/drift_bundle_repository.dart';
+import 'package:offlimu/infrastructure/db/drift_commerce_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_sync_job_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_wallet_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_web_search_repository.dart';
@@ -86,6 +88,7 @@ Future<void> _runBackgroundSync() async {
   final SyncJobRepository syncJobs = DriftSyncJobRepository(db);
   final WalletRepository walletRepository = DriftWalletRepository(db);
   final WebSearchRepository webSearchRepository = DriftWebSearchRepository(db);
+  final CommerceRepository commerceRepository = DriftCommerceRepository(db);
   final ContentStore contentStore = LocalFileContentStore(
     maxStoreBytes: _appConfig.contentStoreMaxBytes,
   );
@@ -126,6 +129,7 @@ Future<void> _runBackgroundSync() async {
     deviceConditions: deviceConditions,
     walletSyncReconciliationService: walletSyncReconciliationService,
     webSearchResultIngestionService: webSearchResultIngestionService,
+    commerceRepository: commerceRepository,
     logger: _logger,
     devicePolicy: SyncDevicePolicy(
       allowMeteredNetwork: _appConfig.syncAllowMeteredNetwork,

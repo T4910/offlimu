@@ -27,54 +27,58 @@ class NodeStatusPage extends ConsumerWidget {
       body: runtimeAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stackTrace) => Center(child: Text('Error: $error')),
-        data: (runtime) => ListView(
+        data: (runtime) => SingleChildScrollView(
           padding: const EdgeInsets.all(12),
-          children: <Widget>[
-            _WelcomeCard(
-              runtime: runtime,
-              onCopyNodeId: () => _copyNodeId(context, runtime.identity.nodeId),
-            ),
-            const SizedBox(height: 10),
-            const _QuickActionsCard(),
-            const SizedBox(height: 10),
-            _PeerHistoryCard(
-              peersAsync: peerContactsAsync,
-              onRefreshPeers: () async {
-                try {
-                  await nodeRuntime.refreshPeersNow();
-                } catch (error) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Refresh failed: $error')),
-                  );
-                }
-              },
-              onCopyPeer: (nodeId) => _copyNodeId(context, nodeId),
-            ),
-            const SizedBox(height: 10),
-            _GatewaySyncCard(
-              gatewayEnabled: gatewayEnabled,
-              gatewaySyncStatus: gatewaySyncStatus,
-              syncState: syncState,
-              onSyncNow: () => ref
-                  .read(gatewaySyncCoordinatorProvider)
-                  .runManual(gatewayEnabled: gatewayEnabled),
-              onGatewayChanged: (value) =>
-                  ref.read(gatewayEnabledProvider.notifier).state = value,
-            ),
-            const SizedBox(height: 10),
-            _RuntimeCard(
-              isRunning: nodeRuntime.isRunning,
-              health: runtime.health,
-              onToggleRuntime: () async {
-                if (nodeRuntime.isRunning) {
-                  await nodeRuntime.stop();
-                } else {
-                  await nodeRuntime.start();
-                }
-              },
-            ),
-          ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              _WelcomeCard(
+                runtime: runtime,
+                onCopyNodeId: () =>
+                    _copyNodeId(context, runtime.identity.nodeId),
+              ),
+              const SizedBox(height: 10),
+              _PeerHistoryCard(
+                peersAsync: peerContactsAsync,
+                onRefreshPeers: () async {
+                  try {
+                    await nodeRuntime.refreshPeersNow();
+                  } catch (error) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Refresh failed: $error')),
+                    );
+                  }
+                },
+                onCopyPeer: (nodeId) => _copyNodeId(context, nodeId),
+              ),
+              const SizedBox(height: 10),
+              const _QuickActionsCard(),
+              const SizedBox(height: 10),
+              _GatewaySyncCard(
+                gatewayEnabled: gatewayEnabled,
+                gatewaySyncStatus: gatewaySyncStatus,
+                syncState: syncState,
+                onSyncNow: () => ref
+                    .read(gatewaySyncCoordinatorProvider)
+                    .runManual(gatewayEnabled: gatewayEnabled),
+                onGatewayChanged: (value) =>
+                    ref.read(gatewayEnabledProvider.notifier).state = value,
+              ),
+              const SizedBox(height: 10),
+              _RuntimeCard(
+                isRunning: nodeRuntime.isRunning,
+                health: runtime.health,
+                onToggleRuntime: () async {
+                  if (nodeRuntime.isRunning) {
+                    await nodeRuntime.stop();
+                  } else {
+                    await nodeRuntime.start();
+                  }
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -224,6 +228,11 @@ class _QuickActionsCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: <Widget>[
+                _ActionButton(
+                  icon: Icons.storefront_rounded,
+                  label: 'Commerce',
+                  onPressed: () => context.push('/commerce'),
+                ),
                 _ActionButton(
                   icon: Icons.outbox_rounded,
                   label: 'Queue',
@@ -514,7 +523,7 @@ class _PeerBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Chip(
-      label: Text(active ? 'Active' : 'Last seen'),
+      label: Text(active ? 'Active' : 'Offline'),
       visualDensity: VisualDensity.compact,
       backgroundColor: active
           ? Theme.of(context).colorScheme.primaryContainer

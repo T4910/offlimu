@@ -11,6 +11,8 @@ import 'package:offlimu/domain/entities/ack_event.dart';
 import 'package:offlimu/domain/entities/bundle.dart';
 import 'package:offlimu/domain/entities/chat_message.dart';
 import 'package:offlimu/domain/entities/chat_thread.dart';
+import 'package:offlimu/domain/entities/commerce_order.dart';
+import 'package:offlimu/domain/entities/commerce_product.dart';
 import 'package:offlimu/domain/entities/content_metadata_record.dart';
 import 'package:offlimu/domain/entities/file_transfer_explorer_item.dart';
 import 'package:offlimu/domain/entities/node_identity.dart';
@@ -21,6 +23,7 @@ import 'package:offlimu/domain/entities/wallet_ledger_entry.dart';
 import 'package:offlimu/domain/entities/web_index_entry.dart';
 import 'package:offlimu/domain/repositories/bundle_repository.dart';
 import 'package:offlimu/domain/repositories/chat_message_repository.dart';
+import 'package:offlimu/domain/repositories/commerce_repository.dart';
 import 'package:offlimu/domain/repositories/peer_repository.dart';
 import 'package:offlimu/domain/repositories/sync_job_repository.dart';
 import 'package:offlimu/domain/repositories/wallet_repository.dart';
@@ -36,21 +39,26 @@ import 'package:offlimu/domain/services/transport_adapter.dart';
 import 'package:offlimu/domain/services/background_scheduler.dart';
 import 'package:offlimu/domain/services/content_store.dart';
 import 'package:offlimu/domain/use_cases/chat_message_bundle_mapper.dart';
+import 'package:offlimu/domain/use_cases/commerce_order_actions_use_case.dart';
 import 'package:offlimu/domain/use_cases/prepare_bundle_content_use_case.dart';
 import 'package:offlimu/domain/use_cases/receive_chat_message_use_case.dart';
 import 'package:offlimu/domain/use_cases/resend_bundle_use_case.dart';
 import 'package:offlimu/domain/use_cases/initiate_wallet_spend_use_case.dart';
+import 'package:offlimu/domain/use_cases/publish_product_use_case.dart';
 import 'package:offlimu/domain/use_cases/send_chat_message_use_case.dart';
 import 'package:offlimu/domain/use_cases/send_file_transfer_use_case.dart';
+import 'package:offlimu/domain/use_cases/submit_commerce_order_use_case.dart';
 import 'package:offlimu/domain/use_cases/submit_web_search_request_use_case.dart';
 import 'package:offlimu/domain/use_cases/reward_issuance_use_case.dart';
 import 'package:offlimu/domain/use_cases/wallet_event_bundle_mapper.dart';
 import 'package:offlimu/domain/use_cases/wallet_sync_reconciliation_service.dart';
 import 'package:offlimu/domain/use_cases/reward_derivation_service.dart';
 import 'package:offlimu/domain/use_cases/web_search_result_ingestion_service.dart';
-import 'package:offlimu/infrastructure/db/app_database.dart' hide PeerContact;
+import 'package:offlimu/infrastructure/db/app_database.dart'
+    hide CommerceOrder, CommerceProduct, PeerContact;
 import 'package:offlimu/infrastructure/db/drift_bundle_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_chat_message_repository.dart';
+import 'package:offlimu/infrastructure/db/drift_commerce_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_peer_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_sync_job_repository.dart';
 import 'package:offlimu/infrastructure/db/drift_wallet_repository.dart';
@@ -308,6 +316,11 @@ final Provider<WebSearchRepository> webSearchRepositoryProvider =
       (ref) => DriftWebSearchRepository(ref.watch(appDatabaseProvider)),
     );
 
+final Provider<CommerceRepository> commerceRepositoryProvider =
+    Provider<CommerceRepository>(
+      (ref) => DriftCommerceRepository(ref.watch(appDatabaseProvider)),
+    );
+
 final Provider<WalletEventBundleMapper> walletEventBundleMapperProvider =
     Provider<WalletEventBundleMapper>((ref) => const WalletEventBundleMapper());
 
@@ -369,6 +382,55 @@ webSearchResultIngestionServiceProvider =
         bundleSignatureService: ref.watch(bundleSignatureServiceProvider),
       ),
     );
+
+final Provider<PublishProductUseCase> publishProductUseCaseProvider =
+    Provider<PublishProductUseCase>(
+      (ref) => PublishProductUseCase(
+        sendFileTransfer: ref.watch(sendFileTransferUseCaseProvider),
+        bundleRepository: ref.watch(bundleRepositoryProvider),
+        commerceRepository: ref.watch(commerceRepositoryProvider),
+        bundleSignatureService: ref.watch(bundleSignatureServiceProvider),
+      ),
+    );
+
+final Provider<SubmitCommerceOrderUseCase> submitCommerceOrderUseCaseProvider =
+    Provider<SubmitCommerceOrderUseCase>(
+      (ref) => SubmitCommerceOrderUseCase(
+        commerceRepository: ref.watch(commerceRepositoryProvider),
+        bundleRepository: ref.watch(bundleRepositoryProvider),
+        initiateWalletSpend: ref.watch(initiateWalletSpendUseCaseProvider),
+        bundleSignatureService: ref.watch(bundleSignatureServiceProvider),
+      ),
+    );
+
+final Provider<MarkOrderReceivedUseCase> markOrderReceivedUseCaseProvider =
+    Provider<MarkOrderReceivedUseCase>(
+      (ref) => MarkOrderReceivedUseCase(
+        commerceRepository: ref.watch(commerceRepositoryProvider),
+        bundleRepository: ref.watch(bundleRepositoryProvider),
+        bundleSignatureService: ref.watch(bundleSignatureServiceProvider),
+      ),
+    );
+
+final Provider<RejectCommerceOrderUseCase> rejectCommerceOrderUseCaseProvider =
+    Provider<RejectCommerceOrderUseCase>(
+      (ref) => RejectCommerceOrderUseCase(
+        commerceRepository: ref.watch(commerceRepositoryProvider),
+        bundleRepository: ref.watch(bundleRepositoryProvider),
+        initiateWalletSpend: ref.watch(initiateWalletSpendUseCaseProvider),
+        bundleSignatureService: ref.watch(bundleSignatureServiceProvider),
+      ),
+    );
+
+final Provider<MarkProductOutOfStockUseCase>
+markProductOutOfStockUseCaseProvider = Provider<MarkProductOutOfStockUseCase>(
+  (ref) => MarkProductOutOfStockUseCase(
+    commerceRepository: ref.watch(commerceRepositoryProvider),
+    bundleRepository: ref.watch(bundleRepositoryProvider),
+    rejectOrder: ref.watch(rejectCommerceOrderUseCaseProvider),
+    bundleSignatureService: ref.watch(bundleSignatureServiceProvider),
+  ),
+);
 
 final StreamProvider<List<Bundle>> pendingBundlesProvider =
     StreamProvider<List<Bundle>>(
@@ -481,6 +543,44 @@ final FutureProviderFamily<WebIndexEntry?, String> webIndexEntryProvider =
     FutureProvider.family<WebIndexEntry?, String>(
       (ref, contentHash) =>
           ref.watch(webSearchRepositoryProvider).getByContentHash(contentHash),
+    );
+
+final StreamProvider<List<CommerceProduct>> commerceAvailableProductsProvider =
+    StreamProvider<List<CommerceProduct>>((ref) {
+      final localNodeId = ref.watch(localNodeIdentityProvider).nodeId;
+      return ref
+          .watch(commerceRepositoryProvider)
+          .watchAvailableProducts(localNodeId: localNodeId);
+    });
+
+final StreamProvider<List<CommerceProduct>> commerceMyListingsProvider =
+    StreamProvider<List<CommerceProduct>>((ref) {
+      final localNodeId = ref.watch(localNodeIdentityProvider).nodeId;
+      return ref
+          .watch(commerceRepositoryProvider)
+          .watchMyListings(localNodeId: localNodeId);
+    });
+
+final StreamProvider<List<CommerceOrder>> commerceIncomingOrdersProvider =
+    StreamProvider<List<CommerceOrder>>((ref) {
+      final localNodeId = ref.watch(localNodeIdentityProvider).nodeId;
+      return ref
+          .watch(commerceRepositoryProvider)
+          .watchIncomingOrders(localNodeId: localNodeId);
+    });
+
+final StreamProvider<List<CommerceOrder>> commerceOutgoingOrdersProvider =
+    StreamProvider<List<CommerceOrder>>((ref) {
+      final localNodeId = ref.watch(localNodeIdentityProvider).nodeId;
+      return ref
+          .watch(commerceRepositoryProvider)
+          .watchOutgoingOrders(localNodeId: localNodeId);
+    });
+
+final StreamProviderFamily<CommerceProduct?, String> commerceProductProvider =
+    StreamProvider.family<CommerceProduct?, String>(
+      (ref, productId) =>
+          ref.watch(commerceRepositoryProvider).watchProduct(productId),
     );
 
 final StreamProvider<List<ContentMetadataRecord>>
@@ -696,6 +796,7 @@ final Provider<NodeRuntime> nodeRuntimeProvider = Provider<NodeRuntime>((ref) {
     webSearchResultIngestionService: ref.watch(
       webSearchResultIngestionServiceProvider,
     ),
+    commerceRepository: ref.watch(commerceRepositoryProvider),
     logger: ref.watch(loggerServiceProvider),
   );
   ref.onDispose(() {

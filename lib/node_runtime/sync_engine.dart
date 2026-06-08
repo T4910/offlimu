@@ -1,6 +1,7 @@
 import 'package:offlimu/domain/entities/bundle.dart';
 import 'package:offlimu/domain/entities/sync_job_history_entry.dart';
 import 'package:offlimu/domain/repositories/bundle_repository.dart';
+import 'package:offlimu/domain/repositories/commerce_repository.dart';
 import 'package:offlimu/domain/repositories/sync_job_repository.dart';
 import 'package:offlimu/domain/services/device_conditions_service.dart';
 import 'package:offlimu/domain/services/logger_service.dart';
@@ -47,6 +48,7 @@ class SyncEngine {
     required DeviceConditionsService deviceConditions,
     WalletSyncReconciliationService? walletSyncReconciliationService,
     WebSearchResultIngestionService? webSearchResultIngestionService,
+    CommerceRepository? commerceRepository,
     LoggerService? logger,
     this.devicePolicy = const SyncDevicePolicy(),
     this.maxHopCount = 5,
@@ -57,6 +59,7 @@ class SyncEngine {
        _deviceConditions = deviceConditions,
        _walletSyncReconciliationService = walletSyncReconciliationService,
        _webSearchResultIngestionService = webSearchResultIngestionService,
+       _commerceRepository = commerceRepository,
        _logger = logger;
 
   final String _localNodeId;
@@ -66,6 +69,7 @@ class SyncEngine {
   final DeviceConditionsService _deviceConditions;
   final WalletSyncReconciliationService? _walletSyncReconciliationService;
   final WebSearchResultIngestionService? _webSearchResultIngestionService;
+  final CommerceRepository? _commerceRepository;
   final LoggerService? _logger;
   final SyncDevicePolicy devicePolicy;
   final int maxHopCount;
@@ -300,6 +304,15 @@ class SyncEngine {
         if (bundle.type == Bundle.typeWebIndexUpdate) {
           await _webSearchResultIngestionService?.ingestIndexUpdateBundle(
             bundle,
+          );
+          await _bundles.markAcknowledged(bundle.bundleId);
+          continue;
+        }
+
+        if (bundle.isCommerceBundle) {
+          await _commerceRepository?.ingestBundle(
+            bundle,
+            localNodeId: _localNodeId,
           );
           await _bundles.markAcknowledged(bundle.bundleId);
           continue;
