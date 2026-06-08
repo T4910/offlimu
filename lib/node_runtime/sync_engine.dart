@@ -234,7 +234,6 @@ class SyncEngine {
         },
       );
 
-      final acknowledgedIds = uploadResult.acknowledgedBundleIds.toSet();
       final rejectedById = {
         for (final rejection in uploadResult.rejections)
           rejection.bundleId: rejection.reason,
@@ -246,17 +245,6 @@ class SyncEngine {
           await _bundles.markRejected(bundle.bundleId, reason: rejectedReason);
           continue;
         }
-
-        if (acknowledgedIds.contains(bundle.bundleId)) {
-          if (_serverAcceptanceCompletesBundle(bundle)) {
-            await _bundles.markAcknowledged(bundle.bundleId);
-          } else {
-            await _bundles.markSent(bundle.bundleId);
-          }
-          continue;
-        }
-
-        // await _bundles.markSent(bundle.bundleId);
       }
 
       final DateTime since =
@@ -393,10 +381,6 @@ class SyncEngine {
     }
     return connectionType == DeviceConnectionType.wifi ||
         connectionType == DeviceConnectionType.ethernet;
-  }
-
-  bool _serverAcceptanceCompletesBundle(Bundle bundle) {
-    return false;
   }
 
   bool _isBatteryAllowed(DeviceConditionsSnapshot snapshot) {

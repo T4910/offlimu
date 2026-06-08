@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:offlimu/domain/entities/bundle.dart';
 import 'package:offlimu/domain/services/bundle_signature_service.dart';
 import 'package:offlimu/domain/services/crypto_service.dart';
@@ -38,40 +36,10 @@ class Ed25519BundleSignatureService implements BundleSignatureService {
       return false;
     }
 
-    final isCurrentFormatValid = await _cryptoService.verify(
+    return _cryptoService.verify(
       payload: bundle.signaturePayload,
       signature: signature,
       publicKey: publicKey,
     );
-
-    if (isCurrentFormatValid) {
-      return true;
-    }
-
-    return _cryptoService.verify(
-      payload: _legacySignaturePayload(bundle),
-      signature: signature,
-      publicKey: publicKey,
-    );
-  }
-
-  String _legacySignaturePayload(Bundle bundle) {
-    return jsonEncode(<String, Object?>{
-      'bundleId': bundle.bundleId,
-      'type': bundle.type,
-      'sourceNodeId': bundle.sourceNodeId,
-      'sourcePublicKey': bundle.sourcePublicKey,
-      'destinationNodeId': bundle.destinationNodeId,
-      'destinationScope': bundle.destinationScope.name,
-      'priority': bundle.priority.name,
-      'ackForBundleId': bundle.ackForBundleId,
-      'payload': bundle.payload,
-      'payloadReference': bundle.payloadReference,
-      'appId': bundle.appId,
-      'createdAtMs': bundle.createdAt.millisecondsSinceEpoch,
-      'expiresAtMs': bundle.expiresAtOverride?.millisecondsSinceEpoch,
-      'ttlSeconds': bundle.ttlSeconds,
-      'hopCount': bundle.hopCount,
-    });
   }
 }

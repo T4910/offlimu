@@ -10,12 +10,10 @@ class SyncRejection {
 
 class SyncUploadResult {
   const SyncUploadResult({
-    required this.acknowledgedBundleIds,
-    required this.rejections,
+    this.rejections = const <SyncRejection>[],
     this.webSearchResults = const <WebSearchResult>[],
   });
 
-  final List<String> acknowledgedBundleIds;
   final List<SyncRejection> rejections;
   final List<WebSearchResult> webSearchResults;
 }

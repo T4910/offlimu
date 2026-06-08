@@ -49,10 +49,8 @@ import 'package:offlimu/domain/use_cases/send_chat_message_use_case.dart';
 import 'package:offlimu/domain/use_cases/send_file_transfer_use_case.dart';
 import 'package:offlimu/domain/use_cases/submit_commerce_order_use_case.dart';
 import 'package:offlimu/domain/use_cases/submit_web_search_request_use_case.dart';
-import 'package:offlimu/domain/use_cases/reward_issuance_use_case.dart';
 import 'package:offlimu/domain/use_cases/wallet_event_bundle_mapper.dart';
 import 'package:offlimu/domain/use_cases/wallet_sync_reconciliation_service.dart';
-import 'package:offlimu/domain/use_cases/reward_derivation_service.dart';
 import 'package:offlimu/domain/use_cases/web_search_result_ingestion_service.dart';
 import 'package:offlimu/infrastructure/db/app_database.dart'
     hide CommerceOrder, CommerceProduct, PeerContact;
@@ -333,27 +331,6 @@ final Provider<InitiateWalletSpendUseCase> initiateWalletSpendUseCaseProvider =
         mapper: ref.watch(walletEventBundleMapperProvider),
       ),
     );
-
-final Provider<RewardIssuanceUseCase> rewardIssuanceUseCaseProvider =
-    Provider<RewardIssuanceUseCase>(
-      (ref) => RewardIssuanceUseCase(
-        bundleRepository: ref.watch(bundleRepositoryProvider),
-        walletRepository: ref.watch(walletRepositoryProvider),
-        bundleSignatureService: ref.watch(bundleSignatureServiceProvider),
-      ),
-    );
-
-final Provider<RewardDerivationService> rewardDerivationServiceProvider =
-    Provider<RewardDerivationService>((ref) {
-      final issuance = ref.watch(rewardIssuanceUseCaseProvider);
-      final localNodeId = ref.watch(localNodeIdentityProvider).nodeId;
-      return RewardDerivationService(
-        outboundSendSuccessesGetter: () =>
-            ref.watch(nodeRuntimeProvider).telemetry.outboundSendSuccesses,
-        issuance: issuance,
-        localNodeId: localNodeId,
-      );
-    });
 
 final Provider<WalletSyncReconciliationService>
 walletSyncReconciliationServiceProvider =
@@ -894,14 +871,6 @@ Future<void> _runScheduledTask(Ref ref, String taskId) async {
           .runManual(gatewayEnabled: gatewayEnabled);
     } catch (_) {
       // Sync failures are already reflected in sync history and status providers.
-    }
-    // After a scheduled sync run, attempt reward derivation and issuance.
-    try {
-      await ref
-          .read(rewardDerivationServiceProvider)
-          .deriveAndIssueIfEligible();
-    } catch (_) {
-      // Non-fatal: reward derivation should not break scheduled tasks.
     }
     return;
   }

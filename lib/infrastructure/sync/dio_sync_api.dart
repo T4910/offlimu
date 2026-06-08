@@ -5,6 +5,7 @@ import 'package:offlimu/domain/entities/bundle.dart';
 import 'package:offlimu/domain/entities/sync_contract.dart';
 import 'package:offlimu/domain/entities/web_search_result.dart';
 import 'package:offlimu/domain/services/sync_api.dart';
+import 'package:offlimu/domain/use_cases/wallet_event_bundle_mapper.dart';
 
 class DioSyncApi implements SyncApi {
   DioSyncApi({required String baseUrl, this.mockMode = false})
@@ -26,14 +27,10 @@ class DioSyncApi implements SyncApi {
   @override
   Future<SyncUploadResult> uploadBundles(List<Bundle> bundles) async {
     if (bundles.isEmpty) {
-      return const SyncUploadResult(
-        acknowledgedBundleIds: <String>[],
-        rejections: <SyncRejection>[],
-      );
+      return const SyncUploadResult();
     }
 
     if (mockMode) {
-      final List<String> acknowledged = <String>[];
       final List<SyncRejection> rejected = <SyncRejection>[];
       final List<WebSearchResult> webSearchResults = <WebSearchResult>[];
 
@@ -49,9 +46,10 @@ class DioSyncApi implements SyncApi {
             ),
           );
         } else {
-          final confirmation = _buildConfirmationFor(bundle);
-          _mockRemoteInbox.add(confirmation);
-          acknowledged.add(bundle.bundleId);
+          final serverBundle = _buildServerGeneratedBundleFor(bundle);
+          if (serverBundle != null) {
+            _mockRemoteInbox.add(serverBundle);
+          }
           if (bundle.type == Bundle.typeWebSearchRequest) {
             webSearchResults.addAll(_buildMockWebResultsFor(bundle));
           }
@@ -59,7 +57,6 @@ class DioSyncApi implements SyncApi {
       }
 
       return SyncUploadResult(
-        acknowledgedBundleIds: acknowledged,
         rejections: rejected,
         webSearchResults: webSearchResults,
       );
@@ -78,7 +75,6 @@ class DioSyncApi implements SyncApi {
     }
 
     final data = _asMap(response.data);
-    final acknowledged = _asStringList(data['acknowledgedBundleIds']);
     final rejectedRaw = data['rejections'];
     final rejected = rejectedRaw is List
         ? rejectedRaw
@@ -103,11 +99,7 @@ class DioSyncApi implements SyncApi {
               .toList(growable: false)
         : const <WebSearchResult>[];
 
-    return SyncUploadResult(
-      acknowledgedBundleIds: acknowledged,
-      rejections: rejected,
-      webSearchResults: webResults,
-    );
+    return SyncUploadResult(rejections: rejected, webSearchResults: webResults);
   }
 
   @override
@@ -214,33 +206,56 @@ class DioSyncApi implements SyncApi {
     return const <String, dynamic>{};
   }
 
-  List<String> _asStringList(Object? raw) {
-    if (raw is! List) {
-      return const <String>[];
+  Bundle? _buildServerGeneratedBundleFor(Bundle uploaded) {
+    if (uploaded.type == Bundle.typeWalletSpend) {
+      return _buildWalletConfirmationFor(uploaded);
     }
-    return raw.whereType<String>().toList(growable: false);
+    return null;
   }
 
-  Bundle _buildConfirmationFor(Bundle uploaded) {
+  Bundle? _buildWalletConfirmationFor(Bundle uploaded) {
+    final payload = const WalletEventBundleMapper().decodeSpendPayload(
+      uploaded,
+    );
+    if (payload == null) {
+      return null;
+    }
     final now = DateTime.now();
-    return Bundle(
-      bundleId: 'server-ack-${uploaded.bundleId}-${now.microsecondsSinceEpoch}',
-      type: Bundle.typeAck,
-      sourceNodeId: 'server-gateway',
-      destinationNodeId: uploaded.sourceNodeId,
-      destinationScope: BundleDestinationScope.direct,
-      priority: BundlePriority.normal,
-      ackForBundleId: uploaded.bundleId,
-      payload: null,
-      appId: uploaded.appId,
+    return const WalletEventBundleMapper().toConfirmationBundle(
+      bundleId:
+          'wallet-confirmation-${uploaded.bundleId}-${now.microsecondsSinceEpoch}',
+      localNodeId: 'server-gateway',
+      sourceSpendBundleId: uploaded.bundleId,
+      recipientNodeId: payload.recipientNodeId,
+      amountMinorUnits: payload.amountMinorUnits,
+      memo: payload.memo,
       createdAt: now,
       ttlSeconds: 600,
-      acknowledged: true,
     );
   }
 
   Bundle _buildRejectionFor(Bundle uploaded) {
     final now = DateTime.now();
+    if (uploaded.type == Bundle.typeWalletSpend) {
+      final payload = const WalletEventBundleMapper().decodeSpendPayload(
+        uploaded,
+      );
+      if (payload != null) {
+        return const WalletEventBundleMapper().toRejectionBundle(
+          bundleId:
+              'wallet-rejection-${uploaded.bundleId}-${now.microsecondsSinceEpoch}',
+          localNodeId: 'server-gateway',
+          sourceSpendBundleId: uploaded.bundleId,
+          recipientNodeId: payload.recipientNodeId,
+          amountMinorUnits: payload.amountMinorUnits,
+          memo: payload.memo,
+          reason: 'Rejected by server policy (mock)',
+          createdAt: now,
+          ttlSeconds: 600,
+        );
+      }
+    }
+
     return Bundle(
       bundleId:
           'server-reject-${uploaded.bundleId}-${now.microsecondsSinceEpoch}',

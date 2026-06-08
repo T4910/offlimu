@@ -10,7 +10,6 @@ import type { WebSearchResultDto } from './webSearchService.js';
 import { WebSearchService } from './webSearchService.js';
 
 export type SyncUploadResult = {
-  acknowledgedBundleIds: string[];
   rejections: Array<{ bundleId: string; reason: string }>;
   webSearchResults: WebSearchResultDto[];
 };
@@ -24,7 +23,6 @@ export class SyncService {
   ) {}
 
   async uploadBundles(wireBundles: WireBundle[]): Promise<SyncUploadResult> {
-    const acknowledgedBundleIds: string[] = [];
     const rejections: Array<{ bundleId: string; reason: string }> = [];
     const webSearchResults: WebSearchResultDto[] = [];
 
@@ -61,7 +59,6 @@ export class SyncService {
 
       const alreadyProcessed = await this.store.hasProcessedBundle(bundle.bundleId);
       if (alreadyProcessed) {
-        acknowledgedBundleIds.push(bundle.bundleId);
         if (bundle.type === 'web_search_request') {
           webSearchResults.push(...(await this.webSearch.processSearchRequest(bundle)));
         }
@@ -70,15 +67,11 @@ export class SyncService {
 
       if (bundle.type === 'wallet_spend') {
         const result = await this.wallet.processSpend(bundle);
-        this.applyWalletResult(result, acknowledgedBundleIds, rejections);
+        this.applyWalletResult(result, rejections);
       } else if (bundle.type === 'ack') {
         await this.rewards.processAck(bundle);
-        acknowledgedBundleIds.push(bundle.bundleId);
       } else if (bundle.type === 'web_search_request') {
         webSearchResults.push(...(await this.webSearch.processSearchRequest(bundle)));
-        acknowledgedBundleIds.push(bundle.bundleId);
-      } else {
-        acknowledgedBundleIds.push(bundle.bundleId);
       }
 
       await this.rewards.processGatewayUpload(bundle.sourceNodeId, bundle.bundleId);
@@ -86,7 +79,7 @@ export class SyncService {
       await this.audit('bundle_processed', bundle, `Processed ${bundle.type}.`);
     }
 
-    return { acknowledgedBundleIds, rejections, webSearchResults };
+    return { rejections, webSearchResults };
   }
 
   async fetchRemoteBundles(sinceMs: number): Promise<{ bundles: WireBundle[] }> {
@@ -96,12 +89,9 @@ export class SyncService {
 
   private applyWalletResult(
     result: WalletProcessResult,
-    acknowledgedBundleIds: string[],
     rejections: Array<{ bundleId: string; reason: string }>
   ): void {
-    if (result.ok) {
-      acknowledgedBundleIds.push(result.acknowledgedBundleId);
-    } else {
+    if (!result.ok) {
       rejections.push({ bundleId: result.rejectedBundleId, reason: result.reason });
     }
   }

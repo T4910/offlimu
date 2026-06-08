@@ -1,10 +1,6 @@
 import { createHash } from 'node:crypto';
 import nacl from 'tweetnacl';
-import {
-  type Bundle,
-  legacySignaturePayload,
-  signaturePayload
-} from '../types/bundle.js';
+import { type Bundle, signaturePayload } from '../types/bundle.js';
 
 export type ServerIdentity = {
   nodeId: string;
@@ -39,12 +35,7 @@ export function verifyBundleSignature(bundle: Bundle): boolean {
   if (publicKey.length !== 32 || signature.length !== 64) return false;
 
   const currentPayload = Buffer.from(signaturePayload(bundle), 'utf8');
-  if (nacl.sign.detached.verify(currentPayload, signature, publicKey)) {
-    return true;
-  }
-
-  const legacyPayload = Buffer.from(legacySignaturePayload(bundle), 'utf8');
-  return nacl.sign.detached.verify(legacyPayload, signature, publicKey);
+  return nacl.sign.detached.verify(currentPayload, signature, publicKey);
 }
 
 export function signBundle(bundle: Bundle, identity: ServerIdentity): Bundle {

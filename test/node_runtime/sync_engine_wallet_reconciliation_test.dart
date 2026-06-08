@@ -40,10 +40,7 @@ void main() {
       await bundleRepository.save(bundle);
 
       final fakeSyncApi = _FakeSyncApi(
-        uploadResult: const SyncUploadResult(
-          acknowledgedBundleIds: <String>['direct-chat-1'],
-          rejections: <SyncRejection>[],
-        ),
+        uploadResult: const SyncUploadResult(),
         fetchResult: const SyncFetchResult(bundles: <Bundle>[]),
       );
       final engine = SyncEngine(
@@ -59,7 +56,7 @@ void main() {
       final stored = await bundleRepository.getById('direct-chat-1');
       expect(fakeSyncApi.uploadedBundles, hasLength(1));
       expect(stored?.acknowledged, isFalse);
-      expect(stored?.sentAt, isNotNull);
+      expect(stored?.sentAt, isNull);
     },
   );
 
@@ -84,10 +81,7 @@ void main() {
     await bundleRepository.save(bundle);
 
     final fakeSyncApi = _FakeSyncApi(
-      uploadResult: const SyncUploadResult(
-        acknowledgedBundleIds: <String>['broadcast-search-1'],
-        rejections: <SyncRejection>[],
-      ),
+      uploadResult: const SyncUploadResult(),
       fetchResult: const SyncFetchResult(bundles: <Bundle>[]),
     );
     final engine = SyncEngine(
@@ -103,7 +97,7 @@ void main() {
     final stored = await bundleRepository.getById('broadcast-search-1');
     expect(fakeSyncApi.uploadedBundles, hasLength(1));
     expect(stored?.acknowledged, isFalse);
-    expect(stored?.sentAt, isNotNull);
+    expect(stored?.sentAt, isNull);
   });
 
   test(
@@ -166,10 +160,7 @@ void main() {
         now: () => DateTime.fromMillisecondsSinceEpoch(1700001000000),
       );
       final fakeSyncApi = _FakeSyncApi(
-        uploadResult: SyncUploadResult(
-          acknowledgedBundleIds: <String>[spendResult.bundle.bundleId],
-          rejections: const <SyncRejection>[],
-        ),
+        uploadResult: const SyncUploadResult(),
         fetchResult: SyncFetchResult(
           bundles: <Bundle>[
             mapper.toConfirmationBundle(
@@ -260,7 +251,6 @@ void main() {
     );
     final fakeSyncApi = _FakeSyncApi(
       uploadResult: SyncUploadResult(
-        acknowledgedBundleIds: const <String>[],
         rejections: <SyncRejection>[
           SyncRejection(
             bundleId: spendResult.bundle.bundleId,
@@ -352,10 +342,7 @@ void main() {
       );
 
       final fakeSyncApi = _FakeSyncApi(
-        uploadResult: SyncUploadResult(
-          acknowledgedBundleIds: const <String>[],
-          rejections: const <SyncRejection>[],
-        ),
+        uploadResult: const SyncUploadResult(),
         fetchResult: SyncFetchResult(bundles: <Bundle>[rewardBundle]),
       );
 

@@ -77,26 +77,6 @@ export function signaturePayload(bundle: Bundle): string {
   });
 }
 
-export function legacySignaturePayload(bundle: Bundle): string {
-  return JSON.stringify({
-    bundleId: bundle.bundleId,
-    type: bundle.type,
-    sourceNodeId: bundle.sourceNodeId,
-    sourcePublicKey: bundle.sourcePublicKey ?? null,
-    destinationNodeId: bundle.destinationNodeId ?? null,
-    destinationScope: bundle.destinationScope,
-    priority: bundle.priority,
-    ackForBundleId: bundle.ackForBundleId ?? null,
-    payload: bundle.payload ?? null,
-    payloadReference: bundle.payloadReference ?? null,
-    appId: bundle.appId,
-    createdAtMs: bundle.createdAtMs,
-    expiresAtMs: bundle.expiresAtMs ?? null,
-    ttlSeconds: bundle.ttlSeconds,
-    hopCount: bundle.hopCount
-  });
-}
-
 export function parseJsonPayload(bundle: Bundle): Record<string, unknown> | null {
   if (!bundle.payload) return null;
   try {

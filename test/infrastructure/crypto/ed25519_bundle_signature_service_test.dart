@@ -80,7 +80,7 @@ void main() {
     expect(await signatureService.verify(forwarded), isTrue);
   });
 
-  test('verification accepts legacy hop-count-inclusive signatures', () async {
+  test('verification rejects legacy hop-count-inclusive signatures', () async {
     final vault = _InMemoryNodeIdentityVault();
     final identityStore = SecureNodeIdentityStore(
       vault: vault,
@@ -130,7 +130,7 @@ void main() {
       signature: legacySignature,
     );
 
-    expect(await signatureService.verify(legacySigned), isTrue);
+    expect(await signatureService.verify(legacySigned), isFalse);
   });
 }
 

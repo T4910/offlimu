@@ -16,8 +16,8 @@ describe('sync API', () => {
 
     expect(upload.statusCode).toBe(200);
     const body = upload.json();
-    expect(body.acknowledgedBundleIds).toContain(spend.bundleId);
     expect(body.rejections).toEqual([]);
+    expect(body).not.toHaveProperty('acknowledgedBundleIds');
 
     const fetch = await app.inject({ method: 'GET', url: '/sync/fetch?sinceMs=0' });
     const fetched = fetch.json();
@@ -51,7 +51,7 @@ describe('sync API', () => {
     await app.inject({ method: 'POST', url: '/sync/upload', payload: { bundles: [spend] } });
     const second = await app.inject({ method: 'POST', url: '/sync/upload', payload: { bundles: [spend] } });
 
-    expect(second.json().acknowledgedBundleIds).toContain(spend.bundleId);
+    expect(second.json()).not.toHaveProperty('acknowledgedBundleIds');
     const fetch = await app.inject({ method: 'GET', url: '/sync/fetch?sinceMs=0' });
     const confirmations = fetch.json().bundles.filter((bundle: { type: string; ackForBundleId: string }) => bundle.type === 'wallet_confirmation' && bundle.ackForBundleId === spend.bundleId);
     expect(confirmations).toHaveLength(1);
