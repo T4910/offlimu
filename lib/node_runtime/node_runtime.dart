@@ -662,7 +662,7 @@ class NodeRuntime {
     List<DiscoveredPeer> peers,
   ) {
     final now = DateTime.now();
-    final sorted = peers.toList(growable: false)
+    final sorted = peers.toList()
       ..sort((a, b) {
         final scoreA = _scorePeerForBundle(bundle, a, now);
         final scoreB = _scorePeerForBundle(bundle, b, now);
